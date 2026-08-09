@@ -28,6 +28,9 @@ db-up: .env ## Start Postgres + pgvector and wait until healthy
 	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' snomed-search-db 2>/dev/null)" = "healthy" ]; do sleep 2; done
 	@echo "db healthy."
 
+download: .env ## Download+extract the latest International release from MLDS (needs SNOMED_USER/PASSWORD)
+	$(PY) etl/syndication_downloader.py
+
 etl: ## Load the SNOMED release into Postgres (reads SNOMED_SNAPSHOT_DIR from .env)
 	$(PY) etl/load_descriptions.py
 
@@ -59,4 +62,4 @@ down: ## Stop the database container (keeps data)
 reset: ## Delete the DB volume and re-init (DESTROYS loaded data + embeddings)
 	docker compose down -v
 
-.PHONY: help install db-up etl index-lexical embed index-hnsw all llm serve smoke down reset
+.PHONY: help install db-up download etl index-lexical embed index-hnsw all llm serve smoke down reset

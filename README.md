@@ -18,7 +18,9 @@ and Mermaid diagrams are in [`docs/`](docs/) — start with [docs/04-architectur
 
 - **Docker** (runs Postgres 16 + pgvector; nothing else needs a container)
 - **Python 3.10+**
-- A **SNOMED CT RF2 release** (the `Snapshot` folder) — you provide this; it is **not** included
+- A **SNOMED CT RF2 release** (the `Snapshot` folder) — you provide this; it is **not** included.
+  You can point at one you already downloaded, or run `make download` to fetch the latest International
+  Edition from the SNOMED syndication service (needs your MLDS credentials — see below).
 - A valid **SNOMED CT / UMLS license** (see [Licensing](#licensing))
 - *Optional:* an **OpenAI-compatible chat LLM** endpoint for query translation and rerank
   (any server exposing `/v1/chat/completions`; the system degrades gracefully without it).
@@ -35,6 +37,15 @@ git clone <your-fork-url> && cd snomed-search
 cp .env.example .env          # then edit SNOMED_SNAPSHOT_DIR (and EMBED_DEVICE / GEMMA_* if needed)
 make all                      # db + deps + ETL + embeddings + indexes
 make serve                    # open http://127.0.0.1:8090
+```
+
+Don't have a release downloaded yet? Put your MLDS credentials in `.env` (`SNOMED_USER` /
+`SNOMED_PASSWORD`) and let the tool fetch it:
+
+```bash
+make install db-up            # venv + database
+make download                 # fetch+extract latest International Edition, set SNOMED_SNAPSHOT_DIR
+make etl index-lexical embed index-hnsw serve
 ```
 
 `make all` is the full pipeline. The long step is embedding (~1M terms; minutes on GPU/MPS, longer on
@@ -61,8 +72,10 @@ This is the whole point of the packaging. The ETL locates the release files **by
 recursively under `SNOMED_SNAPSHOT_DIR`, so a new **International** release needs **only a path change**:
 
 ```bash
-# 1. Point at the new release's Snapshot directory
+# 1. Get the new release. Either point at one you downloaded…
 $EDITOR .env          # set SNOMED_SNAPSHOT_DIR=/path/to/SnomedCT_..._<NEW_VERSION>/Snapshot
+# …or fetch the latest International Edition automatically (needs MLDS credentials in .env):
+make download         # downloads, extracts, and sets SNOMED_SNAPSHOT_DIR for you
 
 # 2. Rebuild from clean
 make reset            # wipe the old DB volume (optional but recommended)
@@ -71,6 +84,8 @@ make serve
 ```
 
 Notes:
+- `make download` always fetches the **latest** International Edition from the syndication feed and
+  updates `SNOMED_SNAPSHOT_DIR` in `.env`. The feed is public; the ZIP download needs your MLDS login.
 - **Other editions** (e.g. a national extension) may name the Description/Language files differently
   or use another language code; adjust the glob patterns in [`etl/load_descriptions.py`](etl/load_descriptions.py).
 - Only **active** descriptions of **active** concepts are loaded (FSN + synonyms).
@@ -107,6 +122,7 @@ snomed-search/
 │  ├─ 01_schema.sql        # extensions + descriptions table (auto-run on first DB start)
 │  └─ 02_indexes.sql       # GIN + HNSW index definitions (reference)
 ├─ etl/
+│  ├─ syndication_downloader.py  # fetch+extract a release from SNOMED syndication (MLDS)
 │  ├─ load_descriptions.py    # RF2 -> table + tsvector + preferred-term flags
 │  └─ smoke_test_lexical.py   # lexical-channel sanity check
 ├─ embed/
