@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SNOMED CT hybrid search</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1d24; --fg:#e6e6e6; --muted:#9aa0aa; --accent:#4f9cf9;
+          --lex:#2e7d32; --sem:#6a1b9a; --both:#1565c0; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+         background:var(--bg); color:var(--fg); }
+  header { padding:24px 20px 8px; max-width:900px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .wrap { max-width:900px; margin:0 auto; padding:12px 20px 60px; }
+  .searchbar { display:flex; gap:8px; align-items:center; margin:12px 0; }
+  input[type=text] { flex:1; padding:12px 14px; font-size:16px; border-radius:10px;
+                     border:1px solid #2b2f38; background:var(--card); color:var(--fg); }
+  label.toggle { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
+  select.lang { padding:11px 8px; font-size:13px; border-radius:10px; border:1px solid #2b2f38;
+                background:var(--card); color:var(--fg); }
+  .meta { color:var(--muted); font-size:12px; margin:6px 0 14px; min-height:16px; }
+  .meta code { color:var(--accent); }
+  .card { background:var(--card); border:1px solid #23262e; border-radius:10px;
+          padding:12px 14px; margin-bottom:8px; display:flex; gap:12px; align-items:baseline; }
+  .rank { color:var(--muted); font-variant-numeric:tabular-nums; min-width:22px; }
+  .term { font-weight:600; }
+  .tag { color:var(--muted); font-weight:400; }
+  .cid { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:20px; color:#fff; white-space:nowrap; }
+  .b-lexical{background:var(--lex);} .b-semantic{background:var(--sem);} .b-both{background:var(--both);}
+  .card.moved { box-shadow: inset 0 0 0 1px var(--both); }
+  /* Provisional state while rerank runs: a light beam circulating the card border. */
+  @property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+  @keyframes borderCycle { to { --angle: 360deg; } }
+  .card.previewing { position: relative; }
+  .card.previewing::before {
+    content: ""; position: absolute; inset: 0; border-radius: 10px; padding: 1.5px;
+    background: conic-gradient(from var(--angle),
+      rgba(79,156,249,0) 0deg,
+      rgba(79,156,249,0) 250deg,
+      rgba(79,156,249,0.85) 322deg,
+      #cfe5ff 345deg,
+      rgba(79,156,249,0) 360deg);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask-composite: exclude;
+    pointer-events: none;
+    animation: borderCycle 1.6s linear infinite;
+  }
+  .score { margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+  .hint { color:var(--muted); font-size:13px; }
+  .hint b { color:var(--fg); }
+</style>
+</head>
+<body>
+<header>
+  <h1>SNOMED CT hybrid search</h1>
+  <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
+</header>
+<div class="wrap">
+  <div class="searchbar">
+    <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
+    <select id="lang" class="lang" title="Clinician's language">
+      <option value="es" selected>ES</option>
+      <option value="en">EN</option>
+      <option value="fr">FR</option>
+      <option value="de">DE</option>
+      <option value="pt">PT</option>
+      <option value="it">IT</option>
+      <option value="nl">NL</option>
+      <option value="da">DA</option>
+    </select>
+    <label class="toggle"><input id="gemma" type="checkbox" checked> gemma → EN</label>
+    <label class="toggle"><input id="rerank" type="checkbox"> rerank</label>
+  </div>
+  <div class="meta" id="meta"></div>
+  <div id="results">
+    <p class="hint">Type a query in Spanish or English. Try "badly worded" terms:
+      <b>heart attack</b>, <b>azucar alta</b>, <b>water on the knee</b>, <b>rinon inflamado</b>.</p>
+  </div>
+</div>
+<script>
+const q = document.getElementById('q');
+const gemma = document.getElementById('gemma');
+const rerank = document.getElementById('rerank');
+const lang = document.getElementById('lang');
+const meta = document.getElementById('meta');
+const results = document.getElementById('results');
+let timer = null, seq = 0, inflight = null;
+
+function badge(ch){ return `<span class="badge b-${ch}">${ch}</span>`; }
+
+const STAGE_TEXT = {
+  expand:   'translating with gemma…',
+  retrieve: 'searching the index…',
+  rerank:   'reranking with gemma…',
+};
+
+function metaLine(data){
+  const t = data.timings || {};
+  const breakdown = [
+    t.expand_ms != null ? `gemma ${t.expand_ms}` : null,
+    t.retrieval_ms != null ? `search ${t.retrieval_ms}` : null,
+    t.rerank_ms != null ? `rerank ${t.rerank_ms}` : null,
+  ].filter(Boolean).join(' + ');
+  return (data.expansion ? `gemma → <code>${data.expansion}</code> &nbsp;·&nbsp; ` : '')
+    + `tsquery: <code>${data.tsquery || '(empty)'}</code> &nbsp;·&nbsp; ${data.results.length} concepts`
+    + (t.total_ms != null ? ` &nbsp;·&nbsp; ⏱ <b>${t.total_ms} ms</b> (${breakdown})` : '')
+    + (data.reranked ? ` &nbsp;·&nbsp; <span class="badge b-both">reranked</span>` : '');
+}
+
+function cardHtml(r, i){
+  return `<div class="card" data-cid="${r.concept_id}">
+    <span class="rank">${i+1}</span>
+    <div>
+      <div class="term">${r.fsn || r.matched_term} ${r.semantic_tag?`<span class="tag">· ${r.semantic_tag}</span>`:''}</div>
+      <div class="cid">${r.concept_id}${r.matched_term && r.fsn && r.matched_term!==r.fsn ? ' · match: '+r.matched_term : ''}</div>
+    </div>
+    ${badge(r.channel)}
+    <span class="score">${r.score}</span>
+  </div>`;
+}
+
+function paintResults(data){   // full render (cards only; caller sets meta)
+  results.innerHTML = data.results.length
+    ? data.results.map(cardHtml).join('')
+    : '<p class="hint">No results.</p>';
+}
+
+// FLIP animation: reorder the existing cards to the new (reranked) order and animate the move.
+function animateReorder(data){
+  const cards = {};
+  [...results.children].forEach(el=>{ if(el.dataset && el.dataset.cid) cards[el.dataset.cid]=el; });
+  const cids = data.results.map(r=>String(r.concept_id));
+  if(cids.some(c=>!cards[c])){ paintResults(data); return; }   // DOM mismatch: just repaint
+  const first = {};                                            // First: current positions
+  cids.forEach(c=> first[c]=cards[c].getBoundingClientRect().top);
+  data.results.forEach((r,i)=>{                                // reorder DOM + update rank numbers
+    const el = cards[String(r.concept_id)];
+    el.querySelector('.rank').textContent = i+1;
+    results.appendChild(el);
+  });
+  cids.forEach(c=>{                                            // Last + Invert + Play
+    const el = cards[c];
+    const dy = first[c] - el.getBoundingClientRect().top;
+    if(Math.abs(dy) < 1) return;
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${dy}px)`;
+    el.classList.add('moved');
+    requestAnimationFrame(()=>{
+      el.style.transition = 'transform 500ms cubic-bezier(.2,.7,.2,1)';
+      el.style.transform = '';
+      setTimeout(()=>{ el.style.transition=''; el.classList.remove('moved'); }, 650);
+    });
+  });
+}
+
+async function run(){
+  const query = q.value.trim();
+  if(!query){ results.innerHTML=''; meta.textContent=''; return; }
+  const mySeq = ++seq;
+  meta.textContent = '';
+  if(inflight) inflight.abort();          // cancel the previous in-flight search
+  const ctrl = new AbortController();
+  inflight = ctrl;
+  gemma.disabled = rerank.disabled = lang.disabled = true;   // lock the controls while running
+
+  // Live counter: shows the current stage + elapsed seconds. Before the preview it lives in the
+  // results area; after the preview (during rerank) it lives in the meta line (#live).
+  const t0 = performance.now();
+  const secs = ()=> ((performance.now()-t0)/1000).toFixed(1);
+  let stage = 'searching…', previewShown = false;
+  const paint = ()=>{
+    if(!previewShown){
+      results.innerHTML = `<p class="hint">${stage} · ⏱ ${secs()} s</p>`;
+    } else {
+      const live = document.getElementById('live');
+      if(live) live.textContent = `${stage} · ⏱ ${secs()} s`;
+    }
+  };
+  paint();
+  const tick = setInterval(paint, 100);
+
+  try{
+    const url = `/api/search_stream?q=${encodeURIComponent(query)}&gemma=${gemma.checked}&rerank=${rerank.checked}&lang=${lang.value}`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '', doneData = null;
+    while(true){
+      const { value, done } = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, { stream:true });
+      let nl;
+      while((nl = buf.indexOf('\n')) >= 0){
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl+1);
+        if(!line) continue;
+        const ev = JSON.parse(line);
+        if(mySeq !== seq) continue;               // superseded: ignore incoming events
+        if(ev.stage === 'results'){               // preview: base order, shown immediately
+          paintResults(ev);
+          previewShown = true;
+          const pending = rerank.checked && ev.results.length > 1;
+          stage = STAGE_TEXT.rerank;
+          meta.innerHTML = metaLine(ev)
+            + (pending ? ` &nbsp;·&nbsp; <span class="badge b-both" id="live">${stage} · ⏱ ${secs()} s</span>` : '');
+          if(pending){ [...results.children].forEach(el=>el.classList.add('previewing')); }  // provisional state
+        } else if(ev.stage === 'done'){
+          doneData = ev;
+        } else if(ev.stage){
+          stage = STAGE_TEXT[ev.stage] || 'searching…';
+        }
+      }
+    }
+    clearInterval(tick);
+    if(mySeq !== seq) return;                      // discard stale responses
+    if(doneData){
+      [...results.children].forEach(el=>el.classList.remove('previewing'));  // leave provisional state
+      if(doneData.reranked) animateReorder(doneData);   // animate the reordering
+      else if(!previewShown) paintResults(doneData);
+      meta.innerHTML = metaLine(doneData);
+    }
+  }catch(e){
+    clearInterval(tick);
+    if(e.name === 'AbortError') return;       // superseded by a newer search
+    if(mySeq !== seq) return;
+    meta.textContent = '';
+    results.innerHTML = '<p class="hint">Connection error. Retrying as you type…</p>';
+  }finally{
+    clearInterval(tick);
+    if(mySeq === seq){ gemma.disabled = rerank.disabled = lang.disabled = false; }   // re-enable only if this is the current search
+  }
+}
+q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 1100); });
+q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
+gemma.addEventListener('change', run);
+rerank.addEventListener('change', run);
+lang.addEventListener('change', run);
+</script>
+</body>
+</html>

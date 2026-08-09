@@ -1,0 +1,28 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: snomed-search-db
+    restart: unless-stopped
+    # /dev/shm por defecto en Docker = 64MB. Los builds HNSW en PARALELO usan memoria
+    # compartida y fallan con "No space left on device". Con esto se habilitan.
+    # (El build en SERIE usa maintenance_work_mem y no necesita esto.)
+    shm_size: "2gb"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-snomed}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-snomed}
+      POSTGRES_DB: ${POSTGRES_DB:-snomed_search}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Se ejecuta SOLO en el primer arranque (BD vacía): crea extensiones + tabla.
+      # Los índices (GIN/HNSW) se crean DESPUÉS de cargar datos, no aquí.
+      - ./sql/01_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-snomed} -d ${POSTGRES_DB:-snomed_search}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
