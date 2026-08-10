@@ -56,7 +56,7 @@ flowchart TD
 
     subgraph FUS["Fusion + ranking"]
         direction TB
-        R["RRF: score = 1/(60+rank_lex) + 1/(60+rank_vec)<br/>+ 0.01 boost if preferred term"]
+        R["RRF: score = 1/(60+rank_lex) + 1/(60+rank_vec)<br/>+ small preferred-term nudge · exact matches floated first"]
         D["Dedup by concept_id<br/>(best description per concept)"]
         FSN["Attach the concept's FSN"]
         R --> D --> FSN
@@ -160,8 +160,18 @@ sequenceDiagram
 
 ### Fusion — RRF (Reciprocal Rank Fusion)
 - Combines the two rankings without calibrating disparate score scales:
-  `score(doc) = 1/(60 + rank_lexical) + 1/(60 + rank_semantic) + 0.01·[is_preferred]`.
-- A concept appearing in **both** channels rises to the top → `both` badge (highest confidence).
+  `score(doc) = 1/(60 + rank_lexical) + 1/(60 + rank_semantic) + PREF_BOOST·[is_preferred]`.
+- Lexical `ts_rank` uses length normalization (`ts_rank(..., 1)`) so verbose descriptions that
+  repeat the query word don't get an artificial boost over concise ones.
+- The lexical query is `to_tsquery(OR(original, gemma-expansion))`, so an already-precise clinical
+  term (e.g. `Hepatomegaly`) still fires its exact/synonym match even if gemma expands it into
+  something else — while lay terms are still bridged via the expansion.
+- **`PREF_BOOST` is small (0.001), a gentle tie-breaker.** An RRF rank step is ~1/60² ≈ 0.0003;
+  the old 0.01 acted like ~30 ranks and let a *preferred* term beat a clearly better exact match.
+- A concept appearing in **both** channels rises → `both` badge (highest confidence).
+- **Deterministic exact-match rule (`exact_first`):** a concept with a description whose normalized
+  text equals the query **or** the expansion is floated to the **top**, before the model reranker and
+  the pref nudge (`exact` badge). An exact match to what the user typed should always win.
 - Then **dedup by concept** (keep the best description) and attach the **FSN** for display.
 - **Background:** RRF is the method of Cormack, Clarke & Büttcher [5]; hybrid lexical+semantic retrieval
   is the dominant pattern in the clinical-ontology search literature [1].

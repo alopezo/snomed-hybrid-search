@@ -34,6 +34,9 @@ GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma-4-26b-a4b-it")
 
 RRF_K = 60
 CANDIDATES = 200  # top-N per channel before fusing
+# Preferred-term nudge added to the RRF score. Kept small: an RRF rank step is ~1/60² ≈ 0.0003,
+# so 0.001 ≈ a few ranks — a gentle tie-breaker, not a dominator (0.01 used to flip clear winners).
+PREF_BOOST = 0.001
 
 # Source languages the clinician can write in (code -> name used in the prompt).
 LANGUAGES = {
@@ -45,7 +48,7 @@ DEFAULT_LANG = "es"
 RRF_SQL = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
 lex AS (
-    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts) DESC) AS r
+    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1) DESC) AS r
     FROM descriptions d, q
     WHERE %(tsq)s <> '' AND d.term_tsv @@ q.ts
     LIMIT %(cand)s
@@ -67,7 +70,7 @@ fused AS (
 ),
 scored AS (
     SELECT d.concept_id, d.term, d.semantic_tag,
-           f.lex_s + f.vec_s + (d.pref_us::int * 0.01) AS score,
+           f.lex_s + f.vec_s + (d.pref_us::int * %(pref_boost)s) AS score,
            f.in_lex, f.in_vec
     FROM fused f JOIN descriptions d ON d.id = f.id
 ),
@@ -78,7 +81,9 @@ best AS (
     ORDER BY concept_id, score DESC
 )
 SELECT b.concept_id, b.matched_term, b.semantic_tag, b.score, b.in_lex, b.in_vec,
-       fsn.term AS fsn
+       fsn.term AS fsn,
+       EXISTS (SELECT 1 FROM descriptions e
+               WHERE e.concept_id = b.concept_id AND e.term_norm = ANY(%(exact_norms)s)) AS is_exact
 FROM best b
 LEFT JOIN LATERAL (
     SELECT term FROM descriptions
@@ -123,6 +128,32 @@ def to_prefix_query(text: str) -> str:
         seen.add(k)
         words.append(w)
     return " & ".join(f"{w}:*" for w in words)
+
+
+def exact_first(results: list[dict]) -> list[dict]:
+    """Deterministic manual rerank: float concepts with an EXACT description match to the top,
+    preserving the existing order within each group (stable). An exact match to what the user
+    typed should always win, regardless of the model reranker or the preferred-term nudge."""
+    return sorted(results, key=lambda r: 0 if r.get("is_exact") else 1)
+
+
+def build_tsquery(query: str, expansion: str | None) -> str:
+    """Lexical query = OR of two AND-groups: the ORIGINAL query and the gemma expansion.
+    This keeps exact/synonym matches for already-precise clinical terms (e.g. 'Hepatomegaly',
+    which gemma may otherwise expand into something worse) while still bridging lay terms via
+    the expansion. Each group ANDs its own prefixes; the groups are OR-ed."""
+    groups = []
+    for text in (query, expansion):
+        if not text:
+            continue
+        g = to_prefix_query(text)
+        if g and g not in groups:
+            groups.append(g)
+    if not groups:
+        return ""
+    if len(groups) == 1:
+        return groups[0]
+    return " | ".join(f"({g})" for g in groups)
 
 
 @lru_cache(maxsize=1)
@@ -205,8 +236,11 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     # The descriptions index is in ENGLISH. If gemma translated/expanded, we use that EN
     # version in BOTH channels: BioLORD embeds an English clinical phrase much better than short
     # Spanish lay jargon (empirical finding). Without gemma, we fall back to the raw query (works for EN).
-    search_text = expansion or query
-    tsq = to_prefix_query(search_text)
+    search_text = expansion or query          # semantic channel: expansion when available
+    tsq = build_tsquery(query, expansion)     # lexical channel: OR(original, expansion)
+
+    # Exact-match set: what the user typed and the gemma expansion, normalized like term_norm.
+    exact_norms = list(dict.fromkeys(n for n in (normalize(query), normalize(expansion or "")) if n))
 
     yield {"stage": "retrieve"}
     tr = time.perf_counter()
@@ -214,7 +248,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
         cur.execute(RRF_SQL, {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
-            "k": RRF_K, "k_out": k,
+            "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)
@@ -227,9 +261,11 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
             "semantic_tag": tag,
             "score": round(float(score), 5),
             "channel": ("both" if in_lex and in_vec else "lexical" if in_lex else "semantic"),
+            "is_exact": bool(is_exact),
         }
-        for cid, term, tag, score, in_lex, in_vec, fsn in rows
+        for cid, term, tag, score, in_lex, in_vec, fsn, is_exact in rows
     ]
+    results = exact_first(results)   # deterministic: exact matches to the top
 
     # Preview: emit the base (pre-rerank) results immediately so the UI can show them
     # while the (slower) rerank runs. The UI animates the reordering when "done" arrives.
@@ -242,7 +278,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         trr = time.perf_counter()
         new_order = crossencoder_rerank(search_text, results)
         if new_order is not None:
-            results = new_order
+            results = exact_first(new_order)   # rerank the rest, but keep exact matches on top
             reranked = True
         t["rerank_ms"] = round((time.perf_counter() - trr) * 1000, 1)
 

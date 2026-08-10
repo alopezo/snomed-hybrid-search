@@ -134,7 +134,7 @@ snomed-search/
 │  ├─ search.py               # hybrid search: gemma expand -> lexical + semantic -> RRF -> optional cross-encoder rerank; streaming
 │  └─ server.py               # FastAPI: /api/search, /api/search_stream, static demo
 ├─ demo/
-│  └─ index.html              # live search UI (language select, stages, timings, rerank toggle, animated reorder)
+│  └─ index.html              # live search UI (language select, stages, timings, rerank toggle, exact badge, animated reorder)
 ├─ scripts/
 │  └─ serve-llm.sh            # one-command local LLM (Ollama) for translation/expansion
 └─ docs/                      # design, paper references, Mermaid diagrams, docs/llm-setup.md
