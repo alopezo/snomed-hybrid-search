@@ -33,14 +33,14 @@ def main() -> None:
     dsn = os.environ["PG_DSN"]
     query = sys.argv[1] if len(sys.argv) > 1 else "diab mell"
     tsq = to_prefix_query(query)
-    print(f"query: {query!r}  ->  to_tsquery('simple', {tsq!r})\n")
+    print(f"query: {query!r}  ->  to_tsquery('unaccent_simple', {tsq!r})\n")
 
     with psycopg.connect(dsn) as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT concept_id, term, semantic_tag, pref_us "
             "FROM descriptions "
-            "WHERE term_tsv @@ to_tsquery('simple', %s) "
-            "ORDER BY ts_rank(term_tsv, to_tsquery('simple', %s)) DESC "
+            "WHERE term_tsv @@ to_tsquery('unaccent_simple', %s) "
+            "ORDER BY ts_rank(term_tsv, to_tsquery('unaccent_simple', %s)) DESC "
             "LIMIT 15",
             (tsq, tsq),
         )

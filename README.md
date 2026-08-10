@@ -5,12 +5,14 @@ when the clinician doesn't use the exact words. It combines three components:
 
 | # | Component | Role | Tech |
 |---|-----------|------|------|
-| ① | **Lexical (algorithmic)** | multi-word prefix match, order-independent | PostgreSQL `to_tsquery` + GIN |
-| ② | **LLM (query understanding)** | translate the clinician's note to English (source language selectable), expand abbreviations/localisms, optional rerank | any OpenAI-compatible chat endpoint (e.g. gemma via Ollama) |
+| ① | **Lexical (algorithmic)** | multi-word prefix match, order- & accent-independent | PostgreSQL `to_tsquery` (`unaccent_simple` config) + GIN |
+| ② | **LLM (query understanding)** | translate the clinician's note to English (source language selectable), expand abbreviations/localisms | any OpenAI-compatible chat endpoint (e.g. gemma via Ollama) |
 | ③ | **Semantic index** | retrieve by meaning (solves *vocabulary mismatch*) | BioLORD-2023-M + pgvector (HNSW) |
 
-Results from ① and ③ are fused with **Reciprocal Rank Fusion (RRF)**. Full design, evaluation notes,
-and Mermaid diagrams are in [`docs/`](docs/) — start with [docs/04-architecture-flow.md](docs/04-architecture-flow.md).
+Results from ① and ③ are fused with **Reciprocal Rank Fusion (RRF)**. An **optional cross-encoder
+reranker** (a purpose-built neural relevance model — `BAAI/bge-reranker-v2-m3`, not the LLM) can
+reorder the fused candidates. Full design, evaluation notes, and Mermaid diagrams are in
+[`docs/`](docs/) — start with [docs/04-architecture-flow.md](docs/04-architecture-flow.md).
 
 ---
 
@@ -22,7 +24,7 @@ and Mermaid diagrams are in [`docs/`](docs/) — start with [docs/04-architectur
   You can point at one you already downloaded, or run `make download` to fetch the latest International
   Edition from the SNOMED syndication service (needs your MLDS credentials — see below).
 - A valid **SNOMED CT / UMLS license** (see [Licensing](#licensing))
-- *Optional:* an **OpenAI-compatible chat LLM** endpoint for query translation and rerank
+- *Optional:* an **OpenAI-compatible chat LLM** endpoint for query translation/expansion
   (any server exposing `/v1/chat/completions`; the system degrades gracefully without it).
   Easiest setup: `make llm` (Ollama + a small gemma). See [docs/llm-setup.md](docs/llm-setup.md).
 
@@ -129,12 +131,12 @@ snomed-search/
 │  ├─ download_model.py       # download + validate BioLORD (checks dim + ES→EN similarity)
 │  └─ index_embeddings.py     # encode unique terms -> pgvector (dedup + staging + join)
 ├─ api/
-│  ├─ search.py               # hybrid search: gemma -> lexical + semantic -> RRF -> (rerank); streaming
+│  ├─ search.py               # hybrid search: gemma expand -> lexical + semantic -> RRF -> optional cross-encoder rerank; streaming
 │  └─ server.py               # FastAPI: /api/search, /api/search_stream, static demo
 ├─ demo/
 │  └─ index.html              # live search UI (language select, stages, timings, rerank toggle, animated reorder)
 ├─ scripts/
-│  └─ serve-llm.sh            # one-command local LLM (Ollama) for translation + rerank
+│  └─ serve-llm.sh            # one-command local LLM (Ollama) for translation/expansion
 └─ docs/                      # design, paper references, Mermaid diagrams, docs/llm-setup.md
 ```
 
@@ -156,15 +158,32 @@ If you later containerize the Python app, a container can't see the host's `127.
 
 ---
 
-## Operations
+## Operations & keeping it running
+
+Three moving parts, with different lifetimes:
+
+| Service | Lifetime | How to (re)start |
+|---|---|---|
+| **Postgres** (Docker) | durable — `restart: unless-stopped`, survives reboots | automatic |
+| **Ollama** (LLM) | make it durable with `brew services start ollama` | `brew services start ollama` |
+| **API** (uvicorn) | the fragile one — a plain process | `make up` |
+
+Everyday commands:
 
 | Action | Command |
 |---|---|
-| Stop DB (keep data) | `make down` |
-| Start DB again | `docker compose start` |
-| DB logs | `docker compose logs -f db` |
-| psql console | `docker compose exec db psql -U snomed -d snomed_search` |
+| Start the whole stack | `make up` |
+| Check what's up/down | `make status` |
+| Stop the stack (keep data) | `make down` |
+| Live health (DB/LLM/embeddings) | open the demo — status dots + `warm up` button, or `GET /api/health` |
 | Full reset (wipe data) | `make reset` |
+| DB logs / psql | `docker compose logs -f db` · `docker compose exec db psql -U snomed -d snomed_search` |
+
+**Auto-start the API (optional):** `make service-install` installs a launchd agent so the API starts
+on login and restarts if it crashes; `make service-uninstall` removes it.
+⚠️ macOS caveat: LaunchAgents cannot read `~/Documents`, `~/Desktop`, or `~/Downloads` without extra
+permission — if the repo lives there, the service fails with a `PermissionError`. In that case use
+`make up`, move the repo outside those folders, or grant Full Disk Access to `.venv/bin/python3`.
 
 The `pgdata` Docker volume persists data across restarts. `sql/01_schema.sql` only runs when the
 volume is empty; after a schema change, `make reset` re-initializes.

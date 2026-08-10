@@ -121,9 +121,13 @@ sequenceDiagram
 
 ### ① Algorithmic — lexical channel (`to_tsquery` multi-prefix, order-independent)
 - **What it does:** deterministic matching by **prefixes of all words**, in **any order**.
-  `"diab mell"` → `to_tsquery('simple', 'diab:* & mell:*')` → finds *Diabetes mellitus*.
-- **How:** column `term_tsv = to_tsvector('simple', term_norm)` + **GIN** index. The `&` requires that
-  **all** words appear (high precision); the `:*` allows prefixes (tolerates half-typed words).
+  `"diab mell"` → `to_tsquery('unaccent_simple', 'diab:* & mell:*')` → finds *Diabetes mellitus*.
+- **How:** column `term_tsv = to_tsvector('unaccent_simple', term)` + **GIN** index. The `&` requires
+  that **all** words appear (high precision); the `:*` allows prefixes (tolerates half-typed words).
+- **Accent/case handling (unified in SQL):** `unaccent_simple` is a custom text-search configuration
+  (`simple` + the `unaccent` dictionary, no stemming) used by **both** `to_tsvector` (indexing) and
+  `to_tsquery` (querying), so normalization is identical on both sides. That is why `riñón`/`rinon`
+  and `Diabético`/`diabetico` match. Query tokens are de-duplicated before building the tsquery.
 - **Strength:** exact, fast, explainable; ideal when the clinician uses the correct vocabulary (or English).
 - **Weakness:** blind to meaning. `"azucar alta"` shares no letters with *Hyperglycemia* → 0 results.
   That is why it needs component ② to translate first.
@@ -135,6 +139,7 @@ sequenceDiagram
   expands abbreviations and localisms into a **standard English clinical phrase**. `"IAM"` (ES) →
   *acute myocardial infarction*; `"EPOC reagudizada"` (ES) → *acute exacerbation of COPD*. The source
   language is passed in explicitly (a UI dropdown), which disambiguates acronyms (e.g. "EPOC" in ES = COPD).
+  The LLM output is de-duplicated (it sometimes repeats a term, e.g. "thrombocytopenia thrombocytopenia").
 - **Why it is essential** (empirical finding): BioLORD embeds clinical phrases well, but **poorly**
   embeds short Spanish slang. Without translation, `"presion alta"` fell onto *barometric pressure*;
   translated, it correctly hits *Hypertensive disorder*. gemma feeds **BOTH** channels (not only lexical).
@@ -160,6 +165,16 @@ sequenceDiagram
 - Then **dedup by concept** (keep the best description) and attach the **FSN** for display.
 - **Background:** RRF is the method of Cormack, Clarke & Büttcher [5]; hybrid lexical+semantic retrieval
   is the dominant pattern in the clinical-ontology search literature [1].
+
+### Optional rerank — cross-encoder (not the LLM)
+- A toggle (`rerank`) can reorder the fused top-K with a **cross-encoder** (`BAAI/bge-reranker-v2-m3`,
+  multilingual, ~560M) — a purpose-built neural relevance model that scores `(query, concept)` pairs
+  directly. It is **deterministic** and **semantic**, unlike an LLM asked to reorder (which we tried
+  first and found inconsistent) and unlike lexical trigram similarity.
+- It scores against the **gemma expansion** (the normalized clinical phrase), which ranks far better
+  than short lay input. It reorders only what the fusion already returned, so the top-K pool must be
+  large enough to contain the good candidates (default K=15).
+- Loaded lazily (~a few seconds on first use, then ~1 s per query). Off by default.
 
 ---
 

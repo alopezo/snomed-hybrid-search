@@ -15,11 +15,11 @@ embedding model is separate). Example used during development: `gemma-4-26b-a4b-
 ## Architecture (reminder)
 
 ```
-query (ES/EN)
-  ├─ [gemma] normalizes + translates/expands abbreviations → EN variants   (optional, cacheable)
-  ├─ LEXICAL channel   : tsvector + to_tsquery('w:* & w:*')  (multi-prefix, order-independent)
+query (source language selectable)
+  ├─ [gemma] translates→EN + expands abbreviations/localisms → EN terms (deduped)   (optional, cacheable)
+  ├─ LEXICAL channel   : to_tsvector/to_tsquery('unaccent_simple', 'w:* & w:*')  (multi-prefix, order- & accent-independent)
   ├─ SEMANTIC channel: BioLORD-2023-M → 768d vector → pgvector kNN (cosine)
-  └─ RRF FUSION (SQL) → boosts (preferred/type) → [optional gemma rerank] → top-10
+  └─ RRF FUSION (SQL) → boosts (preferred/type) → [optional cross-encoder rerank] → top-10
 ```
 Single store: **PostgreSQL 16 + pgvector**.
 
@@ -89,6 +89,11 @@ Inputs: `Terminology/sct2_Description_...`, `Refset/Language/der2_cRefset_Langua
     ```sql
     CREATE EXTENSION IF NOT EXISTS vector;
     CREATE EXTENSION IF NOT EXISTS unaccent;
+    -- Accent/case-insensitive, no-stemming config used by BOTH indexing and querying.
+    CREATE TEXT SEARCH CONFIGURATION unaccent_simple (COPY = simple);
+    ALTER TEXT SEARCH CONFIGURATION unaccent_simple
+      ALTER MAPPING FOR asciiword, asciihword, hword_asciipart, word, hword, hword_part
+      WITH unaccent, simple;
     CREATE TABLE descriptions (
       id BIGINT PRIMARY KEY, concept_id BIGINT, term TEXT, term_norm TEXT,
       type_id BIGINT, semantic_tag TEXT,
@@ -101,11 +106,11 @@ Inputs: `Terminology/sct2_Description_...`, `Refset/Language/der2_cRefset_Langua
   2. Read `Description` row by row (TSV, `\t`), filter `active=1`, `typeId ∈ {synonym, FSN}`,
      and active `conceptId`.
   3. Extract `semantic_tag` from the FSN (regex `\(([^)]+)\)$`).
-  4. `term_norm = unaccent(lower(term))`.
-  5. Bulk `COPY` into the table (use `psycopg.copy` for speed; 1.4M rows).
-- [ ] **[AUTO]** `etl/build_tsvector.py` (or inside the COPY):
+  4. `term_norm = normalize(term)` in Python (used only as the embedding dedup key).
+  5. Bulk `COPY` into the table (use `psycopg.copy` for speed; ~1M rows).
+- [ ] **[AUTO]** build the lexical vector (inside the ETL) — accent/case folding via the config:
     ```sql
-    UPDATE descriptions SET term_tsv = to_tsvector('simple', unaccent(term));
+    UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term);
     ```
   - Mark `pref_us`/`pref_gb` with a join to the Language refset
     (acceptability `900000000000548007` = preferred; US refset `...509007`, GB `...508004`).
@@ -116,7 +121,7 @@ Inputs: `Terminology/sct2_Description_...`, `Refset/Language/der2_cRefset_Langua
     ```
 - [ ] **Checkpoint:** the **lexical channel already works** (multi-prefix order-independent) without needing embeddings.
     ```sql
-    SELECT term FROM descriptions WHERE term_tsv @@ to_tsquery('simple','diab:* & mell:*') LIMIT 10;
+    SELECT term FROM descriptions WHERE term_tsv @@ to_tsquery('unaccent_simple','diab:* & mell:*') LIMIT 10;
     ```
 
 ---
@@ -173,7 +178,9 @@ Tested against the real index (1M descriptions + HNSW):
   4. Apply boosts (`pref_us`, FSN) and return top-10 grouped by `concept_id`.
 - [ ] **[AUTO]** `sql/search_rrf.sql` (base already defined in the README/design): CTE `lex` + CTE `vec` +
       `1/(60+rank)` + boosts.
-- [ ] **[optional] [AUTO]** final rerank of top-20 with gemma (LLM-as-reranker), asynchronous.
+- [ ] **[optional] [AUTO]** cross-encoder rerank of the fused candidates (`BAAI/bge-reranker-v2-m3`,
+  deterministic neural relevance — replaced the earlier LLM-as-reranker, which was inconsistent).
+  Feed it the gemma expansion (the clinical phrase), not the raw lay query.
 
 ---
 
@@ -214,7 +221,7 @@ Tested against the real index (1M descriptions + HNSW):
 1. Phase 0 + Phase 1 → **lexical search working today** (multi-prefix order-independent).
 2. Phase 2 + Phase 3 (without gemma) → **lexical+semantic hybrid**.
 3. Phase 4 → **visible demo**.
-4. gemma (expansion/rerank) and Phase 5 → refinement.
+4. gemma (expansion) + optional cross-encoder rerank, and Phase 5 → refinement.
 
 ## Consolidated MANUAL steps
 1. Confirm SNOMED/UMLS license. ✔️

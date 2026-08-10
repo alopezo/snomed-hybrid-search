@@ -2,7 +2,7 @@
 """
 Phase 3 — Hybrid search core (lexical + semantic) with RRF fusion.
 
-- Lexical channel:  to_tsquery('simple', 'w1:* & w2:* ...')  (multi-prefix ignore-order)
+- Lexical channel:  to_tsquery('unaccent_simple', 'w1:* & w2:* ...')  (multi-prefix, order- & accent-independent)
 - Semantic channel: BioLORD-2023-M -> pgvector kNN (cosine)
 - Fusion:           Reciprocal Rank Fusion (k=60) + preferred-term boost
 - Optional:         ES->EN expansion/translation with gemma (improves the lexical channel)
@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import re
 import time
 import unicodedata
 from functools import lru_cache
@@ -29,6 +28,7 @@ load_dotenv()
 PG_DSN = os.environ["PG_DSN"]
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "FremyCompany/BioLORD-2023-M")
 EMBED_DEVICE = os.environ.get("EMBED_DEVICE", "cpu")
+RERANK_MODEL = os.environ.get("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 GEMMA_URL = os.environ.get("GEMMA_URL", "http://127.0.0.1:8080/v1")
 GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma-4-26b-a4b-it")
 
@@ -43,7 +43,7 @@ LANGUAGES = {
 DEFAULT_LANG = "es"
 
 RRF_SQL = """
-WITH q AS (SELECT to_tsquery('simple', %(tsq)s) AS ts),
+WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
 lex AS (
     SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts) DESC) AS r
     FROM descriptions d, q
@@ -90,13 +90,38 @@ LIMIT %(k_out)s
 
 
 def normalize(term: str) -> str:
+    """lower + strip accents (NFKD) + collapse spaces. Used for the embedding dedup key."""
     t = unicodedata.normalize("NFKD", term.lower())
     t = "".join(c for c in t if not unicodedata.combining(c))
     return " ".join(t.split())
 
 
+def dedup_words(text: str) -> str:
+    """Order-preserving, case-insensitive de-duplication of space-separated words
+    (the LLM sometimes repeats a term, e.g. 'thrombocytopenia thrombocytopenia')."""
+    out, seen = [], set()
+    for w in text.split():
+        k = w.lower()
+        if k not in seen:
+            seen.add(k)
+            out.append(w)
+    return " ".join(out)
+
+
 def to_prefix_query(text: str) -> str:
-    words = [w for w in normalize(text).split() if w]
+    """Build a multi-prefix, order-independent tsquery: 'w1:* & w2:* ...'. Tokenizes, strips
+    punctuation, and de-duplicates. Accent/case folding is done by the SQL text-search config
+    (unaccent_simple), so raw letters are kept here — index and query normalize the same way."""
+    words, seen = [], set()
+    for raw in text.split():
+        w = "".join(ch for ch in raw if ch.isalnum())
+        if not w:
+            continue
+        k = w.lower()
+        if k in seen:
+            continue
+        seen.add(k)
+        words.append(w)
     return " & ".join(f"{w}:*" for w in words)
 
 
@@ -138,42 +163,27 @@ def gemma_expand(query: str, language: str = "Spanish", timeout: float = 25.0) -
         return None
 
 
-def gemma_rerank(query: str, results: list[dict], timeout: float = 30.0) -> list[dict] | None:
-    """Reorder candidates by faithfulness to the ORIGINAL query text, using gemma.
-    Returns the reordered list, or None if gemma fails (caller keeps the original order)."""
-    lines = [f"{i + 1}. {r['fsn'] or r['matched_term']}" for i, r in enumerate(results)]
-    prompt = (
-        "A clinician searched with the query below. Reorder the candidate SNOMED concepts by how "
-        "faithfully each one matches the clinical meaning of the ORIGINAL query. Return ONLY the "
-        "item numbers separated by commas, best first, no other text.\n"
-        f"Query: {query}\nCandidates:\n" + "\n".join(lines)
-    )
+@lru_cache(maxsize=1)
+def get_reranker():
+    from sentence_transformers import CrossEncoder
+    return CrossEncoder(RERANK_MODEL, device=EMBED_DEVICE)
+
+
+def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
+    """Reorder candidates by a cross-encoder's relevance score for (text, concept FSN).
+    A purpose-built neural reranker (deterministic, multilingual) — not an LLM opinion, not lexical.
+    `text` should be the clinical query (the gemma expansion when available; it scores far better
+    against a normalized clinical phrase than against short lay input). Returns the reordered list,
+    or None on failure (caller keeps the original order)."""
+    if len(results) < 2:
+        return results
     try:
-        r = httpx.post(
-            f"{GEMMA_URL}/chat/completions",
-            json={
-                "model": GEMMA_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.0,
-                "max_tokens": 120,
-            },
-            timeout=timeout,
-        )
-        r.raise_for_status()
-        text = r.json()["choices"][0]["message"]["content"]
+        ce = get_reranker()
+        scores = ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])
     except Exception:
         return None
-
-    order: list[int] = []
-    for tok in re.findall(r"\d+", text):
-        n = int(tok)
-        if 1 <= n <= len(results) and n not in order:
-            order.append(n)
-    # Append any candidates gemma omitted, preserving their original order.
-    for n in range(1, len(results) + 1):
-        if n not in order:
-            order.append(n)
-    return [results[n - 1] for n in order]
+    order = sorted(range(len(results)), key=lambda i: float(scores[i]), reverse=True)
+    return [dict(results[i], rerank_score=round(float(scores[i]), 4)) for i in order]
 
 
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
@@ -188,6 +198,8 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     tg = time.perf_counter()
     language = LANGUAGES.get(lang, LANGUAGES[DEFAULT_LANG])
     expansion = gemma_expand(query, language=language) if use_gemma else None
+    if expansion:
+        expansion = dedup_words(expansion)   # the LLM sometimes repeats terms
     t["expand_ms"] = round((time.perf_counter() - tg) * 1000, 1)
 
     # The descriptions index is in ENGLISH. If gemma translated/expanded, we use that EN
@@ -225,10 +237,10 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
            "reranked": False, "timings": dict(t), "results": results}
 
     reranked = False
-    if rerank and use_gemma and len(results) > 1:
+    if rerank and len(results) > 1:
         yield {"stage": "rerank"}
         trr = time.perf_counter()
-        new_order = gemma_rerank(query, results)
+        new_order = crossencoder_rerank(search_text, results)
         if new_order is not None:
             results = new_order
             reranked = True
@@ -248,6 +260,34 @@ def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False
     final = dict(final)
     final.pop("stage", None)
     return final
+
+
+def health() -> dict:
+    """Report the status of each dependency: Postgres, the LLM endpoint, the embedding model."""
+    status: dict = {}
+    try:
+        with psycopg.connect(PG_DSN, connect_timeout=3) as c, c.cursor() as cur:
+            cur.execute("SELECT count(*) FILTER (WHERE embedding IS NOT NULL) FROM descriptions")
+            n = cur.fetchone()[0]
+        status["db"] = {"ok": True, "embeddings": n}
+    except Exception as e:
+        status["db"] = {"ok": False, "error": str(e)[:140]}
+    try:
+        r = httpx.get(f"{GEMMA_URL}/models", timeout=3)
+        r.raise_for_status()
+        installed = [m.get("id") for m in r.json().get("data", [])]
+        status["llm"] = {"ok": True, "model": GEMMA_MODEL, "installed": GEMMA_MODEL in installed}
+    except Exception as e:
+        status["llm"] = {"ok": False, "model": GEMMA_MODEL, "error": str(e)[:140]}
+    status["embeddings"] = {"ok": True, "loaded": get_model.cache_info().currsize > 0}
+    return status
+
+
+def warmup() -> dict:
+    """Load the embedding model and warm the LLM (the 'wake' action)."""
+    get_model()
+    exp = gemma_expand("warmup")
+    return {"embeddings_loaded": True, "llm_ok": exp is not None}
 
 
 def main() -> None:

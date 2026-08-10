@@ -1,12 +1,13 @@
 # Local LLM setup (the ② component)
 
-The hybrid search needs an **OpenAI-compatible chat endpoint** for two lightweight tasks:
-1. **Translate/expand** the query to English (e.g. `azucar alta` → `high blood sugar hyperglycemia`).
-2. **Optional rerank** of the top results by faithfulness to the original query.
+The hybrid search uses an **OpenAI-compatible chat endpoint** for one lightweight task:
+**translate/expand** the clinician's note to English clinical term(s) (e.g. `azucar alta` →
+`high blood sugar hyperglycemia`).
 
-This is *not* the embedding model (that's BioLORD, handled by `embed/`). It is a small chat model.
-It is **optional**: without it, English queries and cross-lingual embeddings still work; you lose
-reliable handling of short non-English lay phrases and the rerank.
+This is *not* the embedding model (that's BioLORD, handled by `embed/`), and *not* the reranker
+(the optional rerank is a **cross-encoder**, `BAAI/bge-reranker-v2-m3`, not the LLM). It is a small
+chat model. It is **optional**: without it, English queries and cross-lingual embeddings still work;
+you lose reliable handling of short non-English lay phrases and acronyms.
 
 > **Model size vs quality (measured).** A very small model (e.g. `gemma3:4b`) is fastest (~0.6–1 s)
 > but terse/inconsistent — it can drop the key term or invent details, which hurts retrieval.

@@ -7,7 +7,7 @@ What it does:
   2. Reads sct2_Description_Snapshot (pass 1) -> conceptId -> semantic_tag map (from the FSN).
   3. Reads sct2_Description_Snapshot (pass 2) -> bulk COPY of active descriptions
      (synonyms + FSN) of active concepts, with term_norm and semantic_tag.
-  4. Builds term_tsv = to_tsvector('simple', term_norm)  (lexical channel).
+  4. Builds term_tsv = to_tsvector('unaccent_simple', term)  (lexical channel, accent-insensitive).
   5. Reads der2_cRefset_LanguageSnapshot   -> marks pref_us / pref_gb (preferred term per dialect).
 
 Usage:
@@ -187,7 +187,7 @@ def main() -> None:
 
         print("Building term_tsv (lexical channel)...")
         with conn.cursor() as cur:
-            cur.execute("UPDATE descriptions SET term_tsv = to_tsvector('simple', term_norm)")
+            cur.execute("UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term)")
 
         print("Marking preferred terms (US/GB)...")
         mark_preferred(conn, lang_file)

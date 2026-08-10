@@ -16,7 +16,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.search import gemma_expand, get_model, search, search_stream
+from api.search import gemma_expand, get_model, health, search, search_stream, warmup
 
 app = FastAPI(title="SNOMED hybrid search")
 
@@ -30,6 +30,16 @@ def _warmup() -> None:
         gemma_expand("warmup")  # load the LLM into memory so the first real query isn't cold
     except Exception:
         pass
+
+
+@app.get("/api/health")
+def api_health():
+    return health()
+
+
+@app.get("/api/warmup")
+def api_warmup():
+    return warmup()
 
 
 @app.get("/api/search")

@@ -8,6 +8,9 @@ retrieve *Myocardial infarction* even though they share no lexical overlap.
 
 ## Decisions made
 - **Single store:** PostgreSQL 16 + `pgvector` (lexical with `tsvector`/GIN, vector with HNSW, RRF fusion in SQL).
+- **Accent/case normalization unified in SQL:** a custom text-search config `unaccent_simple`
+  (`simple` + `unaccent`, no stemming) is used by both `to_tsvector` and `to_tsquery`, so indexing and
+  querying fold accents identically (`riñón`/`rinon` match). LLM output is de-duplicated.
 - **Language:** multilingual queries; the clinician's source language is selectable (ES/EN/FR/DE/PT/IT/NL/DA) and
   drives the translation prompt. SNOMED terms are in English.
 - **Embedding model:** **BioLORD-2023-M** (biomedical + multilingual, 768 dims). See [02-biolord-notes.md](02-biolord-notes.md).

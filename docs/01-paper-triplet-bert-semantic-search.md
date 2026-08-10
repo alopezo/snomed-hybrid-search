@@ -90,7 +90,7 @@ align synonyms* (exactly what SapBERT / BioLORD already do → see note 02).
 
 | From the paper | In our system |
 |---|---|
-| BM25 as the lexical channel | `tsvector` + `to_tsquery('w:* & w:*')` multi-prefix ignore-order (Postgres) |
+| BM25 as the lexical channel | `tsvector`/`to_tsquery('unaccent_simple', 'w:* & w:*')` multi-prefix ignore-order, accent-insensitive (Postgres) |
 | Triplet-BERT (synonym fine-tuning) | **BioLORD-2023-M** already comes synonym-aligned and is multilingual → we do not retrain |
 | Algorithm 1 (triplets from the hierarchy) | Plan B: if we wanted our own fine-tuning, generate triplets from Description + Language refset + Relationship (IS-A) |
 | Cosine + top-K | `embedding <=> qvec` with HNSW; show top-5/top-10 |

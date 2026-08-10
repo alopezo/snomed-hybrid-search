@@ -53,12 +53,27 @@
   .score { margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
   .hint { color:var(--muted); font-size:13px; }
   .hint b { color:var(--fg); }
+  .status { display:flex; align-items:center; gap:14px; font-size:12px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
+  .status .item { display:flex; align-items:center; gap:6px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:#555; display:inline-block; }
+  .dot.ok { background:#2e7d32; } .dot.bad { background:#c62828; } .dot.idle { background:#f9a825; }
+  .status button { font-size:12px; padding:3px 10px; border-radius:8px; border:1px solid #2b2f38;
+                   background:var(--card); color:var(--fg); cursor:pointer; }
+  .status button:disabled { opacity:.5; cursor:default; }
+  #statusmsg { color:var(--muted); }
 </style>
 </head>
 <body>
 <header>
   <h1>SNOMED CT hybrid search</h1>
   <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
+  <div class="status" id="status">
+    <span class="item"><span class="dot" id="d-db"></span> DB</span>
+    <span class="item"><span class="dot" id="d-llm"></span> LLM</span>
+    <span class="item"><span class="dot" id="d-emb"></span> embeddings</span>
+    <button id="wake">warm up</button>
+    <span id="statusmsg"></span>
+  </div>
 </header>
 <div class="wrap">
   <div class="searchbar">
@@ -222,18 +237,53 @@ async function run(){
       if(doneData.reranked) animateReorder(doneData);   // animate the reordering
       else if(!previewShown) paintResults(doneData);
       meta.innerHTML = metaLine(doneData);
+      if(wake.style.display !== 'none') checkHealth();   // a search warms the model → refresh panel
     }
   }catch(e){
     clearInterval(tick);
     if(e.name === 'AbortError') return;       // superseded by a newer search
     if(mySeq !== seq) return;
     meta.textContent = '';
-    results.innerHTML = '<p class="hint">Connection error. Retrying as you type…</p>';
+    results.innerHTML = '<p class="hint">Connection error — the API may be down. Start it with <b>make up</b>, then retry.</p>';
+    checkHealth();
   }finally{
     clearInterval(tick);
     if(mySeq === seq){ gemma.disabled = rerank.disabled = lang.disabled = false; }   // re-enable only if this is the current search
   }
 }
+// --- Status panel: health check + warm-up ("wake") button ---
+const wake = document.getElementById('wake');
+const statusmsg = document.getElementById('statusmsg');
+function setDot(id, state){ // state: 'ok' | 'bad' | 'idle'
+  const el = document.getElementById(id);
+  el.classList.remove('ok','bad','idle'); el.classList.add(state);
+}
+async function checkHealth(){
+  try{
+    const h = await (await fetch('/api/health')).json();
+    setDot('d-db',  h.db && h.db.ok ? 'ok' : 'bad');
+    setDot('d-llm', h.llm && h.llm.ok ? 'ok' : 'bad');
+    const warm = !!(h.embeddings && h.embeddings.loaded);
+    setDot('d-emb', warm ? 'ok' : 'idle');
+    wake.style.display = warm ? 'none' : 'inline-block';   // only show when NOT warm
+    const notes = [];
+    if(h.db && !h.db.ok) notes.push('DB down');
+    if(h.llm && !h.llm.ok) notes.push('LLM down (run: make llm)');
+    if(!warm) notes.push('embeddings idle — click "warm up"');
+    statusmsg.textContent = notes.join(' · ');
+  }catch(e){
+    ['d-db','d-llm','d-emb'].forEach(id=>setDot(id,'bad'));
+    wake.style.display = 'none';   // API unreachable: button can't help
+    statusmsg.textContent = 'API unreachable — run: make up';
+  }
+}
+wake.addEventListener('click', async ()=>{
+  wake.disabled = true; statusmsg.textContent = 'warming up…';
+  try{ await fetch('/api/warmup'); }catch(e){}
+  await checkHealth(); wake.disabled = false;
+});
+checkHealth();
+
 q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 1100); });
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
 gemma.addEventListener('change', run);
