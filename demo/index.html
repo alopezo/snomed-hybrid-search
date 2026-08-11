@@ -103,6 +103,24 @@ const q = document.getElementById('q');
 const gemma = document.getElementById('gemma');
 const rerank = document.getElementById('rerank');
 const lang = document.getElementById('lang');
+
+// Persist the language / gemma / rerank options across reloads.
+const PREFS_KEY = 'snomed-search-prefs';
+(function restorePrefs(){
+  try {
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+    if (p.lang) lang.value = p.lang;
+    if (typeof p.gemma === 'boolean') gemma.checked = p.gemma;
+    if (typeof p.rerank === 'boolean') rerank.checked = p.rerank;
+  } catch(e) {}
+})();
+function savePrefs(){
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({
+      lang: lang.value, gemma: gemma.checked, rerank: rerank.checked,
+    }));
+  } catch(e) {}
+}
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
 let timer = null, seq = 0, inflight = null;
@@ -288,9 +306,9 @@ checkHealth();
 
 q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 1100); });
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
-gemma.addEventListener('change', run);
-rerank.addEventListener('change', run);
-lang.addEventListener('change', run);
+gemma.addEventListener('change', ()=>{ savePrefs(); run(); });
+rerank.addEventListener('change', ()=>{ savePrefs(); run(); });
+lang.addEventListener('change', ()=>{ savePrefs(); run(); });
 </script>
 </body>
 </html>
