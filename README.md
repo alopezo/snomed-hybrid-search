@@ -194,8 +194,7 @@ volume is empty; after a schema change, `make reset` re-initializes.
 
 - **Code:** MIT (suggested — set the license you want before publishing).
 - **SNOMED CT content is NOT included in this repo** and must not be committed. Use of SNOMED CT
-  requires a license from **SNOMED International** (free for Members and, in many countries, for
-  research/development via the **UMLS Metathesaurus**). Download your own RF2 release and point
+  requires a license from **SNOMED International** (free for Members or affiliates). Download your own RF2 release and point
   `SNOMED_SNAPSHOT_DIR` at it.
 - **BioLORD-2023-M** derives from UMLS/SNOMED; using it requires appropriate UMLS/SNOMED licensing.
 - `.gitignore` already excludes `.env`, `.venv/`, `models/`, and Python caches. **Never commit** the
