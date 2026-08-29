@@ -38,13 +38,6 @@ CANDIDATES = 200  # top-N per channel before fusing
 # so 0.001 ≈ a few ranks — a gentle tie-breaker, not a dominator (0.01 used to flip clear winners).
 PREF_BOOST = 0.001
 
-# Source languages the clinician can write in (code -> name used in the prompt).
-LANGUAGES = {
-    "es": "Spanish", "en": "English", "fr": "French", "de": "German",
-    "pt": "Portuguese", "it": "Italian", "nl": "Dutch", "da": "Danish",
-}
-DEFAULT_LANG = "es"
-
 RRF_SQL = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
 lex AS (
@@ -167,13 +160,14 @@ def embed_query(text: str) -> str:
     return "[" + ",".join(f"{x:.6f}" for x in vec) + "]"
 
 
-def gemma_expand(query: str, language: str = "Spanish", timeout: float = 25.0) -> str | None:
-    """Translate a clinician's note from `language` to English and expand it to standard clinical
-    term(s) + synonyms. Best-effort: if it fails, returns None."""
+def gemma_expand(query: str, timeout: float = 25.0) -> str | None:
+    """Pre-process a clinician's note: auto-detect the language, translate to English, and expand
+    it to standard clinical term(s) + synonyms (also cleans up shorthand/typos). Best-effort:
+    if it fails, returns None."""
     prompt = (
-        f"You are a clinical terminology assistant. Given a fast clinical note written in {language} "
-        "by a clinician, sometimes using acronyms, shorthand, or localisms, translate it to English "
-        "and output the corresponding standard English clinical term(s) and close synonyms (expand "
+        "You are a clinical terminology assistant. Given a fast clinical note from a clinician (any "
+        "language; sometimes using acronyms, shorthand, or localisms), translate it to English and "
+        "output the corresponding standard English clinical term(s) and close synonyms (expand "
         "abbreviations, use formal medical vocabulary). Do not add details not implied by the note. "
         "Return ONLY English medical terms separated by spaces, no explanations.\nNote: " + query
     )
@@ -217,18 +211,15 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
     return [dict(results[i], rerank_score=round(float(scores[i]), 4)) for i in order]
 
 
-def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-                  lang: str = DEFAULT_LANG):
+def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
-    then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
-    `lang` is the ISO code of the language the clinician wrote in (drives the translation prompt)."""
+    then a final {"stage": "done", ...full result...}. Lets the UI show the live stage."""
     t: dict[str, float] = {}
     t0 = time.perf_counter()
 
     yield {"stage": "expand" if use_gemma else "retrieve"}
     tg = time.perf_counter()
-    language = LANGUAGES.get(lang, LANGUAGES[DEFAULT_LANG])
-    expansion = gemma_expand(query, language=language) if use_gemma else None
+    expansion = gemma_expand(query) if use_gemma else None
     if expansion:
         expansion = dedup_words(expansion)   # the LLM sometimes repeats terms
     t["expand_ms"] = round((time.perf_counter() - tg) * 1000, 1)
@@ -287,11 +278,10 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
            "reranked": reranked, "timings": t, "results": results}
 
 
-def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-           lang: str = DEFAULT_LANG) -> dict:
+def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False) -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
-    for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank, lang=lang):
+    for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank):
         final = event
     final = dict(final)
     final.pop("stage", None)
@@ -331,11 +321,10 @@ def main() -> None:
     ap.add_argument("query")
     ap.add_argument("--k", type=int, default=15)
     ap.add_argument("--no-gemma", action="store_true")
-    ap.add_argument("--rerank", action="store_true", help="reorder results with gemma by faithfulness")
-    ap.add_argument("--lang", default=DEFAULT_LANG, choices=list(LANGUAGES), help="clinician's language")
+    ap.add_argument("--rerank", action="store_true", help="reorder results with the cross-encoder")
     args = ap.parse_args()
 
-    out = search(args.query, k=args.k, use_gemma=not args.no_gemma, rerank=args.rerank, lang=args.lang)
+    out = search(args.query, k=args.k, use_gemma=not args.no_gemma, rerank=args.rerank)
     print(f"query:     {out['query']!r}")
     if out["expansion"]:
         print(f"expansion: {out['expansion']!r}")

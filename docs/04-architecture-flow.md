@@ -9,7 +9,7 @@ The three components:
 | # | Component | Nature | Role | Technology |
 |---|-----------|--------|------|------------|
 | 1 | **Algorithmic (lexical)** | Deterministic | Multi-word prefix matching, order-independent | PostgreSQL `tsvector`/`to_tsquery` + GIN |
-| 2 | **LLM (query understanding)** | Generative | Translates the clinician's note (source language selectable) to English and expands abbreviations/localisms | gemma via Ollama (e.g. gemma3:12b), local, OpenAI-compatible |
+| 2 | **LLM (query understanding / "pre-process")** | Generative | Auto-detects the source language, translates the note to English, and expands abbreviations/localisms | gemma via Ollama (e.g. gemma3:12b), local, OpenAI-compatible |
 | 3 | **Semantic index** | Vector | Retrieves by *meaning*, not by letters | BioLORD-2023-M + pgvector HNSW (cosine) |
 
 The **RRF fusion** combines the rankings from (1) and (3); component (2) **prepares** the input for both.
@@ -134,12 +134,14 @@ sequenceDiagram
 - **Background:** BM25-style lexical retrieval is the standard baseline in [1]; SNOMED's own description
   search uses this same word-prefix-any-order strategy.
 
-### ② LLM — gemma (query understanding / normalization)
-- **What it does:** translates the clinician's note from the **selected source language** to English and
+### ② LLM — gemma (query understanding / "pre-process")
+- **What it does:** **auto-detects the language**, translates the clinician's note to English, and
   expands abbreviations and localisms into a **standard English clinical phrase**. `"IAM"` (ES) →
-  *acute myocardial infarction*; `"EPOC reagudizada"` (ES) → *acute exacerbation of COPD*. The source
-  language is passed in explicitly (a UI dropdown), which disambiguates acronyms (e.g. "EPOC" in ES = COPD).
+  *acute myocardial infarction*; `"EPOC reagudizada"` (ES) → *acute exacerbation of COPD*.
   The LLM output is de-duplicated (it sometimes repeats a term, e.g. "thrombocytopenia thrombocytopenia").
+- **Trade-off (no language picker):** auto-detection handles full-word queries well; the cost is that
+  language-specific acronyms (e.g. ES "EPOC") can be mis-read without an explicit source language. We
+  removed the picker deliberately — the redundancy wasn't worth it for the common case.
 - **Why it is essential** (empirical finding): BioLORD embeds clinical phrases well, but **poorly**
   embeds short Spanish slang. Without translation, `"presion alta"` fell onto *barometric pressure*;
   translated, it correctly hits *Hypertensive disorder*. gemma feeds **BOTH** channels (not only lexical).

@@ -6,7 +6,7 @@ when the clinician doesn't use the exact words. It combines three components:
 | # | Component | Role | Tech |
 |---|-----------|------|------|
 | ① | **Lexical (algorithmic)** | multi-word prefix match, order- & accent-independent | PostgreSQL `to_tsquery` (`unaccent_simple` config) + GIN |
-| ② | **LLM (query understanding)** | translate the clinician's note to English (source language selectable), expand abbreviations/localisms | any OpenAI-compatible chat endpoint (e.g. gemma via Ollama) |
+| ② | **LLM (query understanding / "pre-process")** | translate the clinician's note to English (auto-detects the source language), expand abbreviations/localisms | any OpenAI-compatible chat endpoint (e.g. gemma via Ollama) |
 | ③ | **Semantic index** | retrieve by meaning (solves *vocabulary mismatch*) | BioLORD-2023-M + pgvector (HNSW) |
 
 Results from ① and ③ are fused with **Reciprocal Rank Fusion (RRF)**. An **optional cross-encoder
@@ -134,7 +134,7 @@ snomed-search/
 │  ├─ search.py               # hybrid search: gemma expand -> lexical + semantic -> RRF -> optional cross-encoder rerank; streaming
 │  └─ server.py               # FastAPI: /api/search, /api/search_stream, static demo
 ├─ demo/
-│  └─ index.html              # live search UI (language select, stages, timings, rerank toggle, exact badge, animated reorder)
+│  └─ index.html              # live search UI (pre-process/rerank toggles, stages, timings, exact badge, animated reorder)
 ├─ scripts/
 │  └─ serve-llm.sh            # one-command local LLM (Ollama) for translation/expansion
 └─ docs/                      # design, paper references, Mermaid diagrams, docs/llm-setup.md

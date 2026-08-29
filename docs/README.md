@@ -11,8 +11,9 @@ retrieve *Myocardial infarction* even though they share no lexical overlap.
 - **Accent/case normalization unified in SQL:** a custom text-search config `unaccent_simple`
   (`simple` + `unaccent`, no stemming) is used by both `to_tsvector` and `to_tsquery`, so indexing and
   querying fold accents identically (`riñón`/`rinon` match). LLM output is de-duplicated.
-- **Language:** multilingual queries; the clinician's source language is selectable (ES/EN/FR/DE/PT/IT/NL/DA) and
-  drives the translation prompt. SNOMED terms are in English.
+- **Language:** multilingual queries; the LLM pre-process step **auto-detects** the source language and
+  translates to English (no manual language picker). SNOMED terms are in English. Note: dropping the explicit
+  language means language-specific acronyms (e.g. ES "EPOC") can be mis-read — the trade-off was deemed worth it.
 - **Embedding model:** **BioLORD-2023-M** (biomedical + multilingual, 768 dims). See [02-biolord-notes.md](02-biolord-notes.md).
 - **Role of the local LLM (gemma via Ollama, e.g. gemma3:12b):** does NOT vectorize (no `/v1/embeddings`). It is used for
   query translation/expansion and optional re-ranking. See [llm-setup.md](llm-setup.md).

@@ -18,8 +18,6 @@
   input[type=text] { flex:1; padding:12px 14px; font-size:16px; border-radius:10px;
                      border:1px solid #2b2f38; background:var(--card); color:var(--fg); }
   label.toggle { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
-  select.lang { padding:11px 8px; font-size:13px; border-radius:10px; border:1px solid #2b2f38;
-                background:var(--card); color:var(--fg); }
   .meta { color:var(--muted); font-size:12px; margin:6px 0 14px; min-height:16px; }
   .meta code { color:var(--accent); }
   .card { background:var(--card); border:1px solid #23262e; border-radius:10px;
@@ -79,17 +77,7 @@
 <div class="wrap">
   <div class="searchbar">
     <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
-    <select id="lang" class="lang" title="Clinician's language">
-      <option value="es" selected>ES</option>
-      <option value="en">EN</option>
-      <option value="fr">FR</option>
-      <option value="de">DE</option>
-      <option value="pt">PT</option>
-      <option value="it">IT</option>
-      <option value="nl">NL</option>
-      <option value="da">DA</option>
-    </select>
-    <label class="toggle"><input id="gemma" type="checkbox" checked> gemma → EN</label>
+    <label class="toggle"><input id="gemma" type="checkbox" checked> pre-process</label>
     <label class="toggle"><input id="rerank" type="checkbox"> rerank</label>
   </div>
   <div class="meta" id="meta"></div>
@@ -102,14 +90,12 @@
 const q = document.getElementById('q');
 const gemma = document.getElementById('gemma');
 const rerank = document.getElementById('rerank');
-const lang = document.getElementById('lang');
 
-// Persist the language / gemma / rerank options across reloads.
+// Persist the pre-process / rerank options across reloads.
 const PREFS_KEY = 'snomed-search-prefs';
 (function restorePrefs(){
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    if (p.lang) lang.value = p.lang;
     if (typeof p.gemma === 'boolean') gemma.checked = p.gemma;
     if (typeof p.rerank === 'boolean') rerank.checked = p.rerank;
   } catch(e) {}
@@ -117,7 +103,7 @@ const PREFS_KEY = 'snomed-search-prefs';
 function savePrefs(){
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      lang: lang.value, gemma: gemma.checked, rerank: rerank.checked,
+      gemma: gemma.checked, rerank: rerank.checked,
     }));
   } catch(e) {}
 }
@@ -128,19 +114,19 @@ let timer = null, seq = 0, inflight = null;
 function badge(ch){ return `<span class="badge b-${ch}">${ch}</span>`; }
 
 const STAGE_TEXT = {
-  expand:   'translating with gemma…',
+  expand:   'pre-processing (gemma)…',
   retrieve: 'searching the index…',
-  rerank:   'reranking with gemma…',
+  rerank:   'reranking (cross-encoder)…',
 };
 
 function metaLine(data){
   const t = data.timings || {};
   const breakdown = [
-    t.expand_ms != null ? `gemma ${t.expand_ms}` : null,
+    t.expand_ms != null ? `pre-process ${t.expand_ms}` : null,
     t.retrieval_ms != null ? `search ${t.retrieval_ms}` : null,
     t.rerank_ms != null ? `rerank ${t.rerank_ms}` : null,
   ].filter(Boolean).join(' + ');
-  return (data.expansion ? `gemma → <code>${data.expansion}</code> &nbsp;·&nbsp; ` : '')
+  return (data.expansion ? `pre-process → <code>${data.expansion}</code> &nbsp;·&nbsp; ` : '')
     + `tsquery: <code>${data.tsquery || '(empty)'}</code> &nbsp;·&nbsp; ${data.results.length} concepts`
     + (t.total_ms != null ? ` &nbsp;·&nbsp; ⏱ <b>${t.total_ms} ms</b> (${breakdown})` : '')
     + (data.reranked ? ` &nbsp;·&nbsp; <span class="badge b-both">reranked</span>` : '');
@@ -201,7 +187,7 @@ async function run(){
   if(inflight) inflight.abort();          // cancel the previous in-flight search
   const ctrl = new AbortController();
   inflight = ctrl;
-  gemma.disabled = rerank.disabled = lang.disabled = true;   // lock the controls while running
+  gemma.disabled = rerank.disabled = true;   // lock the controls while running
 
   // Live counter: shows the current stage + elapsed seconds. Before the preview it lives in the
   // results area; after the preview (during rerank) it lives in the meta line (#live).
@@ -220,7 +206,7 @@ async function run(){
   const tick = setInterval(paint, 100);
 
   try{
-    const url = `/api/search_stream?q=${encodeURIComponent(query)}&gemma=${gemma.checked}&rerank=${rerank.checked}&lang=${lang.value}`;
+    const url = `/api/search_stream?q=${encodeURIComponent(query)}&gemma=${gemma.checked}&rerank=${rerank.checked}`;
     const res = await fetch(url, { signal: ctrl.signal });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -268,7 +254,7 @@ async function run(){
     checkHealth();
   }finally{
     clearInterval(tick);
-    if(mySeq === seq){ gemma.disabled = rerank.disabled = lang.disabled = false; }   // re-enable only if this is the current search
+    if(mySeq === seq){ gemma.disabled = rerank.disabled = false; }   // re-enable only if this is the current search
   }
 }
 // --- Status panel: health check + warm-up ("wake") button ---
@@ -308,7 +294,6 @@ q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 110
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
 gemma.addEventListener('change', ()=>{ savePrefs(); run(); });
 rerank.addEventListener('change', ()=>{ savePrefs(); run(); });
-lang.addEventListener('change', ()=>{ savePrefs(); run(); });
 </script>
 </body>
 </html>

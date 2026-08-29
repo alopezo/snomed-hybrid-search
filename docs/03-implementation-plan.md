@@ -15,7 +15,7 @@ embedding model is separate). Example used during development: `gemma-4-26b-a4b-
 ## Architecture (reminder)
 
 ```
-query (source language selectable)
+query (any language, auto-detected)
   ├─ [gemma] translates→EN + expands abbreviations/localisms → EN terms (deduped)   (optional, cacheable)
   ├─ LEXICAL channel   : to_tsvector/to_tsquery('unaccent_simple', 'w:* & w:*')  (multi-prefix, order- & accent-independent)
   ├─ SEMANTIC channel: BioLORD-2023-M → 768d vector → pgvector kNN (cosine)

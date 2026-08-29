@@ -48,9 +48,8 @@ def api_search(
     k: int = Query(15, ge=1, le=50),
     gemma: bool = Query(True),
     rerank: bool = Query(False),
-    lang: str = Query("es"),
 ):
-    return search(q, k=k, use_gemma=gemma, rerank=rerank, lang=lang)
+    return search(q, k=k, use_gemma=gemma, rerank=rerank)
 
 
 @app.get("/api/search_stream")
@@ -59,10 +58,9 @@ def api_search_stream(
     k: int = Query(15, ge=1, le=50),
     gemma: bool = Query(True),
     rerank: bool = Query(False),
-    lang: str = Query("es"),
 ):
     def gen():
-        for event in search_stream(q, k=k, use_gemma=gemma, rerank=rerank, lang=lang):
+        for event in search_stream(q, k=k, use_gemma=gemma, rerank=rerank):
             yield json.dumps(event) + "\n"
     return StreamingResponse(gen(), media_type="application/x-ndjson")
 
