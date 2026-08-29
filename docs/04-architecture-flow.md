@@ -136,9 +136,15 @@ sequenceDiagram
 
 ### ② LLM — gemma (query understanding / "pre-process")
 - **What it does:** **auto-detects the language**, translates the clinician's note to English, and
-  expands abbreviations and localisms into a **standard English clinical phrase**. `"IAM"` (ES) →
-  *acute myocardial infarction*; `"EPOC reagudizada"` (ES) → *acute exacerbation of COPD*.
-  The LLM output is de-duplicated (it sometimes repeats a term, e.g. "thrombocytopenia thrombocytopenia").
+  normalizes abbreviations/localisms/typos into **ONE canonical English clinical term**. `"IAM"` (ES) →
+  *acute myocardial infarction*; `"EPOC reagudizada"` (ES) → *acute exacerbation of COPD*;
+  `"radiografia de torax"` (ES) → *chest x-ray*.
+- **Single term, not a synonym bag:** the prompt explicitly forbids listing synonyms, alternative
+  phrasings, or broader/related concepts — that job belongs to component ③ (the embedding model already
+  captures vocabulary mismatch). An earlier prompt that asked for "term(s) and close synonyms" produced
+  noise like `chest x-ray radiography thorax imaging`, which both bloated the lexical `tsquery` (more
+  OR'd terms) and gave the cross-encoder a dirty phrase to score. The output is still de-duplicated as a
+  safety net (the model occasionally repeats a word).
 - **Trade-off (no language picker):** auto-detection handles full-word queries well; the cost is that
   language-specific acronyms (e.g. ES "EPOC") can be mis-read without an explicit source language. We
   removed the picker deliberately — the redundancy wasn't worth it for the common case.
@@ -186,6 +192,16 @@ sequenceDiagram
 - It scores against the **gemma expansion** (the normalized clinical phrase), which ranks far better
   than short lay input. It reorders only what the fusion already returned, so the top-K pool must be
   large enough to contain the good candidates (default K=15).
+- **Blend, not override (`RERANK_WEIGHT`, default 0.4):** the cross-encoder does **not** re-sort the
+  list on its own score alone. Both the RRF score and the CE score are min-max normalized to `[0,1]`
+  per query and combined as `RERANK_WEIGHT·rerank + (1−RERANK_WEIGHT)·rrf`. `W=1` reproduces the old
+  "CE dictates" behavior; `W=0` ignores the CE. We settled on `0.4` because a pure-CE reorder
+  over-favors broad/high-frequency concepts: for `chest x-ray`, the CE scored *Chest imaging* (0.996)
+  and *Tomography - chest* (0.96) **above** the precise *Plain X-ray of chest* (0.78) and would demote
+  the right answer. Blending lets the CE still do its useful job (it correctly sinks an off-target
+  *Thoracic radiology (qualifier value)* that RRF had ranked #1) without letting it bury a precise hit
+  under a generic parent. Exact matches stay pinned on top regardless (the `exact_first` rule runs
+  after the blend). The payload exposes both `rerank_score` (raw CE) and `combined_score`.
 - Loaded lazily (~a few seconds on first use, then ~1 s per query). Off by default.
 - **Input to the reranker:** the **gemma expansion** (the normalized clinical phrase), i.e. the same
   `search_text` used for retrieval — not the raw lay query. Empirically it scores far better against a

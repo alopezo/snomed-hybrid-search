@@ -37,6 +37,13 @@ CANDIDATES = 200  # top-N per channel before fusing
 # Preferred-term nudge added to the RRF score. Kept small: an RRF rank step is ~1/60² ≈ 0.0003,
 # so 0.001 ≈ a few ranks — a gentle tie-breaker, not a dominator (0.01 used to flip clear winners).
 PREF_BOOST = 0.001
+# How much the cross-encoder gets to reorder. Both the RRF score and the rerank score are min-max
+# normalized to [0,1] per query, then blended: final = W*rerank + (1-W)*rrf.
+#   W = 1.0 -> rerank fully dictates (old behavior; over-favors broad/high-frequency concepts)
+#   W = 0.0 -> rerank ignored (pure RRF)
+# 0.5 lets the reranker refine RRF instead of overriding it, so a precise lexical/semantic hit
+# isn't demoted below a generic parent just because the CE likes the parent's phrasing.
+RERANK_WEIGHT = 0.4
 
 RRF_SQL = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
@@ -167,15 +174,17 @@ def embed_query(text: str) -> str:
 
 
 def gemma_expand(query: str, timeout: float = 25.0) -> str | None:
-    """Pre-process a clinician's note: auto-detect the language, translate to English, and expand
-    it to standard clinical term(s) + synonyms (also cleans up shorthand/typos). Best-effort:
-    if it fails, returns None."""
+    """Pre-process a clinician's note: auto-detect the language, translate to English, and normalize
+    it to ONE canonical English clinical term (expand abbreviations, fix typos). It does NOT list
+    synonyms — the semantic channel handles vocabulary mismatch. Best-effort: returns None on error."""
     prompt = (
-        "You are a clinical terminology assistant. Given a fast clinical note from a clinician (any "
-        "language; sometimes using acronyms, shorthand, or localisms), translate it to English and "
-        "output the corresponding standard English clinical term(s) and close synonyms (expand "
-        "abbreviations, use formal medical vocabulary). Do not add details not implied by the note. "
-        "Return ONLY English medical terms separated by spaces, no explanations.\nNote: " + query
+        "You are a clinical terminology assistant. A clinician typed a quick note (any language; may "
+        "contain acronyms, shorthand, typos, or localisms). Rewrite it as ONE concise, standard "
+        "English clinical term — the canonical name a clinician would use (e.g. 'radiografia de torax' "
+        "-> 'chest x-ray'; 'EPOC' -> 'chronic obstructive pulmonary disease'). Translate to English, "
+        "expand abbreviations, fix typos. Do NOT add synonyms, alternative phrasings, broader or "
+        "related concepts, or any word not implied by the note. Output only that single term, nothing "
+        "else.\nNote: " + query
     )
     try:
         r = httpx.post(
@@ -200,21 +209,38 @@ def get_reranker():
     return CrossEncoder(RERANK_MODEL, device=EMBED_DEVICE)
 
 
+def _minmax(vals: list[float]) -> list[float]:
+    """Scale to [0,1]. If all equal (no signal), return 0.5 so the channel adds no ordering bias."""
+    lo, hi = min(vals), max(vals)
+    if hi - lo < 1e-12:
+        return [0.5] * len(vals)
+    return [(v - lo) / (hi - lo) for v in vals]
+
+
 def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
-    """Reorder candidates by a cross-encoder's relevance score for (text, concept FSN).
+    """Reorder candidates by BLENDING the RRF score with a cross-encoder relevance score.
     A purpose-built neural reranker (deterministic, multilingual) — not an LLM opinion, not lexical.
     `text` should be the clinical query (the gemma expansion when available; it scores far better
-    against a normalized clinical phrase than against short lay input). Returns the reordered list,
-    or None on failure (caller keeps the original order)."""
+    against a normalized clinical phrase than against short lay input).
+
+    Both scores are min-max normalized per query and combined as
+    RERANK_WEIGHT*rerank + (1-RERANK_WEIGHT)*rrf, so the CE refines the fused ranking instead of
+    overriding it — a precise hit isn't demoted below a generic parent the CE happens to like.
+    Returns the reordered list, or None on failure (caller keeps the original order)."""
     if len(results) < 2:
         return results
     try:
         ce = get_reranker()
-        scores = ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])
+        ce_scores = [float(s) for s in ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])]
     except Exception:
         return None
-    order = sorted(range(len(results)), key=lambda i: float(scores[i]), reverse=True)
-    return [dict(results[i], rerank_score=round(float(scores[i]), 4)) for i in order]
+    ce_norm = _minmax(ce_scores)
+    rrf_norm = _minmax([float(r["score"]) for r in results])
+    w = RERANK_WEIGHT
+    combined = [w * ce_norm[i] + (1 - w) * rrf_norm[i] for i in range(len(results))]
+    order = sorted(range(len(results)), key=lambda i: combined[i], reverse=True)
+    return [dict(results[i], rerank_score=round(ce_scores[i], 4),
+                 combined_score=round(combined[i], 4)) for i in order]
 
 
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
