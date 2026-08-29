@@ -44,12 +44,18 @@ lex AS (
     SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1) DESC) AS r
     FROM descriptions d, q
     WHERE %(tsq)s <> '' AND d.term_tsv @@ q.ts
+      AND (%(filter)s::bigint IS NULL OR EXISTS (
+          SELECT 1 FROM concept_ancestors ca
+          WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
     LIMIT %(cand)s
 ),
 vec AS (
     SELECT d.id, row_number() OVER (ORDER BY d.embedding <=> %(qvec)s::vector) AS r
     FROM descriptions d
     WHERE d.embedding IS NOT NULL
+      AND (%(filter)s::bigint IS NULL OR EXISTS (
+          SELECT 1 FROM concept_ancestors ca
+          WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
     ORDER BY d.embedding <=> %(qvec)s::vector
     LIMIT %(cand)s
 ),
@@ -211,9 +217,11 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
     return [dict(results[i], rerank_score=round(float(scores[i]), 4)) for i in order]
 
 
-def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False):
+def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
+                  filter_concept: int | None = None):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
-    then a final {"stage": "done", ...full result...}. Lets the UI show the live stage."""
+    then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
+    `filter_concept`: if set, restrict results to descendants-or-self of that concept id."""
     t: dict[str, float] = {}
     t0 = time.perf_counter()
 
@@ -237,9 +245,13 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     tr = time.perf_counter()
     qvec = embed_query(search_text)
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
+        if filter_concept is not None:
+            # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
+            cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
         cur.execute(RRF_SQL, {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
+            "filter": filter_concept,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)
@@ -278,10 +290,12 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
            "reranked": reranked, "timings": t, "results": results}
 
 
-def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False) -> dict:
+def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
+           filter_concept: int | None = None) -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
-    for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank):
+    for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank,
+                               filter_concept=filter_concept):
         final = event
     final = dict(final)
     final.pop("stage", None)

@@ -187,6 +187,20 @@ sequenceDiagram
   than short lay input. It reorders only what the fusion already returned, so the top-K pool must be
   large enough to contain the good candidates (default K=15).
 - Loaded lazily (~a few seconds on first use, then ~1 s per query). Off by default.
+- **Input to the reranker:** the **gemma expansion** (the normalized clinical phrase), i.e. the same
+  `search_text` used for retrieval — not the raw lay query. Empirically it scores far better against a
+  clinical phrase (`"thrombocytopenia"` → generic *Thrombocytopenic disorder* ≈ 0.998) than against
+  short lay input (`"low platelet"` favors whatever literally contains "platelet"). With pre-process
+  off, it falls back to the raw query.
+
+### Optional hierarchy filter (descendants-or-self of any concept)
+- A precomputed **transitive closure** (`concept_ancestors(concept_id, ancestors bigint[])`, GIN-indexed)
+  built once per release from the RF2 IS-A relationships. Membership is a single indexed lookup —
+  `ancestors @> ARRAY[X]` — no per-query hierarchy traversal.
+- Applied as a **pre-filter inside both channels** (lexical + vector), so retrieval only considers the
+  subtree. For the HNSW channel we enable pgvector 0.8 **iterative index scans** so the filtered ANN
+  still returns enough in-subtree neighbours.
+- UI: quick chips for the top-level hierarchies (Clinical finding, Procedure, …) plus a free SCTID input.
 
 ---
 

@@ -35,6 +35,9 @@ download: .env ## Download+extract the latest International release from MLDS (n
 etl: ## Load the SNOMED release into Postgres (reads SNOMED_SNAPSHOT_DIR from .env)
 	$(PY) etl/load_descriptions.py
 
+hierarchy: ## Load IS-A + build concept_ancestors (for the descendant/hierarchy filter)
+	$(PY) etl/load_hierarchy.py
+
 index-lexical: ## Build the lexical (GIN) index
 	$(PSQL) -c "CREATE INDEX IF NOT EXISTS ix_desc_tsv ON descriptions USING gin (term_tsv); CREATE INDEX IF NOT EXISTS ix_desc_concept ON descriptions (concept_id); ANALYZE descriptions;"
 
@@ -45,7 +48,7 @@ embed: ## Download the embedding model and encode all terms into pgvector
 index-hnsw: ## Build the semantic (HNSW) index
 	$(PSQL) -c "SET maintenance_work_mem='2GB'; CREATE INDEX IF NOT EXISTS ix_desc_emb ON descriptions USING hnsw (embedding vector_cosine_ops); ANALYZE descriptions;"
 
-all: db-up install etl index-lexical embed index-hnsw ## Full reproduction pipeline
+all: db-up install etl hierarchy index-lexical embed index-hnsw ## Full reproduction pipeline
 	@echo ">> Pipeline complete. Start the app with: make serve"
 
 llm: ## Start a small local LLM (Ollama) for translation + rerank (see docs/llm-setup.md)
@@ -86,5 +89,5 @@ service-uninstall: ## Remove the API launchd agent
 reset: ## Delete the DB volume and re-init (DESTROYS loaded data + embeddings)
 	docker compose down -v
 
-.PHONY: help install db-up download etl index-lexical embed index-hnsw all llm serve smoke \
+.PHONY: help install db-up download etl hierarchy index-lexical embed index-hnsw all llm serve smoke \
         up down status service-install service-uninstall reset

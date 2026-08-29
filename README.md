@@ -11,8 +11,11 @@ when the clinician doesn't use the exact words. It combines three components:
 
 Results from ① and ③ are fused with **Reciprocal Rank Fusion (RRF)**. An **optional cross-encoder
 reranker** (a purpose-built neural relevance model — `BAAI/bge-reranker-v2-m3`, not the LLM) can
-reorder the fused candidates. Full design, evaluation notes, and Mermaid diagrams are in
-[`docs/`](docs/) — start with [docs/04-architecture-flow.md](docs/04-architecture-flow.md).
+reorder the fused candidates. An **optional hierarchy filter** restricts results to the
+descendants-or-self of any concept (e.g. only *Clinical findings*, or only things under
+*Myocardial infarction*), via a precomputed transitive closure (`concept_ancestors`, GIN-indexed).
+Full design, evaluation notes, and Mermaid diagrams are in [`docs/`](docs/) — start with
+[docs/04-architecture-flow.md](docs/04-architecture-flow.md).
 
 ---
 
@@ -47,7 +50,7 @@ Don't have a release downloaded yet? Put your MLDS credentials in `.env` (`SNOME
 ```bash
 make install db-up            # venv + database
 make download                 # fetch+extract latest International Edition, set SNOMED_SNAPSHOT_DIR
-make etl index-lexical embed index-hnsw serve
+make etl hierarchy index-lexical embed index-hnsw serve
 ```
 
 `make all` is the full pipeline. The long step is embedding (~1M terms; minutes on GPU/MPS, longer on
@@ -59,6 +62,7 @@ Prefer to go step by step? Each stage is its own target:
 make db-up            # start Postgres + pgvector (auto-creates .env, waits for healthy)
 make install          # venv + pip install
 make etl              # RF2 -> descriptions table (+ term_norm, semantic_tag, preferred flags)
+make hierarchy        # IS-A -> concept_ancestors (enables the hierarchy/descendant filter)
 make index-lexical    # GIN index  -> lexical channel usable now
 make embed            # download model + encode terms into pgvector
 make index-hnsw       # HNSW index -> semantic channel usable
@@ -81,7 +85,7 @@ make download         # downloads, extracts, and sets SNOMED_SNAPSHOT_DIR for yo
 
 # 2. Rebuild from clean
 make reset            # wipe the old DB volume (optional but recommended)
-make db-up etl index-lexical embed index-hnsw
+make db-up etl hierarchy index-lexical embed index-hnsw
 make serve
 ```
 
@@ -126,6 +130,7 @@ snomed-search/
 ├─ etl/
 │  ├─ syndication_downloader.py  # fetch+extract a release from SNOMED syndication (MLDS)
 │  ├─ load_descriptions.py    # RF2 -> table + tsvector + preferred-term flags
+│  ├─ load_hierarchy.py       # RF2 IS-A -> concept_ancestors (transitive closure for the filter)
 │  └─ smoke_test_lexical.py   # lexical-channel sanity check
 ├─ embed/
 │  ├─ download_model.py       # download + validate BioLORD (checks dim + ES→EN similarity)

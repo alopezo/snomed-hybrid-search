@@ -17,6 +17,12 @@
   .searchbar { display:flex; gap:8px; align-items:center; margin:12px 0; }
   input[type=text] { flex:1; padding:12px 14px; font-size:16px; border-radius:10px;
                      border:1px solid #2b2f38; background:var(--card); color:var(--fg); }
+  input.filter { flex:0 0 130px; padding:11px 10px; font-size:13px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:-4px 0 12px; }
+  .chips-label { color:var(--muted); font-size:12px; }
+  .chip { font-size:12px; padding:3px 10px; border-radius:20px; border:1px solid #2b2f38;
+          background:var(--card); color:var(--fg); cursor:pointer; }
+  .chip.active { background:var(--both); border-color:var(--both); color:#fff; }
   label.toggle { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
   .meta { color:var(--muted); font-size:12px; margin:6px 0 14px; min-height:16px; }
   .meta code { color:var(--accent); }
@@ -79,6 +85,19 @@
     <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
     <label class="toggle"><input id="gemma" type="checkbox" checked> pre-process</label>
     <label class="toggle"><input id="rerank" type="checkbox"> rerank</label>
+    <input id="filter" class="filter" type="text" inputmode="numeric"
+           placeholder="under SCTID" title="Restrict to descendants-or-self of this concept ID">
+  </div>
+  <div class="chips" id="chips">
+    <span class="chips-label">filter to:</span>
+    <button class="chip" data-sctid="404684003">Clinical finding</button>
+    <button class="chip" data-sctid="71388002">Procedure</button>
+    <button class="chip" data-sctid="123037004">Body structure</button>
+    <button class="chip" data-sctid="105590001">Substance</button>
+    <button class="chip" data-sctid="373873005">Product</button>
+    <button class="chip" data-sctid="410607006">Organism</button>
+    <button class="chip" data-sctid="243796009">Situation</button>
+    <button class="chip" data-sctid="">none</button>
   </div>
   <div class="meta" id="meta"></div>
   <div id="results">
@@ -90,6 +109,7 @@
 const q = document.getElementById('q');
 const gemma = document.getElementById('gemma');
 const rerank = document.getElementById('rerank');
+const filterEl = document.getElementById('filter');
 
 // Persist the pre-process / rerank options across reloads.
 const PREFS_KEY = 'snomed-search-prefs';
@@ -187,7 +207,7 @@ async function run(){
   if(inflight) inflight.abort();          // cancel the previous in-flight search
   const ctrl = new AbortController();
   inflight = ctrl;
-  gemma.disabled = rerank.disabled = true;   // lock the controls while running
+  gemma.disabled = rerank.disabled = filterEl.disabled = true;   // lock the controls while running
 
   // Live counter: shows the current stage + elapsed seconds. Before the preview it lives in the
   // results area; after the preview (during rerank) it lives in the meta line (#live).
@@ -206,7 +226,9 @@ async function run(){
   const tick = setInterval(paint, 100);
 
   try{
-    const url = `/api/search_stream?q=${encodeURIComponent(query)}&gemma=${gemma.checked}&rerank=${rerank.checked}`;
+    const fc = filterEl.value.trim();
+    const url = `/api/search_stream?q=${encodeURIComponent(query)}&gemma=${gemma.checked}&rerank=${rerank.checked}`
+      + (/^\d+$/.test(fc) ? `&filter=${fc}` : '');
     const res = await fetch(url, { signal: ctrl.signal });
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -254,7 +276,7 @@ async function run(){
     checkHealth();
   }finally{
     clearInterval(tick);
-    if(mySeq === seq){ gemma.disabled = rerank.disabled = false; }   // re-enable only if this is the current search
+    if(mySeq === seq){ gemma.disabled = rerank.disabled = filterEl.disabled = false; }   // re-enable only if this is the current search
   }
 }
 // --- Status panel: health check + warm-up ("wake") button ---
@@ -290,7 +312,20 @@ wake.addEventListener('click', async ()=>{
 });
 checkHealth();
 
+// Quick-filter chips: fill the SCTID input with a top-level hierarchy and search.
+const chips = document.getElementById('chips');
+function markActiveChip(){
+  const v = filterEl.value.trim();
+  chips.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', (c.dataset.sctid || '') === v));
+}
+chips.addEventListener('click', (e)=>{
+  const b = e.target.closest('.chip'); if(!b) return;
+  filterEl.value = b.dataset.sctid || '';
+  markActiveChip(); run();
+});
+
 q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 1100); });
+filterEl.addEventListener('input', ()=>{ markActiveChip(); clearTimeout(timer); timer=setTimeout(run, 1100); });
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
 gemma.addEventListener('change', ()=>{ savePrefs(); run(); });
 rerank.addEventListener('change', ()=>{ savePrefs(); run(); });
