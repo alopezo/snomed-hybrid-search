@@ -181,6 +181,13 @@ sequenceDiagram
   text equals the query **or** the expansion is floated to the **top**, before the model reranker and
   the pref nudge (`exact` badge). An exact match to what the user typed should always win.
 - Then **dedup by concept** (keep the best description) and attach the **FSN** for display.
+- **One SQL query, on purpose.** The lexical scan, the vector scan, the RRF fusion, the dedup and the
+  FSN lookup all run in a single query plan — the two channels are **not** split into parallel queries.
+  Measured hot on the full index: lexical ≈ 2–9 ms, semantic ≈ 3 ms, and the whole fused query ≈ 5–12 ms
+  — less than the BioLORD query-embedding step (~25–30 ms) that precedes it. Splitting the two
+  single-digit-ms channels into concurrent queries would only add a second connection round-trip, not
+  save wall-clock. The demo's per-step line reflects this: `pre-process · embed · retrieval · rerank`,
+  where **retrieval** is that one fused query and **embed** is the query vector encoding.
 - **Background:** RRF is the method of Cormack, Clarke & Büttcher [5]; hybrid lexical+semantic retrieval
   is the dominant pattern in the clinical-ontology search literature [1].
 

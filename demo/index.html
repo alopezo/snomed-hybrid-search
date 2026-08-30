@@ -26,6 +26,11 @@
   label.toggle { color:var(--muted); font-size:13px; display:flex; align-items:center; gap:6px; }
   .meta { color:var(--muted); font-size:12px; margin:6px 0 14px; min-height:16px; }
   .meta code { color:var(--accent); }
+  .tbreak { margin-top:4px; display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline;
+            font-variant-numeric:tabular-nums; }
+  .tbreak::before { content:"steps:"; opacity:.55; margin-right:2px; }
+  .tstep { color:var(--muted); }
+  .tstep b { color:var(--fg); font-weight:600; }
   .card { background:var(--card); border:1px solid #23262e; border-radius:10px;
           padding:12px 14px; margin-bottom:8px; display:flex; gap:12px; align-items:baseline; }
   .rank { color:var(--muted); font-variant-numeric:tabular-nums; min-width:22px; }
@@ -139,17 +144,25 @@ const STAGE_TEXT = {
   rerank:   'reranking (cross-encoder)…',
 };
 
-function metaLine(data){
+function metaLine(data, live){
   const t = data.timings || {};
-  const breakdown = [
-    t.expand_ms != null ? `pre-process ${t.expand_ms}` : null,
-    t.retrieval_ms != null ? `search ${t.retrieval_ms}` : null,
-    t.rerank_ms != null ? `rerank ${t.rerank_ms}` : null,
-  ].filter(Boolean).join(' + ');
-  return (data.expansion ? `pre-process → <code>${data.expansion}</code> &nbsp;·&nbsp; ` : '')
+  // Second line: per-step breakdown. embed = BioLORD encoding the query; retrieval = lexical +
+  // semantic + RRF fusion in one SQL query (both channels are single-digit ms, so they're not split).
+  const step = (label, ms) => ms == null ? null
+    : `<span class="tstep">${label} <b>${ms}</b> ms</span>`;
+  const steps = [
+    step('pre-process', t.expand_ms),
+    step('embed',       t.embed_ms),
+    step('retrieval',   t.retrieval_ms),
+    step('rerank',      t.rerank_ms),
+  ].filter(Boolean).join(' · ');
+  const line1 = (data.expansion ? `pre-process → <code>${data.expansion}</code> &nbsp;·&nbsp; ` : '')
     + `tsquery: <code>${data.tsquery || '(empty)'}</code> &nbsp;·&nbsp; ${data.results.length} concepts`
-    + (t.total_ms != null ? ` &nbsp;·&nbsp; ⏱ <b>${t.total_ms} ms</b> (${breakdown})` : '')
-    + (data.reranked ? ` &nbsp;·&nbsp; <span class="badge b-both">reranked</span>` : '');
+    + (t.total_ms != null ? ` &nbsp;·&nbsp; ⏱ <b>${t.total_ms} ms</b>` : '')
+    + (data.reranked ? ` &nbsp;·&nbsp; <span class="badge b-both">reranked</span>` : '')
+    + (live || '');
+  const line2 = steps ? `<div class="tbreak">${steps}</div>` : '';
+  return line1 + line2;
 }
 
 function cardHtml(r, i){
@@ -248,8 +261,8 @@ async function run(){
           previewShown = true;
           const pending = rerank.checked && ev.results.length > 1;
           stage = STAGE_TEXT.rerank;
-          meta.innerHTML = metaLine(ev)
-            + (pending ? ` &nbsp;·&nbsp; <span class="badge b-both" id="live">${stage} · ⏱ ${secs()} s</span>` : '');
+          meta.innerHTML = metaLine(ev,
+            pending ? ` &nbsp;·&nbsp; <span class="badge b-both" id="live">${stage} · ⏱ ${secs()} s</span>` : '');
           if(pending){ [...results.children].forEach(el=>el.classList.add('previewing')); }  // provisional state
         } else if(ev.stage === 'done'){
           doneData = ev;

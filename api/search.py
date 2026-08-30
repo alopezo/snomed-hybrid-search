@@ -268,8 +268,13 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     exact_norms = list(dict.fromkeys(n for n in (normalize(query), normalize(expansion or "")) if n))
 
     yield {"stage": "retrieve"}
+    te = time.perf_counter()
+    qvec = embed_query(search_text)          # BioLORD encodes the query -> 768d vector
+    t["embed_ms"] = round((time.perf_counter() - te) * 1000, 1)
     tr = time.perf_counter()
-    qvec = embed_query(search_text)
+    # Retrieval = lexical + semantic + RRF fusion + FSN, all in ONE SQL plan. Kept as a single
+    # query on purpose: both channels are single-digit ms, so splitting them into parallel queries
+    # would only add a 2nd-connection round-trip, not save time (the embed above dominates anyway).
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
