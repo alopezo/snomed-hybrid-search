@@ -60,6 +60,10 @@ serve: ## Run the API + demo at http://127.0.0.1:8090
 smoke: ## Quick lexical sanity check
 	$(PY) etl/smoke_test_lexical.py "diab mell"
 
+test: ## Retrieval quality tests (needs db + models; add `ARGS='-m "not llm"'` to skip the LLM ones)
+	$(PIP) install -q pytest
+	$(PY) -m pytest $(ARGS)
+
 up: db-up ## Start the whole stack for a session (db + ollama + api)
 	-brew services start ollama
 	@if [ -f "$(PLIST)" ]; then \
@@ -89,5 +93,5 @@ service-uninstall: ## Remove the API launchd agent
 reset: ## Delete the DB volume and re-init (DESTROYS loaded data + embeddings)
 	docker compose down -v
 
-.PHONY: help install db-up download etl hierarchy index-lexical embed index-hnsw all llm serve smoke \
+.PHONY: help install db-up download etl hierarchy index-lexical embed index-hnsw all llm serve smoke test \
         up down status service-install service-uninstall reset

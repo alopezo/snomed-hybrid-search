@@ -4,4 +4,5 @@ __pycache__/
 models/
 data/
 *.pyc
+.pytest_cache/
 .DS_Store

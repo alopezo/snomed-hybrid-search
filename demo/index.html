@@ -81,6 +81,7 @@
   <div class="titlerow">
     <h1>SNOMED CT hybrid search</h1>
     <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
+    <a class="arch-link" href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a>
   </div>
   <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
   <div class="status" id="status">
@@ -348,6 +349,20 @@ filterEl.addEventListener('input', ()=>{ markActiveChip(); clearTimeout(timer); 
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
 gemma.addEventListener('change', ()=>{ savePrefs(); run(); });
 rerank.addEventListener('change', ()=>{ savePrefs(); run(); });
+
+// Deep-link support: /?q=…&gemma=1&rerank=1&filter=71388002 — used by the test runner to open a
+// case in the full search UI (URL params override the saved prefs for this load).
+(function applyUrlParams(){
+  const p = new URLSearchParams(location.search);
+  if(!p.has('q')) return;
+  q.value = p.get('q') || '';
+  const bool = v => v === '1' || v === 'true';
+  if(p.has('gemma'))  gemma.checked  = bool(p.get('gemma'));
+  if(p.has('rerank')) rerank.checked = bool(p.get('rerank'));
+  if(p.has('filter')) filterEl.value = p.get('filter') || '';
+  markActiveChip();
+  run();
+})();
 </script>
 </body>
 </html>

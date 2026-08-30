@@ -195,6 +195,26 @@ volume is empty; after a schema change, `make reset` re-initializes.
 
 ---
 
+## Testing
+
+Retrieval-quality tests in [`tests/`](tests/) encode *why the search has to be hybrid*: each case is a
+real query that only works because of a specific channel or stage — lexical (`inf myo`), semantic
+(`painful kidney`), the exact-match pin (`hepatomegaly`), LLM pre-process (`presion alta` → hypertension),
+the cross-encoder rerank, and the hierarchy filter. They call `search()` in-process, so the DB and models
+must be up; the LLM-dependent cases are marked `llm`.
+
+```bash
+make test                        # everything (needs db + models + gemma)
+make test ARGS='-m "not llm"'    # skip the translation cases (no LLM needed)
+```
+
+If the stack isn't running the tests **skip** with a hint instead of failing. The case collection is
+[tests/cases.py](tests/cases.py); the differential tests (rerank / filter, run with and without the
+feature) are the strongest evidence for the hybrid design. The demo also exposes an interactive runner
+at `/static/tests.html`.
+
+---
+
 ## Licensing
 
 - **Code:** MIT (suggested — set the license you want before publishing).

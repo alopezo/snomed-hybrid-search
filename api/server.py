@@ -42,6 +42,29 @@ def api_warmup():
     return warmup()
 
 
+@app.get("/api/testcases")
+def api_testcases():
+    """Expose the test collection (from tests/cases.py) so the interactive runner uses the same
+    single source of truth as `make test`. Best-effort: returns empty if tests/ isn't present."""
+    try:
+        from tests.cases import (
+            PLAIN_XRAY_CHEST,
+            PROCEDURE_ROOT,
+            SINGLE_CASES,
+            THORACIC_RADIOLOGY,
+        )
+    except Exception:
+        return {"single": [], "constants": {}}
+    return {
+        "single": SINGLE_CASES,
+        "constants": {
+            "plain_xray_chest": PLAIN_XRAY_CHEST,
+            "thoracic_radiology": THORACIC_RADIOLOGY,
+            "procedure_root": PROCEDURE_ROOT,
+        },
+    }
+
+
 @app.get("/api/search")
 def api_search(
     q: str = Query(..., min_length=1),

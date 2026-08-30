@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Interactive Test Runner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#212530; --inset:#14171d;
+    --ink:#e6e6e6; --muted:#9aa0aa; --line:#2b2f38;
+    --accent:#4f9cf9;
+    --pass:#5bbd62; --fail:#e5645a; --skip:#c9a24b;
+    --lex:#5bbd62; --sem:#b57be0; --exact:#4f9cf9; --gemma:#e0a24d; --diff:#46c5cc;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; padding:clamp(20px,4vw,48px) 20px}
+  .wrap{max-width:960px; margin:0 auto}
+  code{font-family:var(--mono); font-size:.9em}
+  a{color:var(--accent); text-decoration:none} a:hover{text-decoration:underline}
+
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 12px}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.5vw,42px); margin:0 0 10px; letter-spacing:-.01em}
+  .lede{color:var(--muted); font-size:15px; max-width:70ch; margin:0}
+  .lede b{color:var(--ink)}
+
+  /* control bar */
+  .bar{display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin:26px 0 8px;
+    padding:14px 16px; background:var(--surface); border:1px solid var(--line); border-radius:12px}
+  button.run{font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; background:var(--accent);
+    border:none; border-radius:8px; padding:9px 16px; cursor:pointer}
+  button.run:disabled{opacity:.5; cursor:default}
+  button.ghost{background:transparent; border:1px solid var(--line); color:var(--ink)}
+  label.tog{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer}
+  .counts{margin-left:auto; display:flex; gap:14px; font-family:var(--mono); font-size:13px}
+  .counts .c-pass{color:var(--pass)} .counts .c-fail{color:var(--fail)} .counts .c-skip{color:var(--skip)}
+  .health{font-family:var(--mono); font-size:12px; color:var(--muted); margin:0 0 22px}
+  .health b.ok{color:var(--pass)} .health b.off{color:var(--fail)}
+
+  h2.sec{font-size:16px; font-weight:600; margin:30px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+  h2.sec .n{font-family:var(--mono); font-size:12px; color:var(--muted); margin-right:8px}
+
+  .cards{display:flex; flex-direction:column; gap:10px}
+  .case{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--c,var(--line));
+    border-radius:0 10px 10px 0; padding:14px 16px; display:flex; flex-direction:column; gap:8px}
+  .case.lex{--c:var(--lex)} .case.sem{--c:var(--sem)} .case.exact{--c:var(--exact)}
+  .case.gemma{--c:var(--gemma)} .case.diff{--c:var(--diff)}
+  .case .head{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .pill{font-family:var(--mono); font-size:11px; font-weight:600; padding:3px 8px; border-radius:20px;
+    border:1px solid var(--line); white-space:nowrap}
+  .pill.st-pending{color:var(--muted)} .pill.st-running{color:var(--accent); border-color:var(--accent)}
+  .pill.st-pass{color:var(--pass); border-color:color-mix(in srgb,var(--pass) 45%,transparent)}
+  .pill.st-fail{color:var(--fail); border-color:color-mix(in srgb,var(--fail) 45%,transparent)}
+  .pill.st-skip{color:var(--skip); border-color:color-mix(in srgb,var(--skip) 45%,transparent)}
+  .feat{font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--c)}
+  .q{font-family:var(--mono); font-size:13.5px; color:var(--ink)}
+  .case .actions{margin-left:auto; display:flex; gap:6px; align-items:center}
+  .case .rerun,.case .open{font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    background:var(--inset); border:1px solid var(--line); border-radius:6px; padding:3px 9px; cursor:pointer}
+  .case .open{color:var(--accent); text-decoration:none}
+  .case .rerun:hover,.case .open:hover{border-color:var(--accent)}
+  .why{font-size:12.5px; color:var(--muted); line-height:1.5}
+  .checks{display:flex; flex-direction:column; gap:3px; font-family:var(--mono); font-size:12px}
+  .chk{display:flex; gap:8px; align-items:baseline}
+  .chk .mk{flex:0 0 auto; font-weight:600}
+  .chk.ok .mk{color:var(--pass)} .chk.no .mk{color:var(--fail)}
+  .chk .got{color:var(--muted)}
+  .tops{font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dotted var(--line);
+    padding-top:7px; margin-top:2px; display:none; flex-direction:column; gap:4px}
+  .tops.show{display:flex}
+  .tops .row{display:flex; gap:8px; align-items:baseline}
+  .tops .lbl{flex:0 0 48px; color:var(--muted); text-transform:uppercase; font-size:10px; letter-spacing:.05em}
+  .tops .val{color:var(--ink); word-break:break-word; flex:1}
+  .tops .val .ch{color:var(--muted)}
+  .tops .val .rk{color:var(--pass); font-weight:600}
+  .tops .val .miss{color:var(--fail)}
+  .tops .prime .val{color:var(--ink)}
+  .hchip{font-family:var(--mono); font-size:10.5px; color:var(--accent);
+    border:1px solid color-mix(in srgb,var(--accent) 35%,transparent); border-radius:20px; padding:2px 8px}
+  footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SNOMED CT hybrid search · tests</p>
+  <h1>Interactive test runner</h1>
+  <p class="lede">The same cases as <code>make test</code> (loaded live from
+    <code>tests/cases.py</code>), run against this API in your browser. Each case proves that one
+    mechanism is <b>necessary</b> — a channel, the exact-match pin, the LLM pre-process, the rerank, or
+    the hierarchy filter. <a href="/">‹ back to search</a> · <a href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a></p>
+
+  <div class="bar">
+    <button class="run" id="runall">Run all</button>
+    <label class="tog"><input type="checkbox" id="incllm" checked> include LLM cases</label>
+    <div class="counts">
+      <span class="c-pass" id="n-pass">0 passed</span>
+      <span class="c-fail" id="n-fail">0 failed</span>
+      <span class="c-skip" id="n-skip">0 skipped</span>
+    </div>
+  </div>
+  <p class="health" id="health">checking API…</p>
+
+  <h2 class="sec"><span class="n">01</span>Single-run cases</h2>
+  <div class="cards" id="single"></div>
+
+  <h2 class="sec"><span class="n">02</span>Differential checks — why hybrid</h2>
+  <div class="cards" id="diff"></div>
+
+  <footer>Runs <code>GET /api/search</code> per case · assertions mirror <code>tests/test_search.py</code></footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let CASES = [], CONST = {}, LLM_OK = false;
+
+const HIER = {404684003:'Clinical finding', 71388002:'Procedure', 123037004:'Body structure',
+  105590001:'Substance', 373873005:'Product', 410607006:'Organism', 243796009:'Situation'};
+function hierLabel(sctid){ return HIER[sctid] || ('under '+sctid); }
+
+function featOf(id){
+  if(id.startsWith('lexical')) return {cls:'lex', label:'lexical'};
+  if(id.startsWith('semantic')) return {cls:'sem', label:'semantic'};
+  if(id.startsWith('exact')) return {cls:'exact', label:'exact pin'};
+  if(id.startsWith('gemma')) return {cls:'gemma', label:'pre-process'};
+  return {cls:'', label:'case'};
+}
+
+function searchHref(query, {gemma=false, rerank=false, filter=null}={}){
+  let h = `/?q=${encodeURIComponent(query)}&gemma=${gemma?1:0}&rerank=${rerank?1:0}`;
+  if(filter!=null) h += `&filter=${filter}`;
+  return h;
+}
+
+async function apiSearch(q, {gemma=false, rerank=false, filter=null}={}){
+  let url = `/api/search?q=${encodeURIComponent(q)}&k=15&gemma=${gemma}&rerank=${rerank}`;
+  if(filter!=null) url += `&filter=${filter}`;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+// mirror of test_search.py::test_case
+function evalCase(c, res){
+  const exp = c.expect, ids = res.results.map(r=>r.concept_id), cid = exp.concept;
+  const checks = [], present = ids.includes(cid);
+  checks.push({label:`retrieves ${cid}`, ok:present, got: present?null:`top: ${ids.slice(0,3).join(', ')||'—'}`});
+  let rank=null, row=null;
+  if(present){
+    const idx = ids.indexOf(cid); rank = idx+1; row = res.results[idx];
+    if(exp.top_k!=null)   checks.push({label:`within top-${exp.top_k}`, ok:rank<=exp.top_k, got:`rank ${rank}`});
+    if(exp.rank_le!=null) checks.push({label:`rank ≤ ${exp.rank_le}`, ok:rank<=exp.rank_le, got:`rank ${rank}`});
+    if(exp.channel)       checks.push({label:`channel ∈ {${exp.channel.join(', ')}}`, ok:exp.channel.includes(row.channel), got:row.channel});
+    if(exp.is_exact)      checks.push({label:`is_exact`, ok:row.is_exact===true, got:String(row.is_exact)});
+    if(exp.expansion_contains){
+      const got = res.expansion||'';
+      checks.push({label:`expansion ⊇ "${exp.expansion_contains}"`, ok:got.toLowerCase().includes(exp.expansion_contains.toLowerCase()), got:got||'(none)'});
+    }
+  }
+  return {pass: checks.every(x=>x.ok), checks, res};
+}
+
+function renderChecks(el, checks){
+  el.innerHTML = checks.map(c =>
+    `<div class="chk ${c.ok?'ok':'no'}"><span class="mk">${c.ok?'✓':'✗'}</span>`
+    + `<span>${c.label}${c.got?` <span class="got">→ ${c.got}</span>`:''}</span></div>`).join('');
+}
+// Show the full prime match (#1) and where the wanted concept landed.
+function renderOutcome(el, res, cid){
+  const prime = res.results[0];
+  const ids = res.results.map(r=>r.concept_id);
+  const idx = cid ? ids.indexOf(cid) : -1;
+  const trow = idx>=0 ? res.results[idx] : null;
+  const primeHtml = prime ? `${prime.concept_id} · ${prime.fsn} <span class="ch">[${prime.channel}]</span>` : '—';
+  const targetHtml = !cid ? '—'
+    : (trow ? `${cid} · rank <span class="rk">${idx+1}</span> · ${trow.fsn} <span class="ch">[${trow.channel}]</span>`
+            : `${cid} · <span class="miss">not in top-${ids.length}</span>`);
+  el.innerHTML =
+    `<div class="row prime"><span class="lbl">prime</span><span class="val">${primeHtml}</span></div>`
+    + `<div class="row"><span class="lbl">want</span><span class="val">${targetHtml}</span></div>`;
+  el.classList.add('show');
+}
+
+function setStatus(card, st, text){
+  const pill = card.querySelector('.pill');
+  pill.className = 'pill st-'+st; pill.textContent = text || st;
+}
+
+function buildCaseCard(c){
+  const f = featOf(c.id);
+  const card = document.createElement('div');
+  card.className = 'case '+f.cls; card.dataset.id = c.id;
+  card.innerHTML =
+    `<div class="head"><span class="pill st-pending">pending</span>`
+    + `<span class="feat">${f.label}</span><span class="q">${c.query}</span>`
+    + (c.gemma?` <span class="feat" style="--c:var(--gemma)">gemma</span>`:'')
+    + (c.rerank?` <span class="feat" style="--c:var(--diff)">rerank</span>`:'')
+    + (c.filter!=null?` <span class="hchip">▽ ${hierLabel(c.filter)}</span>`:'')
+    + `<span class="actions"><span class="rerun">run ▸</span>`
+    + `<a class="open" href="${searchHref(c.query,{gemma:c.gemma,rerank:c.rerank,filter:c.filter})}" target="_blank" rel="noopener">open in search ↗</a></span></div>`
+    + `<div class="why">${c.why}</div><div class="checks"></div><div class="tops"></div>`;
+  card.querySelector('.rerun').onclick = () => runSingle(c, card);
+  return card;
+}
+
+async function runSingle(c, card){
+  if(c.gemma && !($('#incllm').checked && LLM_OK)){
+    setStatus(card, 'skip', 'skipped');
+    card.querySelector('.checks').innerHTML = `<div class="chk"><span class="got">needs the gemma endpoint (LLM off)</span></div>`;
+    return 'skip';
+  }
+  setStatus(card, 'running', 'running…');
+  try{
+    const res = await apiSearch(c.query, {gemma:!!c.gemma, rerank:!!c.rerank, filter:c.filter});
+    const r = evalCase(c, res);
+    setStatus(card, r.pass?'pass':'fail', r.pass?'pass':'fail');
+    renderChecks(card.querySelector('.checks'), r.checks);
+    renderOutcome(card.querySelector('.tops'), res, c.expect.concept);
+    return r.pass?'pass':'fail';
+  }catch(e){
+    setStatus(card, 'fail', 'error');
+    card.querySelector('.checks').innerHTML = `<div class="chk no"><span class="mk">✗</span><span>${e.message}</span></div>`;
+    return 'fail';
+  }
+}
+
+// ---- differential cards (custom logic, constants from cases.py) ----
+function rank(res, cid){ const ids=res.results.map(r=>r.concept_id); return ids.includes(cid)?ids.indexOf(cid)+1:null; }
+
+const DIFFS = [
+  {
+    id:'diff_rerank', feat:'rerank', query:'chest x-ray',
+    link: () => searchHref('chest x-ray', {rerank:true}),
+    why:'Without rerank the generic qualifier "Thoracic radiology" outranks the precise "Plain X-ray of chest". The cross-encoder (blended with RRF) flips it — the marginal value of the rerank stage.',
+    run: async () => {
+      const off = await apiSearch('chest x-ray', {rerank:false});
+      const on  = await apiSearch('chest x-ray', {rerank:true});
+      const P = CONST.plain_xray_chest, T = CONST.thoracic_radiology;
+      const checks = [
+        {label:`Plain X-ray rises: rank ${rank(off,P)} → ${rank(on,P)}`, ok: rank(on,P)!=null && rank(off,P)!=null && rank(on,P)<rank(off,P)},
+        {label:`Plain X-ray is #1 with rerank`, ok: rank(on,P)===1, got:`rank ${rank(on,P)}`},
+        {label:`qualifier demoted: rank ${rank(off,T)} → ${rank(on,T)}`, ok: rank(on,T)!=null && rank(off,T)!=null && rank(on,T)>rank(off,T)},
+      ];
+      return {checks, res:on};
+    }
+  },
+  {
+    id:'diff_filter', feat:'hierarchy', query:'chest x-ray',
+    link: () => searchHref('chest x-ray', {filter:CONST.procedure_root}),
+    why:'The descendant filter must drop concepts outside the subtree. "Thoracic radiology" is a Qualifier value, not a Procedure: present unfiltered, gone when filtered to Procedure, while the real procedure survives.',
+    run: async () => {
+      const no = await apiSearch('chest x-ray', {});
+      const fi = await apiSearch('chest x-ray', {filter:CONST.procedure_root});
+      const ids = r => r.results.map(x=>x.concept_id);
+      const P = CONST.plain_xray_chest, T = CONST.thoracic_radiology;
+      const checks = [
+        {label:`qualifier present unfiltered`, ok: ids(no).includes(T)},
+        {label:`qualifier excluded under Procedure`, ok: !ids(fi).includes(T)},
+        {label:`the procedure survives the filter`, ok: ids(fi).includes(P)},
+      ];
+      return {checks, res:fi};
+    }
+  },
+];
+
+function buildDiffCard(d){
+  const card = document.createElement('div');
+  card.className = 'case diff'; card.dataset.id = d.id;
+  card.innerHTML =
+    `<div class="head"><span class="pill st-pending">pending</span>`
+    + `<span class="feat">${d.feat}</span><span class="q">${d.query}</span>`
+    + `<span class="actions"><span class="rerun">run ▸</span>`
+    + `<a class="open" href="${d.link()}" target="_blank" rel="noopener">open in search ↗</a></span></div>`
+    + `<div class="why">${d.why}</div><div class="checks"></div><div class="tops"></div>`;
+  card.querySelector('.rerun').onclick = () => runDiff(d, card);
+  return card;
+}
+async function runDiff(d, card){
+  setStatus(card, 'running', 'running…');
+  try{
+    const {checks, res} = await d.run();
+    const pass = checks.every(c=>c.ok);
+    setStatus(card, pass?'pass':'fail', pass?'pass':'fail');
+    renderChecks(card.querySelector('.checks'), checks);
+    renderOutcome(card.querySelector('.tops'), res, CONST.plain_xray_chest);
+    return pass?'pass':'fail';
+  }catch(e){
+    setStatus(card, 'fail', 'error');
+    card.querySelector('.checks').innerHTML = `<div class="chk no"><span class="mk">✗</span><span>${e.message}</span></div>`;
+    return 'fail';
+  }
+}
+
+function updateCounts(){
+  const pills = [...document.querySelectorAll('.pill')];
+  const n = st => pills.filter(p=>p.classList.contains('st-'+st)).length;
+  $('#n-pass').textContent = `${n('pass')} passed`;
+  $('#n-fail').textContent = `${n('fail')} failed`;
+  $('#n-skip').textContent = `${n('skip')} skipped`;
+}
+
+async function runAll(){
+  const btn = $('#runall'); btn.disabled = true; btn.textContent = 'running…';
+  for(const c of CASES){ await runSingle(c, document.querySelector(`.case[data-id="${c.id}"]`)); updateCounts(); }
+  for(const d of DIFFS){ await runDiff(d, document.querySelector(`.case[data-id="${d.id}"]`)); updateCounts(); }
+  btn.disabled = false; btn.textContent = 'Run all';
+}
+
+async function init(){
+  // health
+  try{
+    const h = await fetch('/api/health').then(r=>r.json());
+    LLM_OK = !!(h.llm && h.llm.ok);
+    $('#health').innerHTML =
+      `DB <b class="${h.db.ok?'ok':'off'}">${h.db.ok?'up':'down'}</b> · `
+      + `LLM <b class="${LLM_OK?'ok':'off'}">${LLM_OK?'up':'off'}</b> (${h.llm?h.llm.model:'—'}) · `
+      + `embeddings <b class="${h.embeddings.ok?'ok':'off'}">${h.embeddings.ok?'loaded':'—'}</b>`;
+    if(!LLM_OK) $('#incllm').checked = false;
+  }catch(e){ $('#health').innerHTML = `<b class="off">API unreachable</b> — run <code>make up</code>`; }
+
+  // cases from the .py
+  try{
+    const data = await fetch('/api/testcases').then(r=>r.json());
+    CASES = data.single || []; CONST = data.constants || {};
+  }catch(e){ CASES = []; }
+
+  const singleEl = $('#single'), diffEl = $('#diff');
+  CASES.forEach(c => singleEl.appendChild(buildCaseCard(c)));
+  DIFFS.forEach(d => diffEl.appendChild(buildDiffCard(d)));
+  if(!CASES.length) singleEl.innerHTML = `<div class="why">No cases returned by <code>/api/testcases</code>.</div>`;
+
+  runAll();  // auto-run on load
+}
+$('#runall').onclick = runAll;
+init();
+</script>
+</body>
+</html>
