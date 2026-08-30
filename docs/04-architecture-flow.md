@@ -169,8 +169,12 @@ sequenceDiagram
 ### Fusion — RRF (Reciprocal Rank Fusion)
 - Combines the two rankings without calibrating disparate score scales:
   `score(doc) = 1/(60 + rank_lexical) + 1/(60 + rank_semantic) + PREF_BOOST·[is_preferred]`.
-- Lexical `ts_rank` uses length normalization (`ts_rank(..., 1)`) so verbose descriptions that
-  repeat the query word don't get an artificial boost over concise ones.
+- Lexical `ts_rank` uses word-count normalization (`ts_rank(..., 1|8)` — divide by `1+log(word count)`
+  and by the number of distinct words; both measured in **words**, not characters) so a concise
+  canonical term (e.g. *Myocardial
+  infarction*) outranks a verbose one that merely accrues more prefix hits (e.g. a 5-word term where
+  `myo:*` matches both *myofibrillar* and *myopathy*). Without the word-count term, that verbose match
+  would win on raw term frequency.
 - The lexical query is `to_tsquery(OR(original, gemma-expansion))`, so an already-precise clinical
   term (e.g. `Hepatomegaly`) still fires its exact/synonym match even if gemma expands it into
   something else — while lay terms are still bridged via the expansion.

@@ -365,7 +365,8 @@
         <span class="op">to_tsquery('w1:* &amp; w2:*')</span>
         <p>Full-text over a custom <code>unaccent_simple</code> config (unaccent, <b>no stemming</b>).
           <b>Multi-prefix, order-independent, accent-insensitive</b> matching, ranked by
-          length-normalized <code>ts_rank(…,1)</code>.</p>
+          word-count–normalized <code>ts_rank(…,1|8)</code> (÷ log word-length and ÷ unique words — by
+          words, not characters) so concise canonical terms win.</p>
       </div>
       <div class="pgc sem">
         <span class="role">Semantic channel</span>

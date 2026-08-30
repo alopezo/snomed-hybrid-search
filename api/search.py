@@ -48,7 +48,12 @@ RERANK_WEIGHT = 0.4
 RRF_SQL = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
 lex AS (
-    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1) DESC) AS r
+    -- Rank with native ts_rank, normalized by length AND unique-word count (flags 1|8): divide by
+    -- 1+log(length) and by the number of distinct words, so a concise canonical term outranks a
+    -- verbose one that merely accrues more prefix hits (e.g. 'myo:*' matching both 'myofibrillar' and
+    -- 'myopathy'). Word-based because ts_rank operates on the tsvector (lexemes), which is the native,
+    -- index-supported ranking; equivalent to Snowstorm's shorter-is-better intent without leaving ts_rank.
+    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1|8) DESC) AS r
     FROM descriptions d, q
     WHERE %(tsq)s <> '' AND d.term_tsv @@ q.ts
       AND (%(filter)s::bigint IS NULL OR EXISTS (
