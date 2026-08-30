@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Three Models, Three Architectures</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  /* Dark-only, aligned to the search app's palette
+     (--bg #0f1115 / --card #1a1d24 / --fg #e6e6e6 / --accent #4f9cf9 / lex green / sem purple). */
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#212530; --inset:#14171d;
+    --ink:#e6e6e6; --muted:#9aa0aa; --line:#2b2f38;
+    --accent:#4f9cf9;
+    --lex:#5bbd62;              /* lexical channel  (app --lex, brightened) */
+    --gemma:#e0a24d;           /* ① generative     */
+    --biolord:#b57be0;         /* ② semantic       (app --sem, brightened) */
+    --rerank:#46c5cc;          /* ③ cross-encoder  */
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 22px rgba(0,0,0,.28);
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); font-size:15.5px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; padding:clamp(20px,4vw,56px) 20px;
+  }
+  .wrap{max-width:1000px; margin:0 auto}
+  code,.k{font-family:var(--mono); font-size:.9em}
+  .k{color:var(--accent)}
+
+  /* header */
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--serif); font-weight:600; font-size:clamp(31px,5.2vw,50px);
+    line-height:1.05; letter-spacing:-.01em; margin:0 0 16px; text-wrap:balance;
+  }
+  .lede{font-size:clamp(15.5px,1.9vw,18px); color:var(--muted); max-width:66ch; margin:0}
+  .lede b{color:var(--ink); font-weight:600}
+
+  section{margin-top:clamp(40px,6vw,66px)}
+  .sec-head{display:flex; align-items:baseline; gap:12px; margin:0 0 20px;
+    border-bottom:1px solid var(--line); padding-bottom:10px}
+  .sec-head h2{font-family:var(--sans); font-weight:600; font-size:19px; letter-spacing:-.01em; margin:0}
+  .sec-head .n{font-family:var(--mono); font-size:12px; color:var(--muted); font-weight:500}
+
+  /* pipeline */
+  .pipe{display:flex; flex-wrap:wrap; align-items:stretch; gap:8px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:18px; box-shadow:var(--shadow)}
+  .stage{flex:1 1 130px; min-width:120px; display:flex; flex-direction:column; gap:6px;
+    background:var(--inset); border:1px solid var(--line); border-radius:10px; padding:12px 13px}
+  .stage .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); font-weight:500}
+  .stage .name{font-weight:600; font-size:14.5px; line-height:1.2}
+  .stage .sub{font-size:11.5px; color:var(--muted); line-height:1.4; font-family:var(--mono)}
+  .stage.model{border-top:3px solid var(--c)}
+  .stage.fuse-stage{border-top:3px solid var(--accent);
+    background:color-mix(in srgb, var(--accent) 9%, var(--inset))}
+  .stage.fuse-stage .tag{color:var(--accent)}
+  .arrow{display:flex; align-items:center; justify-content:center; color:var(--muted);
+    font-size:18px; flex:0 0 auto; padding:0 2px}
+  .retrieve{flex:2 1 250px; min-width:230px; display:flex; flex-direction:column; gap:8px;
+    background:var(--inset); border:1px dashed var(--line); border-radius:10px; padding:12px}
+  .retrieve .rh{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+  .retrieve .rh .tag{font-family:var(--mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--muted); font-weight:500}
+  .retrieve .rh .oneq{font-family:var(--mono); font-size:10.5px; color:var(--accent)}
+  .channels{display:flex; gap:8px}
+  .chan{flex:1; background:var(--surface); border:1px solid var(--line); border-radius:8px;
+    padding:9px 10px; display:flex; flex-direction:column; gap:3px}
+  .chan .name{font-weight:600; font-size:13px}
+  .chan .sub{font-size:11px; color:var(--muted); font-family:var(--mono)}
+  .chan.lex{border-top:3px solid var(--lex)}
+  .chan.sem{border-top:3px solid var(--biolord)}
+  .fuse{text-align:center; font-family:var(--mono); font-size:11px; color:var(--muted);
+    border-top:1px dotted var(--line); padding-top:7px}
+  .fuse b{color:var(--ink)}
+
+  /* model cards */
+  .cards{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:20px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+    display:flex; flex-direction:column; gap:13px}
+  .card::before{content:""; position:absolute; inset:0 0 auto 0; height:4px; background:var(--c)}
+  .card .idx{font-family:var(--mono); font-size:12px; font-weight:600; color:var(--c)}
+  .card h3{font-family:var(--mono); font-size:15px; font-weight:600; margin:0; line-height:1.25; word-break:break-word}
+  .card .kind{display:inline-block; align-self:flex-start; font-size:12px; font-weight:600;
+    color:var(--c); background:color-mix(in srgb, var(--c) 16%, var(--surface));
+    border:1px solid color-mix(in srgb, var(--c) 40%, transparent); padding:3px 9px; border-radius:20px}
+  .card .role{font-size:13px; color:var(--muted); line-height:1.5; margin:0}
+  .card .role b{color:var(--ink); font-weight:600}
+  .card dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px}
+  .card dt{color:var(--muted)}
+  .card dd{margin:0; font-family:var(--mono); font-weight:500; text-align:right; color:var(--ink)}
+  .card.gemma{--c:var(--gemma)} .card.biolord{--c:var(--biolord)} .card.rerank{--c:var(--rerank)}
+
+  /* table */
+  .twrap{overflow-x:auto; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow)}
+  table{border-collapse:collapse; width:100%; min-width:660px; background:var(--surface)}
+  caption{caption-side:bottom; text-align:left; font-size:12px; color:var(--muted); padding:12px 16px; line-height:1.5}
+  th,td{padding:11px 14px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+  thead th{font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--muted); background:var(--surface-2)}
+  thead th.m{font-family:var(--mono); text-transform:none; letter-spacing:0; font-size:12px; color:var(--c)}
+  thead th.g{--c:var(--gemma)} thead th.b{--c:var(--biolord)} thead th.r{--c:var(--rerank)}
+  tbody th{font-weight:500; color:var(--muted); font-size:12.5px; white-space:nowrap; width:1%}
+  tbody td{font-size:13px}
+  tbody td.mono{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  tbody tr:last-child td, tbody tr:last-child th{border-bottom:none}
+  .foot-row td, .foot-row th{background:var(--surface-2); font-weight:600; color:var(--ink)}
+  .yes{color:var(--lex); font-weight:600}
+  .no{color:var(--muted)}
+
+  /* serving */
+  .serve{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .sbox{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px}
+  .sbox .lab{font-family:var(--mono); font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--accent); font-weight:500}
+  .sbox h3{margin:0; font-size:16.5px; font-weight:600}
+  .sbox p{margin:0; font-size:13px; color:var(--muted); line-height:1.55}
+  .sbox p b{color:var(--ink); font-weight:600}
+  .sbox .who{margin-top:2px; display:flex; flex-wrap:wrap; gap:6px}
+  .pill{font-family:var(--mono); font-size:11.5px; padding:3px 9px; border-radius:6px;
+    border:1px solid var(--line); background:var(--inset); color:var(--muted)}
+  .pill.g{color:var(--gemma); border-color:color-mix(in srgb,var(--gemma) 40%,transparent)}
+  .pill.b{color:var(--biolord); border-color:color-mix(in srgb,var(--biolord) 40%,transparent)}
+  .pill.r{color:var(--rerank); border-color:color-mix(in srgb,var(--rerank) 40%,transparent)}
+
+  .kicker{margin-top:26px; padding:16px 18px; border-radius:12px;
+    background:color-mix(in srgb, var(--accent) 10%, var(--surface));
+    border:1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    font-size:13.5px; line-height:1.6}
+  .kicker b{color:var(--accent)} .kicker code{color:var(--ink)}
+
+  /* postgres roles */
+  .pg-lead{font-size:14px; line-height:1.6; color:var(--muted); max-width:74ch; margin:0 0 20px}
+  .pg-lead b{color:var(--ink); font-weight:600}
+  .pg-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .pgc{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px;
+    box-shadow:var(--shadow); display:flex; flex-direction:column; gap:9px; position:relative; overflow:hidden}
+  .pgc::before{content:""; position:absolute; inset:0 0 auto 0; height:3px; background:var(--c)}
+  .pgc .role{font-weight:600; font-size:14.5px}
+  .pgc .mech{font-family:var(--mono); font-size:11.5px; color:var(--c)}
+  .pgc .op{align-self:flex-start; font-family:var(--mono); font-size:11.5px; background:var(--inset);
+    border:1px solid var(--line); border-radius:6px; padding:3px 8px; color:var(--ink)}
+  .pgc p{margin:0; font-size:12.5px; color:var(--muted); line-height:1.5}
+  .pgc p b{color:var(--ink); font-weight:600}
+  .pgc.lex{--c:var(--lex)} .pgc.sem{--c:var(--biolord)} .pgc.hier{--c:var(--accent)}
+  @media (max-width:760px){ .pg-grid{grid-template-columns:1fr} }
+
+  /* references */
+  .refs{display:flex; flex-direction:column}
+  .ref{display:flex; gap:14px; padding:13px 0; border-bottom:1px solid var(--line); align-items:baseline}
+  .ref:last-child{border-bottom:none}
+  .rtag{flex:0 0 84px; font-family:var(--mono); font-size:10.5px; font-weight:500;
+    letter-spacing:.04em; text-transform:uppercase; padding-top:2px}
+  .rtag.t-g{color:var(--gemma)} .rtag.t-b{color:var(--biolord)} .rtag.t-r{color:var(--rerank)}
+  .rtag.t-n{color:var(--accent)}
+  .rbody{flex:1; min-width:0}
+  .rtitle{font-weight:600; font-size:14px; line-height:1.35}
+  .rtitle a{color:var(--ink); text-decoration:none}
+  .rtitle a:hover{color:var(--accent); text-decoration:underline}
+  .rmeta{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:3px}
+  .rmeta a{color:var(--accent); text-decoration:none}
+  .rmeta a:hover{text-decoration:underline}
+
+  /* prior art / extensions */
+  .prior{font-size:14px; line-height:1.6; color:var(--muted); max-width:74ch; margin:0 0 20px}
+  .prior b{color:var(--ink); font-weight:600}
+  .prior .who{font-family:var(--mono); color:var(--accent)}
+  .deltas{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+  .delta{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0; padding:13px 15px; display:flex; flex-direction:column; gap:5px}
+  .delta .dl{font-family:var(--mono); font-size:11px; font-weight:600; letter-spacing:.03em;
+    text-transform:uppercase; color:var(--accent)}
+  .delta p{margin:0; font-size:12.5px; line-height:1.5; color:var(--muted)}
+  .delta p b{color:var(--ink); font-weight:600}
+  @media (max-width:760px){ .deltas{grid-template-columns:1fr} }
+
+  footer{margin-top:46px; padding-top:16px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:6px 16px; justify-content:space-between}
+  .back{color:var(--accent); text-decoration:none}
+  .back:hover{text-decoration:underline}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+
+  @media (max-width:760px){
+    .cards{grid-template-columns:1fr}
+    .serve{grid-template-columns:1fr}
+    .pipe{flex-direction:column}
+    .arrow{transform:rotate(90deg); height:16px}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .card,.sbox{transition:transform .18s ease, box-shadow .18s ease}
+    .card:hover,.sbox:hover{transform:translateY(-2px)}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">SNOMED CT hybrid search · architecture</p>
+    <h1>Three models, three architectures</h1>
+    <p class="lede">The pipeline runs <b>three neural networks of three distinct classes</b> — not three
+      LLMs. A <b>decoder</b> autoregressively generates text; a <b>bi-encoder</b> projects text into a
+      shared vector space; a <b>cross-encoder</b> scores a query–passage pair with joint attention.
+      Exactly one is domain-adapted to biomedicine.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="n">01</span><h2>Data path — retrieve, then rerank</h2></div>
+    <div class="pipe">
+      <div class="stage"><span class="tag">input</span><span class="name">Clinician note</span><span class="sub">any lang · acronyms · typos</span></div>
+      <div class="arrow">›</div>
+      <div class="stage model gemma" style="--c:var(--gemma)"><span class="tag">① decode</span><span class="name">Pre-process</span><span class="sub">gemma → 1 canonical EN term<br>T=0 · ~1.2 s</span></div>
+      <div class="arrow">›</div>
+      <div class="retrieve">
+        <div class="rh"><span class="tag">retrieve · top-200 / channel</span><span class="oneq">1 SQL plan</span></div>
+        <div class="channels">
+          <div class="chan lex"><span class="name">Lexical</span><span class="sub">to_tsquery + GIN<br>~2–9 ms</span></div>
+          <div class="chan sem"><span class="name">② Semantic</span><span class="sub">BioLORD · pgvector HNSW<br>cosine · ~3 ms</span></div>
+        </div>
+        <div class="fuse">▾ both channels → candidate union</div>
+      </div>
+      <div class="arrow">›</div>
+      <div class="stage fuse-stage"><span class="tag">merge</span><span class="name">RRF fusion</span><span class="sub">Σ 1/(k+rank), k=60<br>+pref · exact_first pin<br>→ top-15</span></div>
+      <div class="arrow">›</div>
+      <div class="stage model rerank" style="--c:var(--rerank)"><span class="tag">③ score</span><span class="name">Rerank</span><span class="sub">bge cross-encoder<br>blend W=0.4 · ~0.2–0.4 s</span></div>
+      <div class="arrow">›</div>
+      <div class="stage"><span class="tag">output</span><span class="name">Ranked concepts</span><span class="sub">SNOMED descriptions</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">02</span><h2>The three models</h2></div>
+    <div class="cards">
+      <div class="card gemma">
+        <span class="idx">① generative LLM · decoder</span>
+        <h3>gemma3:12b</h3>
+        <span class="kind">General-purpose</span>
+        <p class="role">Decoder-only transformer (Google Gemma 3), <b>Q4_K_M</b>-quantized GGUF, 32K
+          context. <b>Prompt-engineered, not fine-tuned:</b> greedy decode (<code>T=0</code>) to
+          language-detect, translate to English, and normalize the note to <b>one canonical clinical
+          term</b> that feeds both retrieval channels.</p>
+        <dl>
+          <dt>Params</dt><dd>~12 B</dd>
+          <dt>Quant</dt><dd>Q4_K_M</dd>
+          <dt>On disk</dt><dd>8.1 GB</dd>
+          <dt>VRAM/RAM</dt><dd>7.8 GB</dd>
+          <dt>Biomedical</dt><dd>no</dd>
+        </dl>
+      </div>
+      <div class="card biolord">
+        <span class="idx">② embedding · bi-encoder</span>
+        <h3>BioLORD-2023-M</h3>
+        <span class="kind">Domain-adapted · biomedical</span>
+        <p class="role">Sentence-transformer bi-encoder; mean-pooled <b>768-d</b> embeddings compared by
+          <b>cosine</b>. Contrastively trained on <b>UMLS/SNOMED</b> concept names + definitions, so
+          synonyms collapse to nearby vectors regardless of surface form. <b>Cross-lingual.</b>
+          Indexed offline with <b>HNSW</b>.</p>
+        <dl>
+          <dt>Params</dt><dd>~110–200 M</dd>
+          <dt>Dim</dt><dd>768</dd>
+          <dt>On disk</dt><dd>1.1 GB</dd>
+          <dt>VRAM/RAM</dt><dd>~0.5–1 GB</dd>
+          <dt>Biomedical</dt><dd>yes</dd>
+        </dl>
+      </div>
+      <div class="card rerank">
+        <span class="idx">③ reranker · cross-encoder</span>
+        <h3>bge-reranker-v2-m3</h3>
+        <span class="kind">General-purpose</span>
+        <p class="role">XLM-RoBERTa-large cross-encoder (BAAI). Runs <b>joint self-attention over the
+          concatenated (query, passage)</b> and emits one relevance logit — no reusable vector, so cost
+          is <code>O(k)</code> forward passes. Applied only to the <b>top-15</b>, min-max blended with
+          the RRF score.</p>
+        <dl>
+          <dt>Params</dt><dd>~560 M</dd>
+          <dt>Base</dt><dd>XLM-R-large</dd>
+          <dt>On disk</dt><dd>2.1 GB</dd>
+          <dt>VRAM/RAM</dt><dd>~2.2 GB</dd>
+          <dt>Biomedical</dt><dd>no</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">03</span><h2>Architecture &amp; memory footprint</h2></div>
+    <div class="twrap">
+      <table>
+        <caption>Measured on Apple Silicon (M2 Max, Metal/MPS). “VRAM/RAM” is resident memory with the
+          model warm; on unified memory the figures coincide. gemma is Q4-quantized and served at 100% GPU.</caption>
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col" class="m g">① gemma3:12b</th>
+            <th scope="col" class="m b">② BioLORD-2023-M</th>
+            <th scope="col" class="m r">③ bge-reranker-v2-m3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Class</th><td>Decoder LLM (autoregressive)</td><td>Bi-encoder (embedding)</td><td>Cross-encoder</td></tr>
+          <tr><th scope="row">Output</th><td>generated tokens</td><td>768-d vector</td><td>relevance logit</td></tr>
+          <tr><th scope="row">Encodes query &amp; concept</th><td class="no">n/a</td><td><b>separately</b> (dot-product later)</td><td><b>jointly</b> (full cross-attention)</td></tr>
+          <tr><th scope="row">Scales to 1 M rows</th><td class="no">—</td><td class="yes">yes · ANN index</td><td class="no">no · rerank top-k only</td></tr>
+          <tr><th scope="row">Domain-adapted</th><td class="no">no (general)</td><td class="yes">yes (UMLS/SNOMED)</td><td class="no">no (general)</td></tr>
+          <tr><th scope="row">Invocations / query</th><td class="mono">1</td><td class="mono">1 (+1.02 M offline)</td><td class="mono">k = 15</td></tr>
+          <tr><th scope="row">Latency (warm)</th><td class="mono">~1.2 s</td><td class="mono">~30 ms</td><td class="mono">~0.2–0.4 s</td></tr>
+          <tr><th scope="row">Params</th><td class="mono">~12 B</td><td class="mono">~110–200 M</td><td class="mono">~560 M</td></tr>
+          <tr><th scope="row">On disk</th><td class="mono">8.1 GB</td><td class="mono">1.1 GB</td><td class="mono">2.1 GB</td></tr>
+          <tr class="foot-row"><th scope="row">VRAM/RAM (loaded)</th><td class="mono">7.8 GB</td><td class="mono">~0.5–1 GB</td><td class="mono">~2.2 GB</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="kicker">All three resident ≈ <b>10–11 GB</b>. The bi-encoder/cross-encoder split <em>is</em>
+      retrieve-then-rerank: ② encodes independently → precomputable, sublinear ANN recall over
+      <code>1,024,825</code> vectors; ③ scores pairs jointly → higher precision but quadratic attention,
+      so it only touches the <code>k=15</code> already recalled. RRF fuses the two rankings without
+      calibrating their score scales.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">04</span><h2>Serving topology</h2></div>
+    <div class="serve">
+      <div class="sbox">
+        <span class="lab">Out-of-process · HTTP</span>
+        <h3>gemma → Ollama</h3>
+        <p><b>Separate daemon</b> (llama.cpp/Metal backend) exposing an OpenAI-compatible API on
+          <span class="pill g">:11434</span>. It owns weight loading, quantization and
+          <code>OLLAMA_KEEP_ALIVE</code>; the app issues an <b>HTTP</b> <code>chat/completions</code>
+          call. Any compatible endpoint is a drop-in — the LLM is <b>swappable and optional</b>.</p>
+        <div class="who"><span class="pill g">① gemma3:12b</span></div>
+      </div>
+      <div class="sbox">
+        <span class="lab">In-process · MPS</span>
+        <h3>BioLORD &amp; reranker → PyTorch</h3>
+        <p>Loaded inside the FastAPI/uvicorn worker via <b>sentence-transformers on MPS</b> — no daemon,
+          no serialization, direct tensor calls. Weights are lazy-loaded once and cached; embeddings
+          land in <b>pgvector</b>, the reranker runs on the fused candidate set.</p>
+        <div class="who"><span class="pill b">② BioLORD-2023-M</span><span class="pill r">③ bge-reranker-v2-m3</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">05</span><h2>What Postgres does</h2></div>
+    <p class="pg-lead">One Postgres instance <b>is the entire retrieval engine</b> — lexical search, vector
+      search and hierarchy filtering, all fused in a single query. No Elasticsearch, no separate vector
+      database: <b>one transactional store</b>, three extensions doing three jobs.</p>
+    <div class="pg-grid">
+      <div class="pgc lex">
+        <span class="role">Lexical channel</span>
+        <span class="mech">tsvector + GIN</span>
+        <span class="op">to_tsquery('w1:* &amp; w2:*')</span>
+        <p>Full-text over a custom <code>unaccent_simple</code> config (unaccent, <b>no stemming</b>).
+          <b>Multi-prefix, order-independent, accent-insensitive</b> matching, ranked by
+          length-normalized <code>ts_rank(…,1)</code>.</p>
+      </div>
+      <div class="pgc sem">
+        <span class="role">Semantic channel</span>
+        <span class="mech">pgvector · HNSW</span>
+        <span class="op">embedding &lt;=&gt; $qvec</span>
+        <p>BioLORD's <b>768-d</b> vectors live in a <code>vector</code> column, searched by <b>cosine</b>
+          through an HNSW index; <b>iterative index scans</b> keep filtered ANN accurate when a subtree
+          filter is applied.</p>
+      </div>
+      <div class="pgc hier">
+        <span class="role">Hierarchy filter</span>
+        <span class="mech">transitive closure + GIN</span>
+        <span class="op">ancestors @&gt; ARRAY[X]</span>
+        <p>A precomputed <code>concept_ancestors(ancestors bigint[])</code> turns “is C under X?” into a
+          <b>single indexed lookup</b> — descendants-or-self with <b>no per-query graph traversal</b>.</p>
+      </div>
+    </div>
+    <div class="kicker">All three run inside <b>one SQL plan</b>, and <b>RRF fusion is computed in SQL too</b>:
+      the two rankings are merged, deduped by concept and joined to the FSN before a single result set ever
+      leaves the database.</div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">06</span><h2>References</h2></div>
+    <div class="refs">
+      <div class="ref">
+        <span class="rtag t-b">② BioLORD</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://academic.oup.com/jamia/article/31/9/1844/7614965" target="_blank" rel="noopener">BioLORD-2023: Semantic Textual Representations Fusing LLM and Clinical Knowledge Graph Insights</a></div>
+          <div class="rmeta">Remy, Demuynck &amp; Demeester · <em>JAMIA</em> 31(9), 2024 · <a href="https://arxiv.org/abs/2311.16075" target="_blank" rel="noopener">arXiv:2311.16075</a></div>
+        </div>
+      </div>
+      <div class="ref">
+        <span class="rtag t-b">② lineage</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://aclanthology.org/2021.naacl-main.334/" target="_blank" rel="noopener">Self-Alignment Pretraining for Biomedical Entity Representations (SapBERT)</a></div>
+          <div class="rmeta">Liu, Shareghi, et al. · <em>NAACL</em> 2021 · the synonym-alignment idea BioLORD builds on</div>
+        </div>
+      </div>
+      <div class="ref">
+        <span class="rtag t-r">③ reranker</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://arxiv.org/abs/2402.03216" target="_blank" rel="noopener">BGE M3-Embedding: Multi-Lingual, Multi-Functionality, Multi-Granularity Text Embeddings via Self-Knowledge Distillation</a></div>
+          <div class="rmeta">Chen, Xiao, et al. (BAAI) · 2024 · <code>bge-reranker-v2-m3</code> is fine-tuned on this base · <a href="https://arxiv.org/abs/2402.03216" target="_blank" rel="noopener">arXiv:2402.03216</a></div>
+        </div>
+      </div>
+      <div class="ref">
+        <span class="rtag t-g">① LLM</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://arxiv.org/abs/2503.19786" target="_blank" rel="noopener">Gemma 3 Technical Report</a></div>
+          <div class="rmeta">Gemma Team, Google DeepMind · 2025 · the generative model used for pre-processing</div>
+        </div>
+      </div>
+      <div class="ref">
+        <span class="rtag t-n">fusion</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://dl.acm.org/doi/10.1145/1571941.1572114" target="_blank" rel="noopener">Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods</a></div>
+          <div class="rmeta">Cormack, Clarke &amp; Büttcher · <em>SIGIR</em> 2009 · the RRF method (k=60)</div>
+        </div>
+      </div>
+      <div class="ref">
+        <span class="rtag t-n">prior art</span>
+        <div class="rbody">
+          <div class="rtitle"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8861757/" target="_blank" rel="noopener">Semantic Search for Large Scale Clinical Ontologies</a></div>
+          <div class="rmeta">Chang, Mai, et al. (CSIRO) · closest prior work — Triplet-BERT semantic retrieval over SNOMED CT</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="n">07</span><h2>Building on prior art</h2></div>
+    <p class="prior">The closest prior work — <span class="who">Chang, Mai et al. (CSIRO)</span> — established that
+      semantic <b>Triplet-BERT</b> retrieval over SNOMED beats lexical baselines on <b>low-lexical-overlap</b>
+      queries, trained from the ontology's own synonyms. We keep that thesis — it <em>is</em> our semantic
+      channel — but extend a single-stage, English, semantic-only retriever into a full system:</p>
+    <div class="deltas">
+      <div class="delta">
+        <span class="dl">Hybrid, not semantic-only</span>
+        <p>Lexical <b>+</b> semantic fused with <b>RRF</b> (plus an <code>exact_first</code> pin): the recall
+          of embeddings <b>and</b> the precision of exact term matches, not a trade-off between them.</p>
+      </div>
+      <div class="delta">
+        <span class="dl">No model training</span>
+        <p>Off-the-shelf <b>BioLORD-2023-M</b> — already pretrained on UMLS/SNOMED and <b>multilingual</b> —
+          instead of fine-tuning a bespoke Triplet-BERT. Zero training cost.</p>
+      </div>
+      <div class="delta">
+        <span class="dl">Dirty, any-language input</span>
+        <p>An <b>LLM pre-process</b> step (gemma) translates, expands acronyms and fixes typos, so real
+          "fast note" input in any language works — the paper is English-focused.</p>
+      </div>
+      <div class="delta">
+        <span class="dl">Retrieve-then-rerank</span>
+        <p>A second stage: the <b>cross-encoder</b> reranks the top-15 (blended with RRF). The prior work is
+          single-stage retrieval.</p>
+      </div>
+      <div class="delta">
+        <span class="dl">Hierarchy filter</span>
+        <p>A precomputed <b>transitive closure</b> (<code>concept_ancestors</code> + GIN) restricts results to
+          the descendants-or-self of any concept — a practical clinical constraint.</p>
+      </div>
+      <div class="delta">
+        <span class="dl">Reproducible local stack</span>
+        <p>One <b>Postgres + pgvector</b> store for both channels, HNSW-indexed, runs on a laptop and points at
+          any SNOMED release with a path change — an experiment becomes a deployable system.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <a class="back" href="/">‹ back to search</a>
+    <span>Postgres 16 + pgvector · FastAPI · Apple Silicon / MPS · only ② is biomedical</span>
+  </footer>
+</div>
+</body>
+</html>

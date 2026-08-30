@@ -12,6 +12,9 @@
          background:var(--bg); color:var(--fg); }
   header { padding:24px 20px 8px; max-width:900px; margin:0 auto; }
   h1 { font-size:20px; margin:0 0 4px; }
+  .titlerow { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .arch-link { font-size:13px; color:var(--accent); text-decoration:none; white-space:nowrap; }
+  .arch-link:hover { text-decoration:underline; }
   .sub { color:var(--muted); font-size:13px; }
   .wrap { max-width:900px; margin:0 auto; padding:12px 20px 60px; }
   .searchbar { display:flex; gap:8px; align-items:center; margin:12px 0; }
@@ -75,7 +78,10 @@
 </head>
 <body>
 <header>
-  <h1>SNOMED CT hybrid search</h1>
+  <div class="titlerow">
+    <h1>SNOMED CT hybrid search</h1>
+    <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
+  </div>
   <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
   <div class="status" id="status">
     <span class="item"><span class="dot" id="d-db"></span> DB</span>
