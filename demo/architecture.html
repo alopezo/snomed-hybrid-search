@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
-<title>Three Models, Three Architectures</title>
+<title>Hybrid Lexical and Semantic Search over SNOMED CT</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -145,6 +145,9 @@
   /* postgres roles */
   .pg-lead{font-size:14px; line-height:1.6; color:var(--muted); max-width:74ch; margin:0 0 20px}
   .pg-lead b{color:var(--ink); font-weight:600}
+  .pg-ext{margin-top:14px; font-size:12.5px; line-height:1.6; color:var(--muted)}
+  .pg-ext b{color:var(--ink); font-weight:600}
+  .pg-ext .x-sem{color:var(--biolord)} .pg-ext .x-lex{color:var(--lex)} .pg-ext .x-core{color:var(--accent)}
   .pg-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
   .pgc{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px;
     box-shadow:var(--shadow); display:flex; flex-direction:column; gap:9px; position:relative; overflow:hidden}
@@ -210,11 +213,12 @@
 <div class="wrap">
   <header>
     <p class="eyebrow">SNOMED CT hybrid search · architecture</p>
-    <h1>Three models, three architectures</h1>
-    <p class="lede">The pipeline runs <b>three neural networks of three distinct classes</b> — not three
-      LLMs. A <b>decoder</b> autoregressively generates text; a <b>bi-encoder</b> projects text into a
-      shared vector space; a <b>cross-encoder</b> scores a query–passage pair with joint attention.
-      Exactly one is domain-adapted to biomedicine.</p>
+    <h1>Hybrid lexical and semantic search over SNOMED CT</h1>
+    <p class="lede">Concept retrieval over SNOMED CT combines three neural components of distinct
+      architectural classes: a <b>decoder-only</b> model normalizes the query, a biomedical
+      <b>bi-encoder</b> embeds text for dense retrieval, and a <b>cross-encoder</b> reranks candidates by
+      joint query–passage attention. Lexical (full-text) and dense channels are fused with
+      <b>Reciprocal Rank Fusion</b>; of the three models, only the bi-encoder is domain-adapted to biomedicine.</p>
   </header>
 
   <section>
@@ -357,7 +361,7 @@
     <div class="sec-head"><span class="n">05</span><h2>What Postgres does</h2></div>
     <p class="pg-lead">One Postgres instance <b>is the entire retrieval engine</b> — lexical search, vector
       search and hierarchy filtering, all fused in a single query. No Elasticsearch, no separate vector
-      database: <b>one transactional store</b>, three extensions doing three jobs.</p>
+      database: <b>one transactional store</b>, mostly core Postgres plus two small extensions.</p>
     <div class="pg-grid">
       <div class="pgc lex">
         <span class="role">Lexical channel</span>
@@ -387,6 +391,13 @@
     <div class="kicker">All three run inside <b>one SQL plan</b>, and <b>RRF fusion is computed in SQL too</b>:
       the two rankings are merged, deduped by concept and joined to the FSN before a single result set ever
       leaves the database.</div>
+    <p class="pg-ext"><b>Extensions:</b> only two are added on top of core Postgres —
+      <code class="x-sem">vector</code> (pgvector, third-party) for the semantic column and HNSW index, and
+      <code class="x-lex">unaccent</code> (contrib — ships with Postgres) for accent folding in the lexical
+      config. Everything else is <b class="x-core">core</b>: the full-text engine
+      (<code>tsvector</code>/<code>tsquery</code>/<code>ts_rank</code>/GIN), the <code>bigint[]</code>
+      ancestor arrays, and RRF. No fork, no Elasticsearch, no separate vector DB — a managed Postgres that
+      offers pgvector runs this unchanged.</p>
   </section>
 
   <section>
