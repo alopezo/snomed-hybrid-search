@@ -14,7 +14,9 @@ Can be used as a library (import search) or CLI:
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import threading
 import time
 import unicodedata
 from functools import lru_cache
@@ -44,6 +46,20 @@ PREF_BOOST = 0.001
 # 0.5 lets the reranker refine RRF instead of overriding it, so a precise lexical/semantic hit
 # isn't demoted below a generic parent just because the CE likes the parent's phrasing.
 RERANK_WEIGHT = 0.4
+
+# Entity type (from extract_entities) -> the SNOMED top-level hierarchy to constrain that entity's
+# search to. Used as the `filter_concept` for per-entity mapping; falls back to no filter if the
+# filtered search finds nothing (the LLM occasionally mislabels the type).
+TYPE_TO_HIERARCHY = {
+    "finding": 404684003,          # Clinical finding
+    "procedure": 71388002,         # Procedure
+    "body structure": 123037004,   # Body structure
+    "medication": 763158003,       # Medicinal product
+    # tolerate common off-enum labels the LLM sometimes emits, mapped to the nearest hierarchy.
+    # morphology is intentionally treated as a finding (those descriptors are searched as findings).
+    "morphology": 404684003, "diagnosis": 404684003, "disorder": 404684003, "symptom": 404684003,
+    "drug": 763158003, "substance": 105590001,
+}
 
 RRF_SQL = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
@@ -167,6 +183,12 @@ def build_tsquery(query: str, expansion: str | None) -> str:
     return " | ".join(f"({g})" for g in groups)
 
 
+# FastAPI runs sync endpoints in a threadpool, so several requests can hit the shared PyTorch models
+# at once. Concurrent forward passes on the SAME model (especially on MPS) stall/wedge, so serialize
+# all model inference through one lock. Inference is fast (~tens of ms), so serializing is cheap.
+_infer_lock = threading.Lock()
+
+
 @lru_cache(maxsize=1)
 def get_model():
     from sentence_transformers import SentenceTransformer
@@ -174,7 +196,8 @@ def get_model():
 
 
 def embed_query(text: str) -> str:
-    vec = get_model().encode([text], normalize_embeddings=True)[0]
+    with _infer_lock:
+        vec = get_model().encode([text], normalize_embeddings=True)[0]
     return "[" + ",".join(f"{x:.6f}" for x in vec) + "]"
 
 
@@ -208,6 +231,74 @@ def gemma_expand(query: str, timeout: float = 25.0) -> str | None:
         return None
 
 
+EXTRACT_SYSTEM = (
+    "You are a clinical NLP entity extractor. From a free-text clinical note, extract ONLY diagnoses, "
+    "clinical findings, procedures, and medications. Be thorough with imaging/procedure mentions even "
+    "when abbreviated (CT, MRI, X-ray, ultrasound, ECG). Do NOT extract raw measurements or numeric "
+    "values — vital signs (blood pressure, pulse, temperature, respiratory rate, O2 saturation) and "
+    "laboratory results are OUT OF SCOPE, and do not infer a finding from a raw value (skip 'BP 92/52', "
+    "'pulse 55', 'platelets 43', 'O2 sat 95%'). Only when the clinician explicitly names a clinical "
+    "interpretation (e.g. 'hypotension', 'fever', 'bradycardia', 'thrombocytopenia') do you extract it.\n"
+    "Return STRICT JSON of the form "
+    '{"terms":[{"text","type","context","language","clinicalTerm","generalTerm","severity","laterality"}]}. '
+    "Field rules:\n"
+    "- text: the clinical term copied VERBATIM from the note (keep the source language), WITHOUT "
+    "surrounding/trailing punctuation and WITHOUT leading articles (a/an/the). Never paraphrase here.\n"
+    "- type: the clinical CATEGORY of the entity, one of finding | procedure | medication | body "
+    "structure. This is NOT a status — NEVER put present/absent/past/unknown in this field. Treat "
+    "cellular/morphologic descriptors (e.g. schistocytes, anisocytosis, spherocytes) as finding.\n"
+    "- context: one of present | absent | past | unknown. Use 'absent' ONLY for explicit negation "
+    "(no / denies / without / ruled out / negative for). Use 'past' for historical or resolved "
+    "conditions ('history of X', 'past X', 'prior X', 'previous X', 'status post X') — the finding DID "
+    "occur (keep the POSITIVE concept); NEVER mark a historical condition as absent. Use 'unknown' for "
+    "uncertain/possible mentions. Otherwise use 'present'.\n"
+    "- clinicalTerm: the standard SNOMED preferred term IN ENGLISH (map lay phrasing to formal "
+    "terminology, correct spelling, e.g. 'low platelet count' -> 'thrombocytopenia'). It MUST always be "
+    "the POSITIVE concept even when the mention is negated (e.g. 'no fever' -> 'fever').\n"
+    "- generalTerm: a broader English term dropping specific qualifiers (e.g. 'bilateral pelvic masses' "
+    "-> 'mass'). Positive concept, in English.\n"
+    "- language: the English name of the source language of 'text' (e.g. 'English', 'Spanish'). If the "
+    "note is not in English, keep 'text' verbatim in the source language but give clinicalTerm and "
+    "generalTerm in English.\n"
+    "- severity: one of mild | moderate | severe | null.\n"
+    "- laterality: one of left | right | bilateral | null.\n"
+    "Examples (note type is the category and context is the status — keep them separate): "
+    '"history of stroke" -> {"text":"stroke","type":"finding","context":"past"}; '
+    '"denies chest pain" -> {"text":"chest pain","type":"finding","context":"absent"}; '
+    '"CT of chest" -> {"text":"CT","type":"procedure","context":"present"}.\n'
+    "Return ONLY the JSON object, no prose."
+)
+
+
+def extract_entities(text: str, timeout: float = 180.0) -> list[dict]:
+    """Extract structured clinical entities from a free-text note via the LLM (JSON mode).
+    Returns the list of entity dicts (see EXTRACT_SYSTEM for the shape); best-effort: [] on error.
+    Each entity's `clinicalTerm` is the normalized English query for the hybrid engine, and `type`
+    maps to a hierarchy filter via TYPE_TO_HIERARCHY."""
+    try:
+        r = httpx.post(
+            f"{GEMMA_URL}/chat/completions",
+            json={
+                "model": GEMMA_MODEL,
+                "messages": [
+                    {"role": "system", "content": EXTRACT_SYSTEM},
+                    {"role": "user", "content": "Extract clinical entities from this note:\n" + text},
+                ],
+                "temperature": 0.0,
+                "max_tokens": 4000,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        content = r.json()["choices"][0]["message"]["content"]
+        data = json.loads(content)
+    except Exception:
+        return []
+    terms = data.get("terms", data) if isinstance(data, dict) else data
+    return terms if isinstance(terms, list) else []
+
+
 @lru_cache(maxsize=1)
 def get_reranker():
     from sentence_transformers import CrossEncoder
@@ -236,7 +327,8 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
         return results
     try:
         ce = get_reranker()
-        ce_scores = [float(s) for s in ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])]
+        with _infer_lock:   # serialize model inference (see embed_query)
+            ce_scores = [float(s) for s in ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])]
     except Exception:
         return None
     ce_norm = _minmax(ce_scores)

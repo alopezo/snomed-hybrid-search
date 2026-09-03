@@ -12,11 +12,20 @@ import os
 
 import json
 
-from fastapi import FastAPI, Query
+from fastapi import Body, FastAPI, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from api.search import gemma_expand, get_model, health, search, search_stream, warmup
+from api.search import (
+    TYPE_TO_HIERARCHY,
+    extract_entities,
+    gemma_expand,
+    get_model,
+    health,
+    search,
+    search_stream,
+    warmup,
+)
 
 app = FastAPI(title="SNOMED hybrid search")
 
@@ -63,6 +72,19 @@ def api_testcases():
             "procedure_root": PROCEDURE_ROOT,
         },
     }
+
+
+@app.post("/api/extract")
+def api_extract(text: str = Body(..., embed=True, min_length=1)):
+    """Extract structured clinical entities from a free-text note (one LLM call). The page then maps
+    each entity through /api/search. `type_filters` lets the page constrain each entity's search to the
+    matching SNOMED hierarchy (with a client-side fallback to no filter)."""
+    return {"entities": extract_entities(text), "type_filters": TYPE_TO_HIERARCHY}
+
+
+@app.get("/extract")
+def extract_page() -> FileResponse:
+    return FileResponse(os.path.join(DEMO_DIR, "extract.html"))
 
 
 @app.get("/api/search")

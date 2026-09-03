@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Clinical Entity Recognition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#212530; --inset:#14171d;
+    --ink:#e6e6e6; --muted:#9aa0aa; --line:#2b2f38;
+    --accent:#4f9cf9;
+    --finding:#4f9cf9; --procedure:#46c5cc; --medication:#e0a24d; --morphology:#b57be0; --body:#5bbd62;
+    --lex:#5bbd62; --sem:#b57be0; --both:#4f9cf9; --exact:#2bb8a5;
+    --pass:#5bbd62; --fail:#e5645a; --skip:#c9a24b;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 22px rgba(0,0,0,.28);
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; padding:clamp(20px,4vw,48px) 20px}
+  .wrap{max-width:1000px; margin:0 auto}
+  code{font-family:var(--mono); font-size:.9em}
+  a{color:var(--accent); text-decoration:none} a:hover{text-decoration:underline}
+
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 12px}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.5vw,42px); margin:0 0 10px; letter-spacing:-.01em}
+  .lede{color:var(--muted); font-size:15px; max-width:74ch; margin:0}
+  .lede b{color:var(--ink)}
+  .nav{margin-top:10px; font-size:13px}
+
+  /* input */
+  .panel{margin:24px 0 8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px}
+  textarea{width:100%; min-height:150px; resize:vertical; background:var(--inset); color:var(--ink);
+    border:1px solid var(--line); border-radius:8px; padding:12px 14px; font-family:var(--sans);
+    font-size:14px; line-height:1.55}
+  textarea:focus{outline:2px solid var(--accent); outline-offset:1px}
+  .controls{display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:12px}
+  button.run{font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; background:var(--accent);
+    border:none; border-radius:8px; padding:9px 18px; cursor:pointer}
+  button.run:disabled{opacity:.5; cursor:default}
+  label.tog{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer}
+  .health{font-family:var(--mono); font-size:12px; color:var(--muted); margin:0 0 4px}
+  .health b.ok{color:var(--pass)} .health b.off{color:var(--fail)}
+  #status{margin-left:auto; font-family:var(--mono); font-size:13px; color:var(--muted)}
+
+  h2.sec{font-size:16px; font-weight:600; margin:30px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+  h2.sec .n{font-family:var(--mono); font-size:12px; color:var(--muted); margin-right:8px}
+  h2.sec .cnt{font-family:var(--mono); font-size:12px; color:var(--muted); font-weight:400; margin-left:8px}
+
+  /* highlighted note */
+  .note{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px;
+    line-height:1.9; font-size:15px}
+  mark{background:transparent; color:inherit; padding:1px 1px; border-bottom:2px solid var(--c,var(--accent));
+    border-radius:2px; cursor:default}
+  mark:hover{background:color-mix(in srgb, var(--c,var(--accent)) 16%, transparent)}
+  mark.absent{border-bottom-style:dashed; text-decoration:line-through; text-decoration-color:var(--muted); opacity:.8}
+  mark.unknown{border-bottom-style:dotted}
+  mark.past{font-style:italic; opacity:.72}
+  .legend{display:flex; flex-wrap:wrap; gap:12px; margin:10px 2px 0; font-family:var(--mono); font-size:11px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:5px}
+  .legend i{width:16px; height:0; border-bottom:2px solid var(--c); display:inline-block}
+
+  /* entity cards */
+  .cards{display:flex; flex-direction:column; gap:10px}
+  .ent{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--c,var(--line));
+    border-radius:0 10px 10px 0; padding:13px 16px; display:flex; flex-direction:column; gap:8px}
+  .ent .top{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .ent .text{font-family:var(--mono); font-size:14px; color:var(--ink); font-weight:600}
+  .badge{font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.03em; padding:2px 8px;
+    border-radius:20px; text-transform:uppercase}
+  .badge.type{color:var(--c); border:1px solid color-mix(in srgb,var(--c) 40%,transparent)}
+  .badge.absent{color:var(--fail); border:1px solid color-mix(in srgb,var(--fail) 45%,transparent)}
+  .badge.unknown{color:var(--skip); border:1px solid color-mix(in srgb,var(--skip) 45%,transparent)}
+  .badge.past{color:var(--muted); border:1px solid var(--line)}
+  .chip{font-family:var(--mono); font-size:11px; color:var(--muted); border:1px solid var(--line);
+    border-radius:6px; padding:2px 7px}
+  .ent .open{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--accent);
+    border:1px solid var(--line); border-radius:6px; padding:3px 9px}
+  .ent .open:hover{border-color:var(--accent); text-decoration:none}
+  .clin{font-size:12.5px; color:var(--muted); font-family:var(--mono)}
+  .clin b{color:var(--ink)}
+  .match{display:flex; gap:8px; align-items:baseline; font-size:13.5px; border-top:1px dotted var(--line); padding-top:8px}
+  .match .lbl{flex:0 0 54px; font-family:var(--mono); font-size:10px; text-transform:uppercase; color:var(--muted); letter-spacing:.05em}
+  .match .val{flex:1; color:var(--ink)}
+  .match .val .cid{font-family:var(--mono); color:var(--muted); font-size:12px}
+  .match .val .miss{color:var(--fail)}
+  .match .val .searching{color:var(--muted)}
+  .cbadge{font-family:var(--mono); font-size:10px; font-weight:600; padding:1px 6px; border-radius:10px; color:#fff}
+  .cbadge.both{background:var(--both)} .cbadge.lexical{background:#2e7d32} .cbadge.semantic{background:#6a1b9a}
+  .relaxed{font-family:var(--mono); font-size:10.5px; color:var(--skip)}
+  .sc{font-family:var(--mono); font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums}
+
+  footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SNOMED CT hybrid search · entity recognition</p>
+  <h1>Clinical entity recognition</h1>
+  <p class="lede">Paste a free-text clinical note. The LLM extracts structured clinical entities
+    (findings, procedures, medications…) as JSON — with negation, laterality and English normalization —
+    and each entity is mapped to SNOMED CT through the <b>same hybrid engine</b>, using its normalized
+    <code>clinicalTerm</code> as the query and its <code>type</code> as a hierarchy filter.</p>
+  <p class="nav"><a href="/">‹ back to search</a> · <a href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a> · <a href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a></p>
+
+  <p class="health" id="health">checking API…</p>
+  <div class="panel">
+    <textarea id="note" spellcheck="false"></textarea>
+    <div class="controls">
+      <button class="run" id="run">Extract &amp; map</button>
+      <label class="tog"><input type="checkbox" id="rerank"> rerank each match</label>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <div id="out"></div>
+
+  <footer>One <code>POST /api/extract</code> (LLM, JSON mode) → per-entity <code>GET /api/search</code> (gemma off, type-filtered)</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const TYPE_COLOR = {finding:'var(--finding)', procedure:'var(--procedure)', medication:'var(--medication)',
+  'body structure':'var(--body)'};
+let TYPE_FILTERS = {};
+
+const SAMPLE = `An 80-year-old woman was admitted with pancytopenia. Five weeks earlier, nausea, vomiting, diarrhea, and no fever had developed. BP 92/52, pulse 55, platelets 43. CT revealed bilateral pelvic masses; a blood smear showed schistocytes. Antecedentes: EPOC e hipertensión. She is on metformin and atorvastatin.`;
+
+const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+// ---- highlighted note ----
+function highlightNote(note, entities){
+  // collect non-overlapping ranges of each entity's verbatim text (case-insensitive, first free slot)
+  const low = note.toLowerCase();
+  const ranges = [];
+  entities.forEach((e, idx) => {
+    const t = (e.text || '').trim(); if(!t) return;
+    let from = 0, i;
+    while((i = low.indexOf(t.toLowerCase(), from)) !== -1){ ranges.push({s:i, e:i+t.length, idx}); from = i + t.length; }
+  });
+  ranges.sort((a,b) => a.s - b.s || b.e - a.e);
+  const kept = []; let last = -1;
+  for(const r of ranges){ if(r.s >= last){ kept.push(r); last = r.e; } }
+  let html = '', pos = 0;
+  for(const r of kept){
+    html += esc(note.slice(pos, r.s));
+    const e = entities[r.idx];
+    const cls = e.context === 'absent' ? ' absent' : e.context === 'past' ? ' past'
+              : e.context === 'unknown' ? ' unknown' : '';
+    const col = TYPE_COLOR[e.type] || 'var(--accent)';
+    html += `<mark class="hl${cls}" style="--c:${col}" title="${esc(e.type||'')} · ${esc(e.clinicalTerm||'')}">${esc(note.slice(r.s, r.e))}</mark>`;
+    pos = r.e;
+  }
+  html += esc(note.slice(pos));
+  return html;
+}
+
+function legendHtml(){
+  return Object.entries(TYPE_COLOR).map(([t,c]) =>
+    `<span><i style="--c:${c}"></i>${t}</span>`).join('') +
+    `<span style="opacity:.7">— dashed strike = negated · italic = history</span>`;
+}
+
+// ---- per-entity search ----
+async function apiSearch(q, filter, rerank){
+  let url = `/api/search?q=${encodeURIComponent(q)}&k=5&gemma=false&rerank=${rerank}`;
+  if(filter != null) url += `&filter=${filter}`;
+  const r = await fetch(url); if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function searchHref(q, filter){
+  let h = `/?q=${encodeURIComponent(q)}&gemma=0&rerank=0`;
+  if(filter != null) h += `&filter=${filter}`;
+  return h;
+}
+
+async function mapEntity(e, card){
+  const q = (e.clinicalTerm || e.text || '').trim();
+  const valEl = card.querySelector('.match .val');
+  if(!q){ valEl.innerHTML = '<span class="miss">no query term</span>'; return; }
+  const filter = TYPE_FILTERS[e.type] ?? null;
+  try{
+    let res = await apiSearch(q, filter, $('#rerank').checked);
+    let relaxed = false;
+    if(filter != null && (!res.results || res.results.length === 0)){
+      res = await apiSearch(q, null, $('#rerank').checked); relaxed = true;   // fallback: type may be wrong
+    }
+    const top = res.results && res.results[0];
+    card.querySelector('.open').href = searchHref(q, relaxed ? null : filter);
+    if(!top){ valEl.innerHTML = '<span class="miss">no match</span>'; return; }
+    valEl.innerHTML =
+      `<b>${esc(top.fsn || top.matched_term)}</b> <span class="cid">${top.concept_id}</span> `
+      + `<span class="cbadge ${top.channel}">${top.channel}</span> <span class="sc">${top.score}</span>`
+      + (relaxed ? ` <span class="relaxed">· filter relaxed</span>` : '');
+  }catch(err){ valEl.innerHTML = `<span class="miss">error: ${esc(err.message)}</span>`; }
+}
+
+function entityCard(e){
+  const col = TYPE_COLOR[e.type] || 'var(--accent)';
+  const card = document.createElement('div');
+  card.className = 'ent'; card.style.setProperty('--c', col);
+  const chips = [];
+  if(e.severity) chips.push(`<span class="chip">${esc(e.severity)}</span>`);
+  if(e.laterality) chips.push(`<span class="chip">${esc(e.laterality)}</span>`);
+  if(e.language && e.language.toLowerCase() !== 'english') chips.push(`<span class="chip">${esc(e.language)}</span>`);
+  const ctx = e.context === 'absent' ? `<span class="badge absent">negated</span>`
+            : e.context === 'past' ? `<span class="badge past">history</span>`
+            : e.context === 'unknown' ? `<span class="badge unknown">uncertain</span>` : '';
+  card.innerHTML =
+    `<div class="top"><span class="text">${esc(e.text || '')}</span>`
+    + `<span class="badge type">${esc(e.type || '?')}</span>${ctx}${chips.join('')}`
+    + `<a class="open" target="_blank" rel="noopener" href="#">open in search ↗</a></div>`
+    + `<div class="clin">clinicalTerm → <b>${esc(e.clinicalTerm || e.text || '')}</b>`
+    + (e.generalTerm ? ` · general: ${esc(e.generalTerm)}` : '') + `</div>`
+    + `<div class="match"><span class="lbl">SNOMED</span><span class="val"><span class="searching">searching…</span></span></div>`;
+  return card;
+}
+
+async function run(){
+  const note = $('#note').value.trim();
+  if(!note){ return; }
+  const btn = $('#run'); btn.disabled = true;
+  $('#status').textContent = 'extracting entities (LLM)…';
+  $('#out').innerHTML = '';
+  let data;
+  try{
+    const r = await fetch('/api/extract', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({text: note})});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    data = await r.json();
+  }catch(err){
+    $('#status').textContent = '';
+    $('#out').innerHTML = `<p class="health"><b class="off">extraction failed</b> — ${esc(err.message)}</p>`;
+    btn.disabled = false; return;
+  }
+  TYPE_FILTERS = data.type_filters || {};
+  const entities = data.entities || [];
+  // Order entities by where they appear in the note, so the table matches the reading order of the
+  // highlighted text (the LLM does not guarantee document order).
+  const low = note.toLowerCase();
+  const posOf = e => { const i = low.indexOf((e.text || '').toLowerCase()); return i < 0 ? Infinity : i; };
+  entities.forEach((e, i) => e.__i = i);                          // stable tiebreak
+  entities.sort((a, b) => posOf(a) - posOf(b) || a.__i - b.__i);
+  $('#status').textContent = `${entities.length} entities · mapping…`;
+
+  const out = $('#out');
+  out.innerHTML =
+    `<h2 class="sec"><span class="n">01</span>Annotated note</h2>`
+    + `<div class="note">${highlightNote(note, entities)}</div><div class="legend">${legendHtml()}</div>`
+    + `<h2 class="sec"><span class="n">02</span>Entities<span class="cnt">${entities.length} extracted · each mapped via the hybrid engine</span></h2>`
+    + `<div class="cards" id="cards"></div>`;
+  const cards = $('#cards');
+  const pairs = entities.map(e => { const c = entityCard(e); cards.appendChild(c); return [e, c]; });
+  // Sequential: the embedding model is one shared instance on MPS — concurrent calls contend/stall.
+  // Each search is ~100 ms, so this fills the cards progressively in a couple of seconds.
+  let done = 0;
+  for(const [e, c] of pairs){ await mapEntity(e, c); $('#status').textContent = `mapped ${++done}/${entities.length}`; }
+  $('#status').textContent = `${entities.length} entities mapped`;
+  btn.disabled = false;
+}
+
+async function health(){
+  try{
+    const h = await fetch('/api/health').then(r => r.json());
+    $('#health').innerHTML =
+      `DB <b class="${h.db.ok?'ok':'off'}">${h.db.ok?'up':'down'}</b> · `
+      + `LLM <b class="${h.llm&&h.llm.ok?'ok':'off'}">${h.llm&&h.llm.ok?'up':'off'}</b> (${h.llm?h.llm.model:'—'}) · `
+      + `embeddings <b class="${h.embeddings.ok?'ok':'off'}">${h.embeddings.ok?'loaded':'—'}</b>`;
+  }catch(e){ $('#health').innerHTML = `<b class="off">API unreachable</b> — run <code>make up</code>`; }
+}
+
+$('#note').value = SAMPLE;
+$('#run').onclick = run;
+health();
+</script>
+</body>
+</html>
