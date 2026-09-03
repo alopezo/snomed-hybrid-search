@@ -42,12 +42,29 @@
   textarea:focus{outline:2px solid var(--accent); outline-offset:1px}
   .controls{display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:12px}
   button.run{font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; background:var(--accent);
-    border:none; border-radius:8px; padding:9px 18px; cursor:pointer}
+    border:2px solid transparent; border-radius:8px; padding:7px 16px; cursor:pointer; position:relative}
   button.run:disabled{opacity:.5; cursor:default}
+  /* modern "border beam": a conic gradient spinning around the button while it runs.
+     Uses @property to animate the gradient angle on the border-box (no stacking tricks). */
+  @property --beam{syntax:"<angle>"; initial-value:0deg; inherits:false}
+  button.run.running{opacity:1; cursor:progress; color:var(--muted); border:2px solid transparent;
+    background:linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
+      conic-gradient(from var(--beam), var(--finding), var(--procedure), var(--medication), var(--body), var(--accent), var(--finding)) border-box;
+    animation:beam 1.2s linear infinite}
+  @keyframes beam{to{--beam:360deg}}
+  /* multicolor mini ring spinner shown next to the status text */
+  .spin{width:14px; height:14px; border-radius:50%; display:inline-block; vertical-align:-3px; margin-right:7px;
+    background:conic-gradient(from 0deg, var(--finding), var(--procedure), var(--medication), var(--body), var(--finding));
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+            mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+    animation:spin .85s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .spin, button.run.running{animation:none} }
   label.tog{display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer}
   .health{font-family:var(--mono); font-size:12px; color:var(--muted); margin:0 0 4px}
   .health b.ok{color:var(--pass)} .health b.off{color:var(--fail)}
   #status{margin-left:auto; font-family:var(--mono); font-size:13px; color:var(--muted)}
+  #status b, .cnt b{color:var(--ink); font-weight:600}
 
   h2.sec{font-size:16px; font-weight:600; margin:30px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line)}
   h2.sec .n{font-family:var(--mono); font-size:12px; color:var(--muted); margin-right:8px}
@@ -134,6 +151,7 @@ let TYPE_FILTERS = {};
 const SAMPLE = `An 80-year-old woman was admitted with pancytopenia. Five weeks earlier, nausea, vomiting, diarrhea, and no fever had developed. BP 92/52, pulse 55, platelets 43. CT revealed bilateral pelvic masses; a blood smear showed schistocytes. Antecedentes: EPOC e hipertensión. She is on metformin and atorvastatin.`;
 
 const esc = s => s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const fmtMs = ms => ms >= 1000 ? (ms/1000).toFixed(1)+' s' : Math.round(ms)+' ms';
 
 // ---- highlighted note ----
 function highlightNote(note, entities){
@@ -226,8 +244,8 @@ function entityCard(e){
 async function run(){
   const note = $('#note').value.trim();
   if(!note){ return; }
-  const btn = $('#run'); btn.disabled = true;
-  $('#status').textContent = 'extracting entities (LLM)…';
+  const btn = $('#run'); btn.disabled = true; btn.classList.add('running');
+  $('#status').innerHTML = '<span class="spin"></span> extracting entities (LLM)…';
   $('#out').innerHTML = '';
   let data;
   try{
@@ -238,7 +256,7 @@ async function run(){
   }catch(err){
     $('#status').textContent = '';
     $('#out').innerHTML = `<p class="health"><b class="off">extraction failed</b> — ${esc(err.message)}</p>`;
-    btn.disabled = false; return;
+    btn.disabled = false; btn.classList.remove('running'); return;
   }
   TYPE_FILTERS = data.type_filters || {};
   const entities = data.entities || [];
@@ -254,16 +272,21 @@ async function run(){
   out.innerHTML =
     `<h2 class="sec"><span class="n">01</span>Annotated note</h2>`
     + `<div class="note">${highlightNote(note, entities)}</div><div class="legend">${legendHtml()}</div>`
-    + `<h2 class="sec"><span class="n">02</span>Entities<span class="cnt">${entities.length} extracted · each mapped via the hybrid engine</span></h2>`
+    + `<h2 class="sec"><span class="n">02</span>Entities<span class="cnt" id="ents-cnt">${entities.length} extracted · mapping…</span></h2>`
     + `<div class="cards" id="cards"></div>`;
   const cards = $('#cards');
   const pairs = entities.map(e => { const c = entityCard(e); cards.appendChild(c); return [e, c]; });
   // Sequential: the embedding model is one shared instance on MPS — concurrent calls contend/stall.
   // Each search is ~100 ms, so this fills the cards progressively in a couple of seconds.
+  const tMap = performance.now();
   let done = 0;
-  for(const [e, c] of pairs){ await mapEntity(e, c); $('#status').textContent = `mapped ${++done}/${entities.length}`; }
-  $('#status').textContent = `${entities.length} entities mapped`;
-  btn.disabled = false;
+  for(const [e, c] of pairs){ await mapEntity(e, c); $('#status').innerHTML = `<span class="spin"></span> mapped ${++done}/${entities.length}`; }
+  const mapMs = performance.now() - tMap;
+  const extractMs = data.extract_ms;
+  const times = `⏱ extract <b>${fmtMs(extractMs)}</b> · map <b>${fmtMs(mapMs)}</b>`;
+  $('#ents-cnt').innerHTML = `${entities.length} extracted · ${times}`;
+  $('#status').innerHTML = times;
+  btn.classList.remove('running'); btn.disabled = false;
 }
 
 async function health(){

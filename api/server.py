@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 
 import json
+import time
 
 from fastapi import Body, FastAPI, Query
 from fastapi.responses import FileResponse, StreamingResponse
@@ -79,7 +80,13 @@ def api_extract(text: str = Body(..., embed=True, min_length=1)):
     """Extract structured clinical entities from a free-text note (one LLM call). The page then maps
     each entity through /api/search. `type_filters` lets the page constrain each entity's search to the
     matching SNOMED hierarchy (with a client-side fallback to no filter)."""
-    return {"entities": extract_entities(text), "type_filters": TYPE_TO_HIERARCHY}
+    t0 = time.perf_counter()
+    entities = extract_entities(text)
+    return {
+        "entities": entities,
+        "type_filters": TYPE_TO_HIERARCHY,
+        "extract_ms": round((time.perf_counter() - t0) * 1000, 1),
+    }
 
 
 @app.get("/extract")
