@@ -5,4 +5,7 @@ models/
 data/
 *.pyc
 .pytest_cache/
+# downloaded gold-standard corpora (CC BY 4.0) — not committed
+validation/symptemist/
+validation/distemist/
 .DS_Store

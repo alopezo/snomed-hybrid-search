@@ -1,0 +1,5296 @@
+{
+  "summary": {
+    "corpus": "symptemist",
+    "n_files": 10,
+    "elapsed_s": 671.9,
+    "gold_mappable": 107,
+    "in_release": 98,
+    "hit_best": 21,
+    "hit_topk": 33,
+    "hit_best_hier": 39,
+    "hit_topk_hier": 51,
+    "recall_best_over_gold": 0.196,
+    "recall_topk_over_gold": 0.308,
+    "recall_best_over_in_release": 0.214,
+    "recall_topk_over_in_release": 0.337,
+    "recall_best_hier_over_gold": 0.364,
+    "recall_topk_hier_over_gold": 0.477,
+    "recall_best_hier_over_in_release": 0.398,
+    "recall_topk_hier_over_in_release": 0.52
+  },
+  "files": [
+    {
+      "file": "es-S0004-06142007000700013-1",
+      "gold_codes": [
+        "112630007",
+        "249321001",
+        "304229000",
+        "307133008",
+        "309088003",
+        "32958008",
+        "400957009",
+        "419099009",
+        "6096002",
+        "82525005",
+        "87290003",
+        "88936002"
+      ],
+      "gold_in_release": [
+        "112630007",
+        "249321001",
+        "304229000",
+        "307133008",
+        "309088003",
+        "32958008",
+        "400957009",
+        "419099009",
+        "6096002",
+        "82525005",
+        "87290003",
+        "88936002"
+      ],
+      "entities": [
+        {
+          "text": "insuficiencia respiratoria grave",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "severe respiratory failure",
+          "relaxed": false,
+          "best": "870590002",
+          "best_fsn": "Acute hypoxemic respiratory failure due to disease caused by severe acute respiratory syndrome coronavirus 2 (disorder)",
+          "topk": [
+            "870590002",
+            "65710008",
+            "409622000",
+            "373895009",
+            "711483003"
+          ]
+        },
+        {
+          "text": "Síndrome de Potter",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Potter syndrome",
+          "relaxed": false,
+          "best": "41962002",
+          "best_fsn": "Oligohydramnios sequence (disorder)",
+          "topk": [
+            "41962002",
+            "716740009",
+            "717824007",
+            "51626007",
+            "392481002"
+          ]
+        },
+        {
+          "text": "oligoamnios severo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "severe oligohydramnios",
+          "relaxed": false,
+          "best": "59566000",
+          "best_fsn": "Oligohydramnios (disorder)",
+          "topk": [
+            "59566000",
+            "1263727005",
+            "41962002",
+            "313017000",
+            "54213000"
+          ]
+        },
+        {
+          "text": "cesárea urgente",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "urgent cesarean section",
+          "relaxed": false,
+          "best": "274130007",
+          "best_fsn": "Emergency cesarean section (procedure)",
+          "topk": [
+            "274130007",
+            "236986001",
+            "177141003",
+            "236985002",
+            "11466000"
+          ]
+        },
+        {
+          "text": "Apgar 1/3/7",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "low Apgar score",
+          "relaxed": false,
+          "best": "302083008",
+          "best_fsn": "Finding of Apgar score (finding)",
+          "topk": [
+            "302083008",
+            "77714001",
+            "39910003",
+            "43610007",
+            "49544001"
+          ]
+        },
+        {
+          "text": "tonalidad subcianótica",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cyanosis",
+          "relaxed": false,
+          "best": "3415004",
+          "best_fsn": "Cyanosis (finding)",
+          "topk": [
+            "3415004",
+            "95837007",
+            "84906002",
+            "119419001",
+            "95442007"
+          ]
+        },
+        {
+          "text": "facies triangular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "triangular facies",
+          "relaxed": false,
+          "best": "248200007",
+          "best_fsn": "Dysmorphic facies (finding)",
+          "topk": [
+            "248200007",
+            "69288002",
+            "49630000",
+            "24814002",
+            "398302004"
+          ]
+        },
+        {
+          "text": "hendiduras parpebrales mongoloides",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mongolian eyelid folds",
+          "relaxed": false,
+          "best": "421191008",
+          "best_fsn": "Asian eyelid (finding)",
+          "topk": [
+            "421191008",
+            "1217653006",
+            "47704002",
+            "33168009",
+            "441963008"
+          ]
+        },
+        {
+          "text": "micrognatia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "micrognathia",
+          "relaxed": false,
+          "best": "32958008",
+          "best_fsn": "Congenital micrognathism (disorder)",
+          "topk": [
+            "32958008",
+            "723018003",
+            "27299009",
+            "35031005",
+            "4602007"
+          ]
+        },
+        {
+          "text": "raiz nasal ancha",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "broad nasal root",
+          "relaxed": false,
+          "best": "249327002",
+          "best_fsn": "Broad nasal tip (finding)",
+          "topk": [
+            "249327002",
+            "1119562007",
+            "1119563002",
+            "1119557006",
+            "399353008"
+          ]
+        },
+        {
+          "text": "occipucio prominente",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "prominent occipitus",
+          "relaxed": false,
+          "best": "92908003",
+          "best_fsn": "Congenital abnormal shape of exoccipital bone (disorder)",
+          "topk": [
+            "92908003",
+            "1365888008",
+            "93002006",
+            "12138000",
+            "48069004"
+          ]
+        },
+        {
+          "text": "masas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass",
+          "relaxed": false,
+          "best": "300848003",
+          "best_fsn": "Mass of body structure (finding)",
+          "topk": [
+            "300848003",
+            "441845009",
+            "443607001",
+            "309529002",
+            "440299000"
+          ]
+        },
+        {
+          "text": "fosas renales",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "renal fossae",
+          "relaxed": false,
+          "best": "58223001",
+          "best_fsn": "Renal area cribrosa structure (body structure)",
+          "topk": [
+            "58223001",
+            "66558008",
+            "363530009",
+            "74033008",
+            "54018001"
+          ]
+        },
+        {
+          "text": "hemiabdomenes",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "abdominal hemisides",
+          "relaxed": false,
+          "best": "818984009",
+          "best_fsn": "Structure of abdominopelvic cavity and/or intra-abdominopelvic content and/or anterior abdominal wall excluding intra-pelvic structure of true pelvis (body structure)",
+          "topk": [
+            "818984009",
+            "818985005",
+            "243960002",
+            "818983003",
+            "422314007"
+          ]
+        },
+        {
+          "text": "quistes",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cysts",
+          "relaxed": false,
+          "best": "37075008",
+          "best_fsn": "Peripheral cystoid degeneration of retina of eye (disorder)",
+          "topk": [
+            "37075008",
+            "253883006",
+            "275505006",
+            "373599008",
+            "441457006"
+          ]
+        },
+        {
+          "text": "riñón",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "kidney",
+          "relaxed": false,
+          "best": "64033007",
+          "best_fsn": "Kidney structure (body structure)",
+          "topk": [
+            "64033007",
+            "119219003",
+            "181414000",
+            "9846003",
+            "18639004"
+          ]
+        },
+        {
+          "text": "pulmones derecho e izquierdo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right and left lungs",
+          "relaxed": false,
+          "best": "74101002",
+          "best_fsn": "Both lungs (body structure)",
+          "topk": [
+            "74101002",
+            "110736001",
+            "44029006",
+            "110549009",
+            "3341006"
+          ]
+        },
+        {
+          "text": "elevación diafragmática",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "diaphragmatic elevation",
+          "relaxed": false,
+          "best": "88936002",
+          "best_fsn": "Elevated diaphragm (disorder)",
+          "topk": [
+            "88936002",
+            "21524000",
+            "62828005",
+            "34168003",
+            "57591009"
+          ]
+        },
+        {
+          "text": "alteraciones posicionales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "positional abnormalities",
+          "relaxed": false,
+          "best": "282868001",
+          "best_fsn": "Difficulty conforming to a position (finding)",
+          "topk": [
+            "282868001",
+            "282865003",
+            "9851009",
+            "43029002",
+            "272525001"
+          ]
+        },
+        {
+          "text": "estudio histológico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "histologic examination",
+          "relaxed": false,
+          "best": "714797009",
+          "best_fsn": "Histologic test (procedure)",
+          "topk": [
+            "714797009",
+            "252416005",
+            "108257001",
+            "113041004",
+            "116783008"
+          ]
+        },
+        {
+          "text": "quistes de distintos tamaños",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cysts of varying sizes",
+          "relaxed": false,
+          "best": "441457006",
+          "best_fsn": "Cyst (disorder)",
+          "topk": [
+            "441457006",
+            "369746007",
+            "419893006",
+            "89988002",
+            "285302001"
+          ]
+        },
+        {
+          "text": "epitelio simple",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "simple epithelium",
+          "relaxed": false,
+          "best": "250441008",
+          "best_fsn": "Epithelial cells present (finding)",
+          "topk": [
+            "250441008",
+            "421059009",
+            "15735521000119108",
+            "1367690006",
+            "15735481000119108"
+          ]
+        },
+        {
+          "text": "hígado",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "liver",
+          "relaxed": false,
+          "best": "10200004",
+          "best_fsn": "Liver structure (body structure)",
+          "topk": [
+            "10200004",
+            "119216005",
+            "181268008",
+            "277955006",
+            "1344872009"
+          ]
+        },
+        {
+          "text": "proliferación y dilatación",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "proliferation and dilation",
+          "relaxed": false,
+          "best": "15454001",
+          "best_fsn": "Increased size (finding)",
+          "topk": [
+            "15454001",
+            "55342001",
+            "1179759008",
+            "51381009",
+            "89977008"
+          ]
+        },
+        {
+          "text": "ductos biliares",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "bile ducts",
+          "relaxed": false,
+          "best": "110617004",
+          "best_fsn": "Gallbladder and bile ducts (combined site) (body structure)",
+          "topk": [
+            "110617004",
+            "110618009",
+            "110616008",
+            "28273000",
+            "34707002"
+          ]
+        },
+        {
+          "text": "enfermedad poliquística renal autosómica recesiva infantil",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "autosomal recessive infantile polycystic kidney disease",
+          "relaxed": false,
+          "best": "28770003",
+          "best_fsn": "Polycystic kidney disease, infantile type (disorder)",
+          "topk": [
+            "28770003",
+            "253880009",
+            "82525005",
+            "765330003",
+            "253878003"
+          ]
+        }
+      ],
+      "hit_best": [
+        "32958008",
+        "88936002"
+      ],
+      "hit_topk": [
+        "32958008",
+        "82525005",
+        "88936002"
+      ],
+      "hit_best_hier": [
+        "112630007",
+        "309088003",
+        "32958008",
+        "82525005",
+        "87290003",
+        "88936002"
+      ],
+      "hit_topk_hier": [
+        "112630007",
+        "249321001",
+        "304229000",
+        "309088003",
+        "32958008",
+        "82525005",
+        "87290003",
+        "88936002"
+      ],
+      "recall_best": 0.167,
+      "recall_topk": 0.25,
+      "recall_best_hier": 0.5,
+      "recall_topk_hier": 0.667
+    },
+    {
+      "file": "es-S0004-06142007000700015-1",
+      "gold_codes": [
+        "163352001",
+        "167568007",
+        "168856006",
+        "237783006",
+        "249274008",
+        "251979003",
+        "253883006",
+        "31462008",
+        "711376006",
+        "7358000",
+        "87557004"
+      ],
+      "gold_in_release": [
+        "163352001",
+        "167568007",
+        "168856006",
+        "237783006",
+        "249274008",
+        "251979003",
+        "253883006",
+        "711376006",
+        "7358000",
+        "87557004"
+      ],
+      "entities": [
+        {
+          "text": "síndrome miccional",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "voiding dysfunction",
+          "relaxed": false,
+          "best": "252030006",
+          "best_fsn": "Dysfunctional voiding of urine (finding)",
+          "topk": [
+            "252030006",
+            "102835006",
+            "236632007",
+            "38671000119103",
+            "40492006"
+          ]
+        },
+        {
+          "text": "polaquiuria",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "frequent urination",
+          "relaxed": false,
+          "best": "162116003",
+          "best_fsn": "Increased frequency of urination (finding)",
+          "topk": [
+            "162116003",
+            "274734008",
+            "300471006",
+            "405234008",
+            "249291007"
+          ]
+        },
+        {
+          "text": "urgencia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "urgency (incontinence)",
+          "relaxed": false,
+          "best": "142251000119102",
+          "best_fsn": "Fecal incontinence with fecal urgency (finding)",
+          "topk": [
+            "142251000119102",
+            "48340000",
+            "87557004",
+            "165232002",
+            "129847007"
+          ]
+        },
+        {
+          "text": "escapes urinario",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "urinary incontinence",
+          "relaxed": false,
+          "best": "165232002",
+          "best_fsn": "Urinary incontinence (finding)",
+          "topk": [
+            "165232002",
+            "129847007",
+            "87557004",
+            "1144946004",
+            "129853007"
+          ]
+        },
+        {
+          "text": "urocultivo",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "urine culture",
+          "relaxed": false,
+          "best": "117010004",
+          "best_fsn": "Urine culture (procedure)",
+          "topk": [
+            "117010004",
+            "117011000",
+            "309470003",
+            "104194007",
+            "117014008"
+          ]
+        },
+        {
+          "text": "anticolinérgicos",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "anticholinergics",
+          "relaxed": false,
+          "best": "764138006",
+          "best_fsn": "Product containing muscarinic receptor agonist (product)",
+          "topk": [
+            "764138006",
+            "14601000",
+            "26244009",
+            "19581007",
+            "420383004"
+          ]
+        },
+        {
+          "text": "cistografía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "cystography",
+          "relaxed": false,
+          "best": "168854009",
+          "best_fsn": "Cystography with contrast (procedure)",
+          "topk": [
+            "168854009",
+            "169146001",
+            "1380329003",
+            "418135007",
+            "711227002"
+          ]
+        },
+        {
+          "text": "ecografía renovesical",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "renal and bladder ultrasound",
+          "relaxed": false,
+          "best": "1076851000000101",
+          "best_fsn": "Ultrasonography of kidney and bladder (procedure)",
+          "topk": [
+            "1076851000000101",
+            "1345060009",
+            "241481001",
+            "306005",
+            "1334074007"
+          ]
+        },
+        {
+          "text": "imágenes quísticas parapiélicas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "paravertebral cystic lesions",
+          "relaxed": false,
+          "best": "1144247000",
+          "best_fsn": "Neurenteric cyst of spine (disorder)",
+          "topk": [
+            "1144247000",
+            "193073001",
+            "277339005",
+            "253163008",
+            "446495002"
+          ]
+        },
+        {
+          "text": "vejiga",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "bladder",
+          "relaxed": false,
+          "best": "89837001",
+          "best_fsn": "Urinary bladder structure (body structure)",
+          "topk": [
+            "89837001",
+            "119221008",
+            "279400008",
+            "302512001",
+            "48367006"
+          ]
+        },
+        {
+          "text": "TAC-abdominal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "abdominal CT scan",
+          "relaxed": false,
+          "best": "169070004",
+          "best_fsn": "Computed tomography of abdomen (procedure)",
+          "topk": [
+            "169070004",
+            "715249004",
+            "712816007",
+            "719485007",
+            "715293004"
+          ]
+        },
+        {
+          "text": "quiste parapiélico",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "paravertebral cyst",
+          "relaxed": false,
+          "best": "1144247000",
+          "best_fsn": "Neurenteric cyst of spine (disorder)",
+          "topk": [
+            "1144247000",
+            "193073001",
+            "277339005",
+            "253163008",
+            "446495002"
+          ]
+        },
+        {
+          "text": "riñón derecho",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right kidney",
+          "relaxed": false,
+          "best": "9846003",
+          "best_fsn": "Right kidney structure (body structure)",
+          "topk": [
+            "9846003",
+            "362208000",
+            "1119324008",
+            "1268766000",
+            "119279008"
+          ]
+        },
+        {
+          "text": "masa hipodensa suprarrenal derecha",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hypodense adrenal mass",
+          "relaxed": false,
+          "best": "237783006",
+          "best_fsn": "Mass of adrenal gland (finding)",
+          "topk": [
+            "237783006",
+            "255036008",
+            "874912007",
+            "97881000119105",
+            "91967007"
+          ]
+        },
+        {
+          "text": "resonancia magnética",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "MRI",
+          "relaxed": false,
+          "best": "113091000",
+          "best_fsn": "Magnetic resonance imaging (procedure)",
+          "topk": [
+            "113091000",
+            "1373820000",
+            "51619007",
+            "241663008",
+            "816077007"
+          ]
+        },
+        {
+          "text": "glándula suprarrenal",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "adrenal gland",
+          "relaxed": false,
+          "best": "23451007",
+          "best_fsn": "Adrenal structure (body structure)",
+          "topk": [
+            "23451007",
+            "181127006",
+            "280081000",
+            "29392005",
+            "280079002"
+          ]
+        },
+        {
+          "text": "lesión quística lobulada",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "lobulated cystic lesion",
+          "relaxed": false,
+          "best": "369746007",
+          "best_fsn": "Cystic tumor configuration (finding)",
+          "topk": [
+            "369746007",
+            "396877008",
+            "419893006",
+            "441457006",
+            "275504005"
+          ]
+        },
+        {
+          "text": "septos",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "septa",
+          "relaxed": false,
+          "best": "253273004",
+          "best_fsn": "Cardiac septal defects (disorder)",
+          "topk": [
+            "253273004",
+            "79009004",
+            "80142000",
+            "30288003",
+            "313255002"
+          ]
+        },
+        {
+          "text": "riñón derecho",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right kidney",
+          "relaxed": false,
+          "best": "9846003",
+          "best_fsn": "Right kidney structure (body structure)",
+          "topk": [
+            "9846003",
+            "362208000",
+            "1119324008",
+            "1268766000",
+            "119279008"
+          ]
+        },
+        {
+          "text": "lesión de características similares",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "similar lesion",
+          "relaxed": false,
+          "best": "129736006",
+          "best_fsn": "Irregular shaped lesion (finding)",
+          "topk": [
+            "129736006",
+            "129733003",
+            "300577008",
+            "129738007",
+            "129742005"
+          ]
+        },
+        {
+          "text": "celda renal izquierda",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left kidney",
+          "relaxed": false,
+          "best": "18639004",
+          "best_fsn": "Left kidney structure (body structure)",
+          "topk": [
+            "18639004",
+            "362209008",
+            "1119325009",
+            "1268765001",
+            "1332103004"
+          ]
+        },
+        {
+          "text": "linfangioma renal bilateral",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "bilateral renal lymphangioma",
+          "relaxed": false,
+          "best": "15957661000119104",
+          "best_fsn": "Benign neoplasm of bilateral kidneys (disorder)",
+          "topk": [
+            "15957661000119104",
+            "15638291000119105",
+            "16697291000119100",
+            "15959261000119108",
+            "204950001"
+          ]
+        },
+        {
+          "text": "síntomatologia miccional",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "voiding symptoms",
+          "relaxed": false,
+          "best": "249274008",
+          "best_fsn": "Urinary symptoms (finding)",
+          "topk": [
+            "249274008",
+            "307541003",
+            "75088002",
+            "16844001",
+            "49650001"
+          ]
+        },
+        {
+          "text": "lesión renal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "renal lesion",
+          "relaxed": false,
+          "best": "79131000119100",
+          "best_fsn": "Kidney lesion (disorder)",
+          "topk": [
+            "79131000119100",
+            "767094002",
+            "897175000",
+            "90708001",
+            "249578005"
+          ]
+        }
+      ],
+      "hit_best": [
+        "237783006",
+        "249274008"
+      ],
+      "hit_topk": [
+        "237783006",
+        "249274008",
+        "87557004"
+      ],
+      "hit_best_hier": [
+        "237783006",
+        "249274008",
+        "253883006",
+        "87557004"
+      ],
+      "hit_topk_hier": [
+        "237783006",
+        "249274008",
+        "253883006",
+        "87557004"
+      ],
+      "recall_best": 0.182,
+      "recall_topk": 0.273,
+      "recall_best_hier": 0.364,
+      "recall_topk_hier": 0.364
+    },
+    {
+      "file": "es-S0004-06142007000900011-1",
+      "gold_codes": [
+        "162052001",
+        "285387005",
+        "300848003",
+        "385494008",
+        "722998005",
+        "93457003"
+      ],
+      "gold_in_release": [
+        "162052001",
+        "285387005",
+        "300848003",
+        "385494008",
+        "722998005",
+        "93457003"
+      ],
+      "entities": [
+        {
+          "text": "hemorragia digestiva alta",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "gastrointestinal hemorrhage",
+          "relaxed": false,
+          "best": "74474003",
+          "best_fsn": "Gastrointestinal hemorrhage (disorder)",
+          "topk": [
+            "74474003",
+            "87763006",
+            "27719009",
+            "37372002",
+            "83628005"
+          ]
+        },
+        {
+          "text": "accidente isquémico transitorio",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "transient ischemic attack",
+          "relaxed": false,
+          "best": "266257000",
+          "best_fsn": "Transient ischemic attack (disorder)",
+          "topk": [
+            "266257000",
+            "444172003",
+            "230716006",
+            "710575003",
+            "230717002"
+          ]
+        },
+        {
+          "text": "trifusal",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "tranexamic acid",
+          "relaxed": false,
+          "best": "109006003",
+          "best_fsn": "Product containing tranexamic acid (medicinal product)",
+          "topk": [
+            "109006003",
+            "777821001",
+            "1193588009",
+            "319861004",
+            "714122002"
+          ]
+        },
+        {
+          "text": "dolor en hemiabdomen izquierdo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "left lower abdominal pain",
+          "relaxed": false,
+          "best": "707597009",
+          "best_fsn": "Continuous abdominal pain of left lower quadrant (finding)",
+          "topk": [
+            "707597009",
+            "301716002",
+            "439774009",
+            "285387005",
+            "54586004"
+          ]
+        },
+        {
+          "text": "cortejo vegetativo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "autonomic dysfunction",
+          "relaxed": false,
+          "best": "230659005",
+          "best_fsn": "Segmental autonomic dysfunction (disorder)",
+          "topk": [
+            "230659005",
+            "231517009",
+            "230665005",
+            "268650001",
+            "230666006"
+          ]
+        },
+        {
+          "text": "tensión arterial",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "blood pressure",
+          "relaxed": false,
+          "best": "392570002",
+          "best_fsn": "Blood pressure finding (finding)",
+          "topk": [
+            "392570002",
+            "129899009",
+            "251080003",
+            "271645000",
+            "38936003"
+          ]
+        },
+        {
+          "text": "dolor en fosa ilíaca izquierda",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "left lower quadrant pain",
+          "relaxed": false,
+          "best": "301716002",
+          "best_fsn": "Left lower quadrant pain (finding)",
+          "topk": [
+            "301716002",
+            "707597009",
+            "439774009",
+            "54586004",
+            "301754002"
+          ]
+        },
+        {
+          "text": "electrocardiograma",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "electrocardiogram",
+          "relaxed": false,
+          "best": "29303009",
+          "best_fsn": "Electrocardiographic procedure (procedure)",
+          "topk": [
+            "29303009",
+            "70878000",
+            "65331008",
+            "268400002",
+            "34405006"
+          ]
+        },
+        {
+          "text": "radiografía simple de tórax",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "chest X-ray",
+          "relaxed": false,
+          "best": "399208008",
+          "best_fsn": "Plain X-ray of chest (procedure)",
+          "topk": [
+            "399208008",
+            "169037009",
+            "413815006",
+            "1295279000",
+            "171229005"
+          ]
+        },
+        {
+          "text": "tomografía computarizada de abdomen",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "computed tomography of the abdomen",
+          "relaxed": false,
+          "best": "169070004",
+          "best_fsn": "Computed tomography of abdomen (procedure)",
+          "topk": [
+            "169070004",
+            "715249004",
+            "712816007",
+            "719485007",
+            "715293004"
+          ]
+        },
+        {
+          "text": "hematoma",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hematoma",
+          "relaxed": false,
+          "best": "385494008",
+          "best_fsn": "Hematoma (disorder)",
+          "topk": [
+            "385494008",
+            "262559001",
+            "239160006",
+            "5309003",
+            "274179004"
+          ]
+        },
+        {
+          "text": "suprarrenal izquierda",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left adrenal gland",
+          "relaxed": false,
+          "best": "12003004",
+          "best_fsn": "Structure of left adrenal gland (body structure)",
+          "topk": [
+            "12003004",
+            "281626000",
+            "782889000",
+            "116212008",
+            "1145340007"
+          ]
+        },
+        {
+          "text": "HTA",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hypertension",
+          "relaxed": false,
+          "best": "38341003",
+          "best_fsn": "Hypertensive disorder, systemic arterial (disorder)",
+          "topk": [
+            "38341003",
+            "31992008",
+            "234072000",
+            "59621000",
+            "429198000"
+          ]
+        },
+        {
+          "text": "analgésicos",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "analgesics",
+          "relaxed": false,
+          "best": "90332006",
+          "best_fsn": "Product containing paracetamol (medicinal product)",
+          "topk": [
+            "90332006",
+            "360204007",
+            "350305008",
+            "85063003",
+            "414984009"
+          ]
+        },
+        {
+          "text": "antagonistas del calcio",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "calcium channel blockers",
+          "relaxed": false,
+          "best": "48698004",
+          "best_fsn": "Product containing calcium channel blocker (product)",
+          "topk": [
+            "48698004",
+            "415151000",
+            "782817006",
+            "782818001",
+            "409390007"
+          ]
+        },
+        {
+          "text": "inhibidores de la enzima convertidora de la angiotensina II",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "ACE inhibitors",
+          "relaxed": false,
+          "best": "41549009",
+          "best_fsn": "Product containing angiotensin-converting enzyme inhibitor (product)",
+          "topk": [
+            "41549009",
+            "407314008",
+            "426230004",
+            "96308008",
+            "346312000"
+          ]
+        },
+        {
+          "text": "nitroprusiato",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "nitropress",
+          "relaxed": false,
+          "best": "8163008",
+          "best_fsn": "Product containing nitroprusside (medicinal product)",
+          "topk": [
+            "8163008",
+            "409378005",
+            "388185005",
+            "71759000",
+            "767123001"
+          ]
+        },
+        {
+          "text": "labetalol",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "labetalol",
+          "relaxed": false,
+          "best": "46547007",
+          "best_fsn": "Product containing labetalol (medicinal product)",
+          "topk": [
+            "46547007",
+            "772543008",
+            "772542003",
+            "776454004",
+            "318446004"
+          ]
+        },
+        {
+          "text": "crisis hipertensiva",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hypertensive crisis",
+          "relaxed": false,
+          "best": "706882009",
+          "best_fsn": "Hypertensive crisis (disorder)",
+          "topk": [
+            "706882009",
+            "132721000119104",
+            "38341003",
+            "449759005",
+            "443482000"
+          ]
+        },
+        {
+          "text": "metanefrinas plasmáticas",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "plasma metanephrines",
+          "relaxed": false,
+          "best": "788327001",
+          "best_fsn": "Product containing adrenal medulla hormone (product)",
+          "topk": [
+            "788327001",
+            "772596004",
+            "41015006",
+            "1236757000",
+            "6067003"
+          ]
+        },
+        {
+          "text": "catecolaminas",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "catecholamines",
+          "relaxed": false,
+          "best": "766970009",
+          "best_fsn": "Product containing catecholamine (product)",
+          "topk": [
+            "766970009",
+            "111130009",
+            "764374006",
+            "86308005",
+            "65502005"
+          ]
+        },
+        {
+          "text": "metanefrina",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "metanephrine",
+          "relaxed": false,
+          "best": "41015006",
+          "best_fsn": "Product containing metaraminol (medicinal product)",
+          "topk": [
+            "41015006",
+            "788327001",
+            "766970009",
+            "704988006",
+            "111130009"
+          ]
+        },
+        {
+          "text": "adrenalina",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "epinephrine",
+          "relaxed": false,
+          "best": "65502005",
+          "best_fsn": "Product containing epinephrine (medicinal product)",
+          "topk": [
+            "65502005",
+            "349935009",
+            "771897001",
+            "430356009",
+            "768881002"
+          ]
+        },
+        {
+          "text": "noradrenalina",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "norepinephrine",
+          "relaxed": false,
+          "best": "111130009",
+          "best_fsn": "Product containing norepinephrine (medicinal product)",
+          "topk": [
+            "111130009",
+            "772650002",
+            "776939000",
+            "780029005",
+            "1145295003"
+          ]
+        },
+        {
+          "text": "normetanefrina",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "normetanephrine",
+          "relaxed": false,
+          "best": "111130009",
+          "best_fsn": "Product containing norepinephrine (medicinal product)",
+          "topk": [
+            "111130009",
+            "704988006",
+            "766970009",
+            "41015006",
+            "788327001"
+          ]
+        },
+        {
+          "text": "suprarrenalectomía unilateral",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "unilateral adrenalectomy",
+          "relaxed": false,
+          "best": "367531007",
+          "best_fsn": "Total adrenalectomy (procedure)",
+          "topk": [
+            "367531007",
+            "33756006",
+            "31904001",
+            "63151000146108",
+            "726488007"
+          ]
+        },
+        {
+          "text": "masa encapsulada",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "encapsulated mass",
+          "relaxed": false,
+          "best": "409767000",
+          "best_fsn": "Tumor contained within organ capsule (finding)",
+          "topk": [
+            "409767000",
+            "300848003",
+            "248528002",
+            "129733003",
+            "396875000"
+          ]
+        },
+        {
+          "text": "necrosis hemorrágica",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hemorrhagic necrosis",
+          "relaxed": false,
+          "best": "197364000",
+          "best_fsn": "Central hemorrhagic necrosis of liver (disorder)",
+          "topk": [
+            "197364000",
+            "31841001",
+            "1366725006",
+            "609410002",
+            "372070002"
+          ]
+        }
+      ],
+      "hit_best": [
+        "385494008"
+      ],
+      "hit_topk": [
+        "285387005",
+        "300848003",
+        "385494008"
+      ],
+      "hit_best_hier": [
+        "162052001",
+        "285387005",
+        "385494008"
+      ],
+      "hit_topk_hier": [
+        "162052001",
+        "285387005",
+        "300848003",
+        "385494008"
+      ],
+      "recall_best": 0.167,
+      "recall_topk": 0.5,
+      "recall_best_hier": 0.5,
+      "recall_topk_hier": 0.667
+    },
+    {
+      "file": "es-S0004-06142007000900013-1",
+      "gold_codes": [
+        "276331001",
+        "276412008",
+        "300483008",
+        "300493001",
+        "64882008",
+        "788918005",
+        "823012003"
+      ],
+      "gold_in_release": [
+        "276331001",
+        "276412008",
+        "300483008",
+        "300493001",
+        "788918005",
+        "823012003"
+      ],
+      "entities": [
+        {
+          "text": "hemiescroto izquierdo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left hemiscrotum",
+          "relaxed": false,
+          "best": "734761008",
+          "best_fsn": "Structure of left hemiscrotum (body structure)",
+          "topk": [
+            "734761008",
+            "734762001",
+            "31156008",
+            "362603002",
+            "362683004"
+          ]
+        },
+        {
+          "text": "color violáceo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "purple discoloration",
+          "relaxed": false,
+          "best": "47415006",
+          "best_fsn": "Abnormal color (finding)",
+          "topk": [
+            "47415006",
+            "107650008",
+            "402605003",
+            "247706003",
+            "247438007"
+          ]
+        },
+        {
+          "text": "llanto inconsolable",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "infant crying",
+          "relaxed": false,
+          "best": "162214009",
+          "best_fsn": "Crying infant (finding)",
+          "topk": [
+            "162214009",
+            "788918005",
+            "766877008",
+            "12161000119107",
+            "766878003"
+          ]
+        },
+        {
+          "text": "fiebre",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "fever",
+          "relaxed": false,
+          "best": "386661006",
+          "best_fsn": "Fever (finding)",
+          "topk": [
+            "386661006",
+            "271751000",
+            "102496004",
+            "240513003",
+            "248447001"
+          ]
+        },
+        {
+          "text": "hemiescroto izquierdo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left hemiscrotum",
+          "relaxed": false,
+          "best": "734761008",
+          "best_fsn": "Structure of left hemiscrotum (body structure)",
+          "topk": [
+            "734761008",
+            "734762001",
+            "31156008",
+            "362603002",
+            "362683004"
+          ]
+        },
+        {
+          "text": "doloroso a la manipulación",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "pain to palpation",
+          "relaxed": false,
+          "best": "865987004",
+          "best_fsn": "Pain on tooth palpation (finding)",
+          "topk": [
+            "865987004",
+            "247348008",
+            "29695002",
+            "301386009",
+            "22253000"
+          ]
+        },
+        {
+          "text": "color rojo vinoso",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "reddish discoloration",
+          "relaxed": false,
+          "best": "47415006",
+          "best_fsn": "Abnormal color (finding)",
+          "topk": [
+            "47415006",
+            "107650008",
+            "3253007",
+            "276697006",
+            "365623006"
+          ]
+        },
+        {
+          "text": "hemograma",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "complete blood count",
+          "relaxed": false,
+          "best": "26604007",
+          "best_fsn": "Complete blood count (procedure)",
+          "topk": [
+            "26604007",
+            "43789009",
+            "35774004",
+            "104093004",
+            "9564003"
+          ]
+        },
+        {
+          "text": "bioquímica",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "biochemistry profile",
+          "relaxed": false,
+          "best": "412890008",
+          "best_fsn": "Biochemical test battery (procedure)",
+          "topk": [
+            "412890008",
+            "275711006",
+            "314071004",
+            "166312007",
+            "866146005"
+          ]
+        },
+        {
+          "text": "estudio de coagulación",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "coagulation studies",
+          "relaxed": false,
+          "best": "395216006",
+          "best_fsn": "Advanced coagulation studies (procedure)",
+          "topk": [
+            "395216006",
+            "879007",
+            "39230005",
+            "3116009",
+            "250368009"
+          ]
+        },
+        {
+          "text": "ecografía escrotal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "scrotal ultrasound",
+          "relaxed": false,
+          "best": "1220587009",
+          "best_fsn": "Ultrasonography of scrotum (procedure)",
+          "topk": [
+            "1220587009",
+            "24737001",
+            "303918003",
+            "1220576001",
+            "1220592006"
+          ]
+        },
+        {
+          "text": "teste derecho",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right testis",
+          "relaxed": false,
+          "best": "15598003",
+          "best_fsn": "Structure of right testis (body structure)",
+          "topk": [
+            "15598003",
+            "367719007",
+            "1365724001",
+            "1217281007",
+            "735181008"
+          ]
+        },
+        {
+          "text": "teste izquierdo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left testis",
+          "relaxed": false,
+          "best": "63239009",
+          "best_fsn": "Structure of left testis (body structure)",
+          "topk": [
+            "63239009",
+            "1365725000",
+            "367720001",
+            "1217282000",
+            "735180009"
+          ]
+        },
+        {
+          "text": "zona anecoica",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "anechoic area",
+          "relaxed": false,
+          "best": "19189001",
+          "best_fsn": "Forepleasure (finding)",
+          "topk": [
+            "19189001",
+            "772128004",
+            "73804003",
+            "60564007",
+            "2583009"
+          ]
+        },
+        {
+          "text": "necrosis",
+          "type": "finding",
+          "context": "unknown",
+          "clinicalTerm": "necrosis",
+          "relaxed": false,
+          "best": "1366725006",
+          "best_fsn": "Tissue necrosis (disorder)",
+          "topk": [
+            "1366725006",
+            "95347000",
+            "397758007",
+            "7159003",
+            "609410002"
+          ]
+        },
+        {
+          "text": "zona hiperecoica",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hyperechoic area",
+          "relaxed": false,
+          "best": "73804003",
+          "best_fsn": "Homology region (finding)",
+          "topk": [
+            "73804003",
+            "238453003",
+            "421238007",
+            "403536009",
+            "231925004"
+          ]
+        },
+        {
+          "text": "calcificación",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "calcification",
+          "relaxed": false,
+          "best": "129763007",
+          "best_fsn": "Heterogeneous radiographic calcification (finding)",
+          "topk": [
+            "129763007",
+            "129748009",
+            "129750001",
+            "6595006",
+            "129770007"
+          ]
+        },
+        {
+          "text": "torsión testicular evolucionada",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "testicular torsion",
+          "relaxed": false,
+          "best": "81996005",
+          "best_fsn": "Torsion of testis (disorder)",
+          "topk": [
+            "81996005",
+            "1148886000",
+            "69282001",
+            "198047009",
+            "1148916009"
+          ]
+        },
+        {
+          "text": "intervención quirúrgica",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "surgical intervention",
+          "relaxed": false,
+          "best": "387713003",
+          "best_fsn": "Surgical procedure (procedure)",
+          "topk": [
+            "387713003",
+            "118717007",
+            "180862005",
+            "4365001",
+            "34896006"
+          ]
+        },
+        {
+          "text": "extirpación del teste izquierdo",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "left orchiectomy",
+          "relaxed": false,
+          "best": "767337004",
+          "best_fsn": "Excision of entire left testis and entire left spermatic cord (procedure)",
+          "topk": [
+            "767337004",
+            "767343002",
+            "767345009",
+            "767341000",
+            "735027008"
+          ]
+        },
+        {
+          "text": "fijación del derecho",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "right testicular fixation",
+          "relaxed": false,
+          "best": "735024001",
+          "best_fsn": "Fixation of right testis (procedure)",
+          "topk": [
+            "735024001",
+            "176434006",
+            "735023007",
+            "85419002",
+            "767379005"
+          ]
+        }
+      ],
+      "hit_best": [],
+      "hit_topk": [
+        "788918005"
+      ],
+      "hit_best_hier": [],
+      "hit_topk_hier": [
+        "788918005"
+      ],
+      "recall_best": 0.0,
+      "recall_topk": 0.143,
+      "recall_best_hier": 0.0,
+      "recall_topk_hier": 0.143
+    },
+    {
+      "file": "es-S0004-06142007000900014-1",
+      "gold_codes": [
+        "110279003",
+        "1144674006",
+        "135815002",
+        "15160007",
+        "2004005",
+        "236714000",
+        "237783006",
+        "271860004",
+        "28543008",
+        "300848003",
+        "301367001",
+        "301404009",
+        "47351003",
+        "53566005",
+        "67967009",
+        "77775007",
+        "88111009"
+      ],
+      "gold_in_release": [
+        "110279003",
+        "1144674006",
+        "135815002",
+        "15160007",
+        "2004005",
+        "237783006",
+        "271860004",
+        "28543008",
+        "300848003",
+        "301367001",
+        "301404009",
+        "47351003",
+        "53566005",
+        "67967009",
+        "77775007",
+        "88111009"
+      ],
+      "entities": [
+        {
+          "text": "dolor en hipocondrio derecho",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right hypochondrial pain",
+          "relaxed": false,
+          "best": "301367001",
+          "best_fsn": "Right hypochondrial pain (finding)",
+          "topk": [
+            "301367001",
+            "301404009",
+            "271853005",
+            "301368006",
+            "231515001"
+          ]
+        },
+        {
+          "text": "alteración del hábito intestinal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "bowel habit alteration",
+          "relaxed": false,
+          "best": "88111009",
+          "best_fsn": "Altered bowel function (finding)",
+          "topk": [
+            "88111009",
+            "129851009",
+            "444702007",
+            "425064003",
+            "15510009"
+          ]
+        },
+        {
+          "text": "síndrome general",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "general syndrome",
+          "relaxed": false,
+          "best": "129632001",
+          "best_fsn": "General adaptation syndrome (disorder)",
+          "topk": [
+            "129632001",
+            "87842000",
+            "7690000",
+            "76129002",
+            "819950002"
+          ]
+        },
+        {
+          "text": "clínica urológica",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "urological findings",
+          "relaxed": false,
+          "best": "106098005",
+          "best_fsn": "Urinary system finding (finding)",
+          "topk": [
+            "106098005",
+            "249273002",
+            "118238000",
+            "251956004",
+            "106100005"
+          ]
+        },
+        {
+          "text": "obesidad moderada",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "moderate obesity",
+          "relaxed": false,
+          "best": "415530009",
+          "best_fsn": "Simple obesity (disorder)",
+          "topk": [
+            "415530009",
+            "443381000124105",
+            "443371000124107",
+            "296526005",
+            "294493008"
+          ]
+        },
+        {
+          "text": "cifras tensionales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "blood pressure",
+          "relaxed": false,
+          "best": "392570002",
+          "best_fsn": "Blood pressure finding (finding)",
+          "topk": [
+            "392570002",
+            "129899009",
+            "251080003",
+            "271645000",
+            "38936003"
+          ]
+        },
+        {
+          "text": "auscultación cardiopulmonar",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "cardiopulmonary auscultation",
+          "relaxed": false,
+          "best": "449263002",
+          "best_fsn": "Auscultation of heart (procedure)",
+          "topk": [
+            "449263002",
+            "37931006",
+            "449264008",
+            "13385008",
+            "373112006"
+          ]
+        },
+        {
+          "text": "abdomen globuloso",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "globular abdomen",
+          "relaxed": false,
+          "best": "289687008",
+          "best_fsn": "Rounded pregnant abdomen (finding)",
+          "topk": [
+            "289687008",
+            "415051003",
+            "714254003",
+            "41931001",
+            "249533007"
+          ]
+        },
+        {
+          "text": "dolor a la presión profunda en hipocondrio derecho",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right hypochondrial pain",
+          "relaxed": false,
+          "best": "301367001",
+          "best_fsn": "Right hypochondrial pain (finding)",
+          "topk": [
+            "301367001",
+            "301404009",
+            "271853005",
+            "301368006",
+            "231515001"
+          ]
+        },
+        {
+          "text": "signo de Murphy",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Murphy's sign",
+          "relaxed": false,
+          "best": "53566005",
+          "best_fsn": "Murphy's sign (finding)",
+          "topk": [
+            "53566005",
+            "73307001",
+            "413814005",
+            "36144008",
+            "443515009"
+          ]
+        },
+        {
+          "text": "ecografía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "ultrasound",
+          "relaxed": false,
+          "best": "16310003",
+          "best_fsn": "Ultrasonography (procedure)",
+          "topk": [
+            "16310003",
+            "89002000",
+            "61593002",
+            "113113000",
+            "373671009"
+          ]
+        },
+        {
+          "text": "tumoración en el área suprarrenal derecha",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right adrenal mass",
+          "relaxed": false,
+          "best": "16357751000119101",
+          "best_fsn": "Adenoma of right adrenal gland (disorder)",
+          "topk": [
+            "16357751000119101",
+            "782668007",
+            "237783006",
+            "1079421000119109",
+            "351601000119104"
+          ]
+        },
+        {
+          "text": "metástasis hepáticas",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "liver metastasis",
+          "relaxed": false,
+          "best": "94381002",
+          "best_fsn": "Metastatic malignant neoplasm to liver (disorder)",
+          "topk": [
+            "94381002",
+            "1251486007",
+            "1186612004",
+            "93870000",
+            "286887005"
+          ]
+        },
+        {
+          "text": "TAC",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "computed tomography",
+          "relaxed": false,
+          "best": "77477000",
+          "best_fsn": "Computed tomography (procedure)",
+          "topk": [
+            "77477000",
+            "258176004",
+            "82641000",
+            "9988008",
+            "450438002"
+          ]
+        },
+        {
+          "text": "infiltración de la misma",
+          "type": "finding",
+          "context": "unknown",
+          "clinicalTerm": "infiltration",
+          "relaxed": false,
+          "best": "247105006",
+          "best_fsn": "Infiltration of retina (finding)",
+          "topk": [
+            "247105006",
+            "1371105003",
+            "19719003",
+            "246955005",
+            "128309002"
+          ]
+        },
+        {
+          "text": "afectación ganglionar retroperitoneal",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "retroperitoneal lymph node involvement",
+          "relaxed": false,
+          "best": "127253006",
+          "best_fsn": "Neoplasm of retroperitoneal lymph nodes (disorder)",
+          "topk": [
+            "127253006",
+            "94519005",
+            "127154008",
+            "127156005",
+            "1204221007"
+          ]
+        },
+        {
+          "text": "trombosis tumoral",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "tumor thrombosis",
+          "relaxed": false,
+          "best": "252986008",
+          "best_fsn": "Tumor embolus (disorder)",
+          "topk": [
+            "252986008",
+            "442078001",
+            "1204120002",
+            "442760001",
+            "128462008"
+          ]
+        },
+        {
+          "text": "RMN",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "magnetic resonance imaging",
+          "relaxed": false,
+          "best": "113091000",
+          "best_fsn": "Magnetic resonance imaging (procedure)",
+          "topk": [
+            "113091000",
+            "258177008",
+            "1144760005",
+            "241663008",
+            "451004008"
+          ]
+        },
+        {
+          "text": "infiltración parietal",
+          "type": "finding",
+          "context": "unknown",
+          "clinicalTerm": "parietal infiltration",
+          "relaxed": false,
+          "best": "94471000",
+          "best_fsn": "Metastatic malignant neoplasm to parietal lobe (disorder)",
+          "topk": [
+            "94471000",
+            "1371769002",
+            "449020009",
+            "838392002",
+            "788932007"
+          ]
+        },
+        {
+          "text": "masa suprarrenal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "adrenal mass",
+          "relaxed": false,
+          "best": "237783006",
+          "best_fsn": "Mass of adrenal gland (finding)",
+          "topk": [
+            "237783006",
+            "874912007",
+            "255036008",
+            "97881000119105",
+            "91967007"
+          ]
+        },
+        {
+          "text": "incisión subcostal derecha transperitoneal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "subcostal incision",
+          "relaxed": false,
+          "best": "276918003",
+          "best_fsn": "Subcostal incision (procedure)",
+          "topk": [
+            "276918003",
+            "278705007",
+            "120145007",
+            "367408005",
+            "278703000"
+          ]
+        },
+        {
+          "text": "disección",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "dissection",
+          "relaxed": false,
+          "best": "122459003",
+          "best_fsn": "Dissection procedure (procedure)",
+          "topk": [
+            "122459003",
+            "386770004",
+            "447380008",
+            "173424005",
+            "172571009"
+          ]
+        },
+        {
+          "text": "exéresis",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "excision",
+          "relaxed": false,
+          "best": "65801008",
+          "best_fsn": "Excision (procedure)",
+          "topk": [
+            "65801008",
+            "86743009",
+            "787439005",
+            "62141006",
+            "79095000"
+          ]
+        },
+        {
+          "text": "polipropileno",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "propylene",
+          "relaxed": false,
+          "best": "411259004",
+          "best_fsn": "Product containing propylene glycol (medicinal product)",
+          "topk": [
+            "411259004",
+            "412486004",
+            "777347000",
+            "424614001",
+            "411239003"
+          ]
+        },
+        {
+          "text": "estudio histológico macroscópico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "macroscopic histological examination",
+          "relaxed": false,
+          "best": "714797009",
+          "best_fsn": "Histologic test (procedure)",
+          "topk": [
+            "714797009",
+            "252416005",
+            "108257001",
+            "43554009",
+            "49052008"
+          ]
+        },
+        {
+          "text": "microscopía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "microscopy",
+          "relaxed": false,
+          "best": "117259009",
+          "best_fsn": "Microscopy (procedure)",
+          "topk": [
+            "117259009",
+            "164839006",
+            "168127009",
+            "104157003",
+            "391427002"
+          ]
+        },
+        {
+          "text": "proliferación de elementos celulares de estirpe estromal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "stromal cell proliferation",
+          "relaxed": false,
+          "best": "34439005",
+          "best_fsn": "Hyperplasia of ovarian stroma (disorder)",
+          "topk": [
+            "34439005",
+            "370064004",
+            "446887007",
+            "721571001",
+            "237058000"
+          ]
+        },
+        {
+          "text": "núcleos pleomórficos",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "pleomorphic nuclei",
+          "relaxed": false,
+          "best": "373400000",
+          "best_fsn": "Nuclear pleomorphism, grade 3: Markedly pleomorphic nuclei, usually >2.5 red blood cell diameters, with coarse chromatin and multiple nucleoli (finding)",
+          "topk": [
+            "373400000",
+            "369783007",
+            "250282006",
+            "250235004",
+            "373371003"
+          ]
+        },
+        {
+          "text": "células multinucleadas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "multinucleated cells",
+          "relaxed": false,
+          "best": "259680000",
+          "best_fsn": "Neocyte (finding)",
+          "topk": [
+            "259680000",
+            "250246001",
+            "443526003",
+            "125417005",
+            "15111002"
+          ]
+        },
+        {
+          "text": "índice mitótico",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mitotic index",
+          "relaxed": false,
+          "best": "396447006",
+          "best_fsn": "1 or more mitotic figure per mm2 (finding)",
+          "topk": [
+            "396447006",
+            "396446002",
+            "369785000",
+            "369788003",
+            "396519009"
+          ]
+        },
+        {
+          "text": "necrosis intratumoral",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "intratumoral necrosis",
+          "relaxed": false,
+          "best": "409762006",
+          "best_fsn": "Histological necrosis present after induction chemotherapy (finding)",
+          "topk": [
+            "409762006",
+            "409763001",
+            "396559007",
+            "425787003",
+            "427697004"
+          ]
+        },
+        {
+          "text": "invasión de tejido suprarrenal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "adrenal tissue invasion",
+          "relaxed": false,
+          "best": "369763006",
+          "best_fsn": "Renal tumor invasion into adrenal gland macroscopically (finding)",
+          "topk": [
+            "369763006",
+            "94161006",
+            "396212001",
+            "237783006",
+            "127021009"
+          ]
+        },
+        {
+          "text": "LEIOMIOSARCOMA DE CAVA",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "leiomyosarcoma of vena cava",
+          "relaxed": false,
+          "best": "685721000119101",
+          "best_fsn": "Primary leiomyosarcoma of thorax (disorder)",
+          "topk": [
+            "685721000119101",
+            "685731000119103",
+            "447707005",
+            "449055006",
+            "685571000119105"
+          ]
+        },
+        {
+          "text": "radioterápico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "radiation therapy",
+          "relaxed": false,
+          "best": "1287742003",
+          "best_fsn": "Radiotherapy (procedure)",
+          "topk": [
+            "1287742003",
+            "448288001",
+            "385798007",
+            "445232009",
+            "168523002"
+          ]
+        }
+      ],
+      "hit_best": [
+        "237783006",
+        "301367001",
+        "53566005",
+        "88111009"
+      ],
+      "hit_topk": [
+        "237783006",
+        "301367001",
+        "301404009",
+        "53566005",
+        "88111009"
+      ],
+      "hit_best_hier": [
+        "2004005",
+        "237783006",
+        "271860004",
+        "300848003",
+        "301367001",
+        "53566005",
+        "88111009"
+      ],
+      "hit_topk_hier": [
+        "2004005",
+        "237783006",
+        "271860004",
+        "300848003",
+        "301367001",
+        "301404009",
+        "53566005",
+        "88111009"
+      ],
+      "recall_best": 0.235,
+      "recall_topk": 0.294,
+      "recall_best_hier": 0.412,
+      "recall_topk_hier": 0.471
+    },
+    {
+      "file": "es-S0004-06142008000300015-1",
+      "gold_codes": [
+        "102031000119109",
+        "27925004",
+        "300493001",
+        "300848003",
+        "399406009",
+        "84387000",
+        "87860000"
+      ],
+      "gold_in_release": [
+        "102031000119109",
+        "27925004",
+        "300493001",
+        "300848003",
+        "399406009",
+        "84387000",
+        "87860000"
+      ],
+      "entities": [
+        {
+          "text": "masa",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass",
+          "relaxed": false,
+          "best": "300848003",
+          "best_fsn": "Mass of body structure (finding)",
+          "topk": [
+            "300848003",
+            "441845009",
+            "443607001",
+            "309529002",
+            "440299000"
+          ]
+        },
+        {
+          "text": "polo superior de teste izquierdo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "superior pole of left testis",
+          "relaxed": false,
+          "best": "52241002",
+          "best_fsn": "Structure of superior pole of testis (body structure)",
+          "topk": [
+            "52241002",
+            "362277009",
+            "1365725000",
+            "279593004",
+            "729049002"
+          ]
+        },
+        {
+          "text": "traumatismo",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "trauma",
+          "relaxed": false,
+          "best": "417746004",
+          "best_fsn": "Traumatic injury (disorder)",
+          "topk": [
+            "417746004",
+            "425359009",
+            "110149000",
+            "1163387009",
+            "25809009"
+          ]
+        },
+        {
+          "text": "cuadro inflamatorio",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "inflammation",
+          "relaxed": false,
+          "best": "298160000",
+          "best_fsn": "Inflammation of joint (finding)",
+          "topk": [
+            "298160000",
+            "225540005",
+            "95361005",
+            "128473001",
+            "363171009"
+          ]
+        },
+        {
+          "text": "maldescenso testicular",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "cryptorchidism",
+          "relaxed": false,
+          "best": "204878001",
+          "best_fsn": "Undescended testicle (disorder)",
+          "topk": [
+            "204878001",
+            "268228006",
+            "1052255000",
+            "1186846000",
+            "1052257008"
+          ]
+        },
+        {
+          "text": "nódulo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "nodule",
+          "relaxed": false,
+          "best": "413678004",
+          "best_fsn": "Bohn's nodule (disorder)",
+          "topk": [
+            "413678004",
+            "95319004",
+            "400961003",
+            "403747000",
+            "1382102005"
+          ]
+        },
+        {
+          "text": "Ecográficamente no existía hidrocele",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "hydrocele",
+          "relaxed": false,
+          "best": "32561000119105",
+          "best_fsn": "Adult hydrocele (disorder)",
+          "topk": [
+            "32561000119105",
+            "82062003",
+            "236028000",
+            "236775006",
+            "26614003"
+          ]
+        },
+        {
+          "text": "teste normoecógeno",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "normal testicular echogenicity",
+          "relaxed": false,
+          "best": "300493001",
+          "best_fsn": "Testis normal (finding)",
+          "topk": [
+            "300493001",
+            "302031001",
+            "300483008",
+            "169254007",
+            "164717000"
+          ]
+        },
+        {
+          "text": "nódulo homogéneo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "homogeneous nodule",
+          "relaxed": false,
+          "best": "253151003",
+          "best_fsn": "Nodular heterotopia (disorder)",
+          "topk": [
+            "253151003",
+            "248527007",
+            "1382102005",
+            "95319004",
+            "400961003"
+          ]
+        },
+        {
+          "text": "cabeza del epidídimo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "head of epididymis",
+          "relaxed": false,
+          "best": "31427003",
+          "best_fsn": "Structure of head of epididymis (body structure)",
+          "topk": [
+            "31427003",
+            "362282002",
+            "279626007",
+            "729056008",
+            "72720006"
+          ]
+        },
+        {
+          "text": "intervención quirúrgica",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "surgical intervention",
+          "relaxed": false,
+          "best": "387713003",
+          "best_fsn": "Surgical procedure (procedure)",
+          "topk": [
+            "387713003",
+            "118717007",
+            "180862005",
+            "4365001",
+            "34896006"
+          ]
+        },
+        {
+          "text": "masa",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass",
+          "relaxed": false,
+          "best": "300848003",
+          "best_fsn": "Mass of body structure (finding)",
+          "topk": [
+            "300848003",
+            "441845009",
+            "443607001",
+            "309529002",
+            "440299000"
+          ]
+        },
+        {
+          "text": "tejido esplénico",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "splenic tissue",
+          "relaxed": false,
+          "best": "78961009",
+          "best_fsn": "Splenic structure (body structure)",
+          "topk": [
+            "78961009",
+            "13515001",
+            "120613001",
+            "276956002",
+            "35845000"
+          ]
+        },
+        {
+          "text": "alteraciones microscópicas",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "microscopic abnormalities",
+          "relaxed": false,
+          "best": "395538009",
+          "best_fsn": "Microscopic specimen observation (finding)",
+          "topk": [
+            "395538009",
+            "250429001",
+            "125386007",
+            "72724002",
+            "300577008"
+          ]
+        },
+        {
+          "text": "pulpa blanca",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "white pulp",
+          "relaxed": false,
+          "best": "26671000",
+          "best_fsn": "Structure of pulp of tooth (body structure)",
+          "topk": [
+            "26671000",
+            "35845000",
+            "245742007",
+            "11326003",
+            "362110007"
+          ]
+        },
+        {
+          "text": "centros germinales",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "germinal centers",
+          "relaxed": false,
+          "best": "787781003",
+          "best_fsn": "Germ cell (cell structure)",
+          "topk": [
+            "787781003",
+            "17196007",
+            "23430009",
+            "308838004",
+            "16733004"
+          ]
+        },
+        {
+          "text": "pulpa roja",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "red pulp",
+          "relaxed": false,
+          "best": "27579002",
+          "best_fsn": "Structure of splenic red pulp (body structure)",
+          "topk": [
+            "27579002",
+            "245742007",
+            "726929008",
+            "26671000",
+            "734067001"
+          ]
+        },
+        {
+          "text": "senos venosos",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "venous sinuses",
+          "relaxed": false,
+          "best": "80334009",
+          "best_fsn": "Structure of venous sinus (body structure)",
+          "topk": [
+            "80334009",
+            "424983004",
+            "50385008",
+            "57766006",
+            "29092000"
+          ]
+        },
+        {
+          "text": "cordones de Billroth",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "Billroth's cords",
+          "relaxed": false,
+          "best": "74761005",
+          "best_fsn": "Structure of ventricular fold of larynx (body structure)",
+          "topk": [
+            "74761005",
+            "71312005",
+            "53455001",
+            "46105003",
+            "90967004"
+          ]
+        },
+        {
+          "text": "exploración física",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "physical examination",
+          "relaxed": false,
+          "best": "5880005",
+          "best_fsn": "Physical examination procedure (procedure)",
+          "topk": [
+            "5880005",
+            "410182004",
+            "53127005",
+            "25656009",
+            "63332003"
+          ]
+        }
+      ],
+      "hit_best": [
+        "300493001",
+        "300848003"
+      ],
+      "hit_topk": [
+        "300493001",
+        "300848003"
+      ],
+      "hit_best_hier": [
+        "102031000119109",
+        "300493001",
+        "300848003",
+        "87860000"
+      ],
+      "hit_topk_hier": [
+        "102031000119109",
+        "300493001",
+        "300848003",
+        "87860000"
+      ],
+      "recall_best": 0.286,
+      "recall_topk": 0.286,
+      "recall_best_hier": 0.571,
+      "recall_topk_hier": 0.571
+    },
+    {
+      "file": "es-S0004-06142008000400010-1",
+      "gold_codes": [
+        "126544009",
+        "139394000",
+        "164734008",
+        "167973009",
+        "170728008",
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "276388004",
+        "31462008",
+        "314983004",
+        "34615008",
+        "38671000119103",
+        "41446000",
+        "419099009",
+        "419326002",
+        "444905003",
+        "49233005",
+        "53298000",
+        "718403007",
+        "733303000",
+        "76069003",
+        "788954009",
+        "84387000"
+      ],
+      "gold_in_release": [
+        "126544009",
+        "139394000",
+        "164734008",
+        "167973009",
+        "170728008",
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "276388004",
+        "314983004",
+        "34615008",
+        "38671000119103",
+        "41446000",
+        "419099009",
+        "419326002",
+        "444905003",
+        "53298000",
+        "718403007",
+        "733303000",
+        "76069003",
+        "788954009",
+        "84387000"
+      ],
+      "entities": [
+        {
+          "text": "cefalea frontoparietal derecha",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right frontal parietal headache",
+          "relaxed": false,
+          "best": "267096005",
+          "best_fsn": "Frontal headache (finding)",
+          "topk": [
+            "267096005",
+            "162304002",
+            "1119295002",
+            "301357006",
+            "330007"
+          ]
+        },
+        {
+          "text": "diplopia de mirada lateral",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "lateral gaze diplopia",
+          "relaxed": false,
+          "best": "24982008",
+          "best_fsn": "Diplopia (disorder)",
+          "topk": [
+            "24982008",
+            "251758007",
+            "246655008",
+            "251757002",
+            "251756006"
+          ]
+        },
+        {
+          "text": "edema palpebral derecho",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right eyelid edema",
+          "relaxed": false,
+          "best": "342481000119101",
+          "best_fsn": "Edema of right eyelid (disorder)",
+          "topk": [
+            "342481000119101",
+            "342461000119105",
+            "342471000119104",
+            "348101000119102",
+            "15930101000119109"
+          ]
+        },
+        {
+          "text": "exoftalmos moderado",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "moderate exophthalmos",
+          "relaxed": false,
+          "best": "301919003",
+          "best_fsn": "Exophthalmos present (finding)",
+          "topk": [
+            "301919003",
+            "18265008",
+            "89907009",
+            "301920009",
+            "340921000119107"
+          ]
+        },
+        {
+          "text": "inflamación",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "inflammation",
+          "relaxed": false,
+          "best": "298160000",
+          "best_fsn": "Inflammation of joint (finding)",
+          "topk": [
+            "298160000",
+            "225540005",
+            "95361005",
+            "128473001",
+            "363171009"
+          ]
+        },
+        {
+          "text": "hiperemia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hyperemia",
+          "relaxed": false,
+          "best": "102939004",
+          "best_fsn": "Hypermimia (finding)",
+          "topk": [
+            "102939004",
+            "193894004",
+            "246890003",
+            "781683000",
+            "246980005"
+          ]
+        },
+        {
+          "text": "tumefacción palpebral superior e inferior derecha moderadas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "moderate swelling of upper and lower eyelids",
+          "relaxed": false,
+          "best": "193967004",
+          "best_fsn": "Swelling of eyelid (finding)",
+          "topk": [
+            "193967004",
+            "700263000",
+            "700337008",
+            "231823007",
+            "342431000119102"
+          ]
+        },
+        {
+          "text": "limitación en todas las posiciones de la mirada",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "limited eye movement",
+          "relaxed": false,
+          "best": "419326002",
+          "best_fsn": "Limited eye movement (finding)",
+          "topk": [
+            "419326002",
+            "418078000",
+            "420150003",
+            "419566002",
+            "419825008"
+          ]
+        },
+        {
+          "text": "alteración de la agudeza visual",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "visual acuity loss",
+          "relaxed": false,
+          "best": "1388890004",
+          "best_fsn": "Sudden loss of visual acuity (finding)",
+          "topk": [
+            "1388890004",
+            "13164000",
+            "170728008",
+            "397540003",
+            "361122008"
+          ]
+        },
+        {
+          "text": "TAC orbitario",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "orbital CT scan",
+          "relaxed": false,
+          "best": "830147001",
+          "best_fsn": "Computed tomography of orbit (procedure)",
+          "topk": [
+            "830147001",
+            "430440000",
+            "429852004",
+            "418447007",
+            "1293026004"
+          ]
+        },
+        {
+          "text": "aumento de tamaño del hueso esfenoides",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "sphenoid bone enlargement",
+          "relaxed": false,
+          "best": "41517009",
+          "best_fsn": "Congenital hypertrophy of sphenoid bone (disorder)",
+          "topk": [
+            "41517009",
+            "126543003",
+            "92403000",
+            "788954009",
+            "11673571000119101"
+          ]
+        },
+        {
+          "text": "patrón permeativo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "permeative pattern",
+          "relaxed": false,
+          "best": "247718007",
+          "best_fsn": "Patterns appear intricately detailed (finding)",
+          "topk": [
+            "247718007",
+            "247719004",
+            "129736006",
+            "404941001",
+            "1134001"
+          ]
+        },
+        {
+          "text": "hiperostosis de cara orbitaria",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "orbital hyperostosis",
+          "relaxed": false,
+          "best": "63717008",
+          "best_fsn": "Exostosis of orbit (disorder)",
+          "topk": [
+            "63717008",
+            "371522000",
+            "80096003",
+            "733303000",
+            "424422000"
+          ]
+        },
+        {
+          "text": "masa de partes blandas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "soft tissue mass",
+          "relaxed": false,
+          "best": "444905003",
+          "best_fsn": "Mass of soft tissue (finding)",
+          "topk": [
+            "444905003",
+            "11718111000119106",
+            "11718061000119105",
+            "16027031000119107",
+            "387837005"
+          ]
+        },
+        {
+          "text": "ocupación de las celdillas etmoidales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "ethmoidal cell involvement",
+          "relaxed": false,
+          "best": "105974005",
+          "best_fsn": "Disorder of ethmoidal sinus (disorder)",
+          "topk": [
+            "105974005",
+            "18643000",
+            "126677000",
+            "363426009",
+            "1260035002"
+          ]
+        },
+        {
+          "text": "RMN craneal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "brain MRI",
+          "relaxed": false,
+          "best": "816077007",
+          "best_fsn": "Magnetic resonance imaging of brain (procedure)",
+          "topk": [
+            "816077007",
+            "29567006",
+            "446138008",
+            "16327691000119101",
+            "241603006"
+          ]
+        },
+        {
+          "text": "meningioma hiperostósico en placa periorbitaria derecha",
+          "type": "finding",
+          "context": "unknown",
+          "clinicalTerm": "hyperostotic meningioma",
+          "relaxed": false,
+          "best": "393566004",
+          "best_fsn": "Meningioma (disorder)",
+          "topk": [
+            "393566004",
+            "302820008",
+            "724171006",
+            "1157161000",
+            "16903531000119107"
+          ]
+        },
+        {
+          "text": "lesiones fibroóseas esfenoidales",
+          "type": "finding",
+          "context": "unknown",
+          "clinicalTerm": "sphenoidal fibrotic lesions",
+          "relaxed": false,
+          "best": "90685008",
+          "best_fsn": "Polyp of sphenoidal sinus (disorder)",
+          "topk": [
+            "90685008",
+            "92403000",
+            "105975006",
+            "126543003",
+            "109343008"
+          ]
+        },
+        {
+          "text": "biopsia quirúrgica",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "surgical biopsy",
+          "relaxed": false,
+          "best": "274330002",
+          "best_fsn": "Surgical biopsy (procedure)",
+          "topk": [
+            "274330002",
+            "165129008",
+            "165127005",
+            "274350003",
+            "308000002"
+          ]
+        },
+        {
+          "text": "tejido conectivo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "connective tissue",
+          "relaxed": false,
+          "best": "105969002",
+          "best_fsn": "Disorder of connective tissue (disorder)",
+          "topk": [
+            "105969002",
+            "126598008",
+            "385424001",
+            "286905003",
+            "239918008"
+          ]
+        },
+        {
+          "text": "músculo esquelético estriado",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "striated skeletal muscle",
+          "relaxed": false,
+          "best": "298274001",
+          "best_fsn": "Enlargement of skeletal muscle (finding)",
+          "topk": [
+            "298274001",
+            "1141858002",
+            "305719002",
+            "1142260007",
+            "251547000"
+          ]
+        },
+        {
+          "text": "trabéculas óseas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "bone trabeculae",
+          "relaxed": false,
+          "best": "897394001",
+          "best_fsn": "Structural abnormality of trabecular substance of bone (disorder)",
+          "topk": [
+            "897394001",
+            "23149001",
+            "203465002",
+            "2116002",
+            "298354005"
+          ]
+        },
+        {
+          "text": "células epiteliales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "epithelial cells",
+          "relaxed": false,
+          "best": "250441008",
+          "best_fsn": "Epithelial cells present (finding)",
+          "topk": [
+            "250441008",
+            "365876004",
+            "897597009",
+            "421059009",
+            "246932007"
+          ]
+        },
+        {
+          "text": "metástasis de adenocarcinoma",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "adenocarcinoma metastasis",
+          "relaxed": false,
+          "best": "1681000119102",
+          "best_fsn": "Metastatic adenocarcinoma to lymph node (disorder)",
+          "topk": [
+            "1681000119102",
+            "354081000119101",
+            "423595004",
+            "443961001",
+            "307226002"
+          ]
+        },
+        {
+          "text": "Antígeno Prostático Específico (PSA)",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Prostate-Specific Antigen (PSA)",
+          "relaxed": false,
+          "best": "166159005",
+          "best_fsn": "Prostate specific antigen within reference range (finding)",
+          "topk": [
+            "166159005",
+            "396152005",
+            "166160000",
+            "399068003",
+            "405901003"
+          ]
+        },
+        {
+          "text": "anamnesis dirigida",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "focused history taking",
+          "relaxed": false,
+          "best": "84100007",
+          "best_fsn": "History taking (procedure)",
+          "topk": [
+            "84100007",
+            "203421005",
+            "371580005",
+            "201495001",
+            "23918007"
+          ]
+        },
+        {
+          "text": "alteraciones en la micción",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "urinary abnormalities",
+          "relaxed": false,
+          "best": "41368006",
+          "best_fsn": "Disorder of urinary tract proper (disorder)",
+          "topk": [
+            "41368006",
+            "128606002",
+            "106098005",
+            "38671000119103",
+            "249273002"
+          ]
+        },
+        {
+          "text": "polaquiuria",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "frequent urination",
+          "relaxed": false,
+          "best": "162116003",
+          "best_fsn": "Increased frequency of urination (finding)",
+          "topk": [
+            "162116003",
+            "274734008",
+            "300471006",
+            "405234008",
+            "249291007"
+          ]
+        },
+        {
+          "text": "nocturia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "nighttime urination",
+          "relaxed": false,
+          "best": "8009008",
+          "best_fsn": "Nocturnal enuresis (finding)",
+          "topk": [
+            "8009008",
+            "281862002",
+            "111478000",
+            "450844008",
+            "8702009"
+          ]
+        },
+        {
+          "text": "hemospermia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hematospermia",
+          "relaxed": false,
+          "best": "34615008",
+          "best_fsn": "Hemospermia (finding)",
+          "topk": [
+            "34615008",
+            "31211008",
+            "33186007",
+            "48188009",
+            "88311004"
+          ]
+        },
+        {
+          "text": "Tacto rectal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "digital rectal exam",
+          "relaxed": false,
+          "best": "410006001",
+          "best_fsn": "Digital examination of rectum (procedure)",
+          "topk": [
+            "410006001",
+            "410007005",
+            "241170009",
+            "42238002",
+            "274295008"
+          ]
+        },
+        {
+          "text": "próstata volumen II/IV",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "prostate volume 2/4",
+          "relaxed": false,
+          "best": "446419007",
+          "best_fsn": "Minimally enlarged prostate (finding)",
+          "topk": [
+            "446419007",
+            "117521000119100",
+            "249608004",
+            "167771001",
+            "167772008"
+          ]
+        },
+        {
+          "text": "consistencia pétrea",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hard prostate consistency",
+          "relaxed": false,
+          "best": "276386000",
+          "best_fsn": "Firm prostate (finding)",
+          "topk": [
+            "276386000",
+            "366293002",
+            "276387009",
+            "276385001",
+            "276388004"
+          ]
+        },
+        {
+          "text": "sospechosa de cáncer de próstata",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "suspicious for prostate cancer",
+          "relaxed": false,
+          "best": "92691004",
+          "best_fsn": "Carcinoma in situ of prostate (disorder)",
+          "topk": [
+            "92691004",
+            "95014000",
+            "254900004",
+            "399068003",
+            "126906006"
+          ]
+        },
+        {
+          "text": "PSA",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Prostate-Specific Antigen (PSA)",
+          "relaxed": false,
+          "best": "166159005",
+          "best_fsn": "Prostate specific antigen within reference range (finding)",
+          "topk": [
+            "166159005",
+            "396152005",
+            "166160000",
+            "399068003",
+            "405901003"
+          ]
+        },
+        {
+          "text": "adenocarcinoma prostático Gleason 4+4=8",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Gleason grade 4+4 prostate adenocarcinoma",
+          "relaxed": false,
+          "best": "860745005",
+          "best_fsn": "Gleason grade group 4 (finding)",
+          "topk": [
+            "860745005",
+            "860746006",
+            "860744009",
+            "18430005",
+            "369773008"
+          ]
+        },
+        {
+          "text": "Rastreo óseo con Tc99m",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "bone scan with Tc99m",
+          "relaxed": false,
+          "best": "432056005",
+          "best_fsn": "Radionuclide dynamic bone imaging (procedure)",
+          "topk": [
+            "432056005",
+            "41747008",
+            "241405008",
+            "91008002",
+            "68796002"
+          ]
+        },
+        {
+          "text": "hipercaptación",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "increased uptake",
+          "relaxed": false,
+          "best": "1381882008",
+          "best_fsn": "Nuclear medicine imaging increased lung tracer uptake (finding)",
+          "topk": [
+            "1381882008",
+            "442783003",
+            "1169371000",
+            "37910008",
+            "442756004"
+          ]
+        },
+        {
+          "text": "región cigomática derecha",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right zygomatic region",
+          "relaxed": false,
+          "best": "787059003",
+          "best_fsn": "Structure of right zygomatic bone (body structure)",
+          "topk": [
+            "787059003",
+            "1254648005",
+            "773931008",
+            "770922007",
+            "424431000"
+          ]
+        },
+        {
+          "text": "región orbital interna derecha",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right internal orbit",
+          "relaxed": false,
+          "best": "721897003",
+          "best_fsn": "Structure of right orbit proper (body structure)",
+          "topk": [
+            "721897003",
+            "773933006",
+            "863974008",
+            "773935004",
+            "363654007"
+          ]
+        },
+        {
+          "text": "parrillas costales",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "rib cage",
+          "relaxed": false,
+          "best": "60413009",
+          "best_fsn": "Thoracic cage structure (body structure)",
+          "topk": [
+            "60413009",
+            "769170009",
+            "769172001",
+            "46454004",
+            "113197003"
+          ]
+        },
+        {
+          "text": "columna dorsolumbar",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "thoracolumbar spine",
+          "relaxed": false,
+          "best": "76079001",
+          "best_fsn": "Joint structure of thoracolumbar junction of spine (body structure)",
+          "topk": [
+            "76079001",
+            "731704002",
+            "6989001",
+            "1217256009",
+            "1148632005"
+          ]
+        },
+        {
+          "text": "pala ilíaca",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "iliac blade",
+          "relaxed": false,
+          "best": "29850006",
+          "best_fsn": "Iliac crest structure (body structure)",
+          "topk": [
+            "29850006",
+            "22356005",
+            "119539000",
+            "314905009",
+            "244694007"
+          ]
+        },
+        {
+          "text": "región acetabular",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "acetabulum",
+          "relaxed": false,
+          "best": "37783008",
+          "best_fsn": "Bone structure of acetabulum (body structure)",
+          "topk": [
+            "37783008",
+            "263370002",
+            "263371003",
+            "1382329005",
+            "79456009"
+          ]
+        },
+        {
+          "text": "espina iliaca",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "iliac spine",
+          "relaxed": false,
+          "best": "314905009",
+          "best_fsn": "Iliac spine structure (body structure)",
+          "topk": [
+            "314905009",
+            "272712007",
+            "20650001",
+            "1260288002",
+            "1260286003"
+          ]
+        },
+        {
+          "text": "diáfisis femoral izquierda",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "left femoral diaphysis",
+          "relaxed": false,
+          "best": "722738000",
+          "best_fsn": "Structure of bone of left femur (body structure)",
+          "topk": [
+            "722738000",
+            "1260152001",
+            "758654003",
+            "1296913005",
+            "1356755002"
+          ]
+        },
+        {
+          "text": "Adenocarcinoma de próstata Gleason 4+4=8 con metástasis óseas múltiples",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Gleason grade 4+4 prostate adenocarcinoma with multiple bone metastases",
+          "relaxed": false,
+          "best": "91281000119103",
+          "best_fsn": "Metastatic adenocarcinoma to bone (disorder)",
+          "topk": [
+            "91281000119103",
+            "134421000",
+            "91271000119101",
+            "203449003",
+            "94222008"
+          ]
+        },
+        {
+          "text": "bloqueo hormonal completo",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "complete androgen blockade",
+          "relaxed": false,
+          "best": "707266006",
+          "best_fsn": "Androgen deprivation therapy (procedure)",
+          "topk": [
+            "707266006",
+            "373842006",
+            "1344869002",
+            "724163007",
+            "225270001"
+          ]
+        },
+        {
+          "text": "Bicalutamida 50 mg/24h",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "bicalutamide",
+          "relaxed": false,
+          "best": "108766001",
+          "best_fsn": "Product containing bicalutamide (medicinal product)",
+          "topk": [
+            "108766001",
+            "714116006",
+            "774854005",
+            "327368008",
+            "327366007"
+          ]
+        },
+        {
+          "text": "Goserelina 10,8 mg/12 semanas",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "goserelin",
+          "relaxed": false,
+          "best": "126138002",
+          "best_fsn": "Product containing goserelin (medicinal product)",
+          "topk": [
+            "126138002",
+            "785515001",
+            "776143000",
+            "327337009",
+            "786221007"
+          ]
+        },
+        {
+          "text": "bifosfonatos",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "bisphosphonates",
+          "relaxed": false,
+          "best": "96281001",
+          "best_fsn": "Product containing bisphosphonate (product)",
+          "topk": [
+            "96281001",
+            "134600006",
+            "96280000",
+            "772820008",
+            "768538005"
+          ]
+        },
+        {
+          "text": "Ácido Zoledrónico 4 mg iv /4 semanas",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "zoledronic acid",
+          "relaxed": false,
+          "best": "134600006",
+          "best_fsn": "Product containing zoledronic acid (medicinal product)",
+          "topk": [
+            "134600006",
+            "785612005",
+            "777988006",
+            "1178983003",
+            "766194008"
+          ]
+        },
+        {
+          "text": "clínica ocular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "eye symptoms",
+          "relaxed": false,
+          "best": "308923001",
+          "best_fsn": "Eye symptom (finding)",
+          "topk": [
+            "308923001",
+            "162274004",
+            "41652007",
+            "7751009",
+            "302017001"
+          ]
+        },
+        {
+          "text": "hematuria",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hematuria",
+          "relaxed": false,
+          "best": "34436003",
+          "best_fsn": "Blood in urine (finding)",
+          "topk": [
+            "34436003",
+            "20407004",
+            "314280007",
+            "53298000",
+            "371020003"
+          ]
+        },
+        {
+          "text": "lavado vesical continuo",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "continuous bladder irrigation",
+          "relaxed": false,
+          "best": "771555004",
+          "best_fsn": "Monitoring of continuous bladder irrigation (regime/therapy)",
+          "topk": [
+            "771555004",
+            "78533007",
+            "716357005",
+            "410259008",
+            "176193005"
+          ]
+        },
+        {
+          "text": "RTU vesical",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "bladder resection",
+          "relaxed": false,
+          "best": "63016009",
+          "best_fsn": "Total resection of urinary bladder (procedure)",
+          "topk": [
+            "63016009",
+            "287708003",
+            "287726000",
+            "57639000",
+            "62461000052109"
+          ]
+        },
+        {
+          "text": "proceso neoformativo prostático",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "prostatic neoplasm",
+          "relaxed": false,
+          "best": "126906006",
+          "best_fsn": "Neoplasm of prostate (disorder)",
+          "topk": [
+            "126906006",
+            "399433008",
+            "399068003",
+            "254900004",
+            "309089006"
+          ]
+        },
+        {
+          "text": "síndrome miccional obstructivo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "urinary obstructive syndrome",
+          "relaxed": false,
+          "best": "22218007",
+          "best_fsn": "Lower urinary tract obstructive syndrome (disorder)",
+          "topk": [
+            "22218007",
+            "7163005",
+            "252029001",
+            "252028009",
+            "708515003"
+          ]
+        },
+        {
+          "text": "disminución de la diuresis",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "decreased urine output",
+          "relaxed": false,
+          "best": "718403007",
+          "best_fsn": "Decreased urine output (finding)",
+          "topk": [
+            "718403007",
+            "271846001",
+            "271848000",
+            "76023003",
+            "424786000"
+          ]
+        },
+        {
+          "text": "deterioro de la función renal",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "renal dysfunction",
+          "relaxed": false,
+          "best": "236423003",
+          "best_fsn": "Renal impairment (disorder)",
+          "topk": [
+            "236423003",
+            "723188008",
+            "277010001",
+            "720513002",
+            "276583007"
+          ]
+        },
+        {
+          "text": "disnea",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "dyspnea",
+          "relaxed": false,
+          "best": "267036007",
+          "best_fsn": "Dyspnea (finding)",
+          "topk": [
+            "267036007",
+            "60845006",
+            "34560001",
+            "25209001",
+            "248548009"
+          ]
+        },
+        {
+          "text": "TAC toracoabdominopélvico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "thoracoabdominalpelvic CT scan",
+          "relaxed": false,
+          "best": "418891003",
+          "best_fsn": "Computed tomography of chest and abdomen (procedure)",
+          "topk": [
+            "418891003",
+            "418023006",
+            "429864007",
+            "433761009",
+            "1148700003"
+          ]
+        },
+        {
+          "text": "derrame pleural derecho",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "right pleural effusion",
+          "relaxed": false,
+          "best": "1366512001",
+          "best_fsn": "Effusion of right pleural cavity (disorder)",
+          "topk": [
+            "1366512001",
+            "13841000119107",
+            "60046008",
+            "167977005",
+            "79231000"
+          ]
+        },
+        {
+          "text": "atelectasia compresiva",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "compressive atelectasis",
+          "relaxed": false,
+          "best": "16537000",
+          "best_fsn": "Compression atelectasis (disorder)",
+          "topk": [
+            "16537000",
+            "46621007",
+            "326542006",
+            "123712000",
+            "67782005"
+          ]
+        },
+        {
+          "text": "adenopatías mediastínicas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mediastinal lymphadenopathy",
+          "relaxed": false,
+          "best": "52324001",
+          "best_fsn": "Mediastinal lymphadenopathy (disorder)",
+          "topk": [
+            "52324001",
+            "127109007",
+            "127110002",
+            "1204159006",
+            "127107009"
+          ]
+        },
+        {
+          "text": "metástasis pulmonares múltiples",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "multiple pulmonary metastases",
+          "relaxed": false,
+          "best": "94391008",
+          "best_fsn": "Metastatic malignant neoplasm to lung (disorder)",
+          "topk": [
+            "94391008",
+            "12246601000119101",
+            "353561000119103",
+            "94515004",
+            "363358000"
+          ]
+        },
+        {
+          "text": "dilatación ureteropielocalicial del riñón izquierdo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "left ureteral hydronephrosis",
+          "relaxed": false,
+          "best": "95581005",
+          "best_fsn": "Bilateral hydronephrosis (disorder)",
+          "topk": [
+            "95581005",
+            "40068008",
+            "1148909008",
+            "43064006",
+            "1148939003"
+          ]
+        },
+        {
+          "text": "pleurocentesis derecha",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "right thoracentesis",
+          "relaxed": false,
+          "best": "91602002",
+          "best_fsn": "Thoracentesis (procedure)",
+          "topk": [
+            "91602002",
+            "1359769003",
+            "709787009",
+            "438812002",
+            "30726001"
+          ]
+        }
+      ],
+      "hit_best": [
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "34615008",
+        "419326002",
+        "444905003",
+        "718403007"
+      ],
+      "hit_topk": [
+        "170728008",
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "276388004",
+        "34615008",
+        "38671000119103",
+        "419326002",
+        "444905003",
+        "53298000",
+        "718403007",
+        "733303000",
+        "788954009"
+      ],
+      "hit_best_hier": [
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "34615008",
+        "419326002",
+        "444905003",
+        "53298000",
+        "718403007",
+        "76069003"
+      ],
+      "hit_topk_hier": [
+        "170728008",
+        "193967004",
+        "22218007",
+        "24982008",
+        "267096005",
+        "276388004",
+        "34615008",
+        "38671000119103",
+        "41446000",
+        "419326002",
+        "444905003",
+        "53298000",
+        "718403007",
+        "733303000",
+        "76069003",
+        "788954009"
+      ],
+      "recall_best": 0.32,
+      "recall_topk": 0.56,
+      "recall_best_hier": 0.4,
+      "recall_topk_hier": 0.64
+    },
+    {
+      "file": "es-S0004-06142008000500015-1",
+      "gold_codes": [
+        "87860000"
+      ],
+      "gold_in_release": [
+        "87860000"
+      ],
+      "entities": [
+        {
+          "text": "masa",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass",
+          "relaxed": false,
+          "best": "300848003",
+          "best_fsn": "Mass of body structure (finding)",
+          "topk": [
+            "300848003",
+            "441845009",
+            "443607001",
+            "309529002",
+            "440299000"
+          ]
+        },
+        {
+          "text": "beta-HCG",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "beta-human chorionic gonadotropin",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "20577002",
+            "391877007",
+            "391878002",
+            "786800001"
+          ]
+        },
+        {
+          "text": "alfa-FP",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "alpha-fetoprotein",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "391878002",
+            "786963003",
+            "788397008",
+            "109042006"
+          ]
+        },
+        {
+          "text": "ecografía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "ultrasound",
+          "relaxed": false,
+          "best": "16310003",
+          "best_fsn": "Ultrasonography (procedure)",
+          "topk": [
+            "16310003",
+            "89002000",
+            "61593002",
+            "113113000",
+            "373671009"
+          ]
+        },
+        {
+          "text": "tumor sólido testicular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "testicular solid tumor",
+          "relaxed": false,
+          "best": "126900000",
+          "best_fsn": "Neoplasm of testis (disorder)",
+          "topk": [
+            "126900000",
+            "95127004",
+            "92764008",
+            "1162859004",
+            "281591005"
+          ]
+        },
+        {
+          "text": "orquiectomía radical inguinal derecha",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "radical orchiectomy",
+          "relaxed": false,
+          "best": "396692006",
+          "best_fsn": "Radical orchiectomy (procedure)",
+          "topk": [
+            "396692006",
+            "116171002",
+            "767339001",
+            "87375004",
+            "767337004"
+          ]
+        },
+        {
+          "text": "lesión quística",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cystic lesion",
+          "relaxed": false,
+          "best": "441457006",
+          "best_fsn": "Cyst (disorder)",
+          "topk": [
+            "441457006",
+            "369746007",
+            "109608003",
+            "419893006",
+            "87551003"
+          ]
+        },
+        {
+          "text": "cápsula",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "capsule",
+          "relaxed": false,
+          "best": "361515007",
+          "best_fsn": "Structure of periotic capsule (body structure)",
+          "topk": [
+            "361515007",
+            "91765006",
+            "85637007",
+            "279300007",
+            "91771000"
+          ]
+        },
+        {
+          "text": "parénquima testicular",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "testicular parenchyma",
+          "relaxed": false,
+          "best": "75454004",
+          "best_fsn": "Structure of parenchyma of testis (body structure)",
+          "topk": [
+            "75454004",
+            "362278004",
+            "279603000",
+            "64526000",
+            "279602005"
+          ]
+        },
+        {
+          "text": "formación quística",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cystic formation",
+          "relaxed": false,
+          "best": "441457006",
+          "best_fsn": "Cyst (disorder)",
+          "topk": [
+            "441457006",
+            "234021009",
+            "419893006",
+            "399176003",
+            "25418001"
+          ]
+        },
+        {
+          "text": "cordón espermático",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "spermatic cord",
+          "relaxed": false,
+          "best": "49957000",
+          "best_fsn": "Spermatic cord structure (body structure)",
+          "topk": [
+            "49957000",
+            "181433005",
+            "279647006",
+            "279645003",
+            "279653006"
+          ]
+        },
+        {
+          "text": "espermatocele",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "spermatocele",
+          "relaxed": false,
+          "best": "49263001",
+          "best_fsn": "Spermatocele (disorder)",
+          "topk": [
+            "49263001",
+            "197980002",
+            "37268004",
+            "66259004",
+            "26614003"
+          ]
+        },
+        {
+          "text": "epitelio escamoso estratificado",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "stratified squamous epithelium",
+          "relaxed": false,
+          "best": "40118003",
+          "best_fsn": "Structure of squamous epithelium (body structure)",
+          "topk": [
+            "40118003",
+            "4360006",
+            "80554009",
+            "727011005",
+            "20281003"
+          ]
+        },
+        {
+          "text": "capa granulosa",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "granulosa layer",
+          "relaxed": false,
+          "best": "1351761003",
+          "best_fsn": "Structure of periantral granulosa cell layer (body structure)",
+          "topk": [
+            "1351761003",
+            "1351871007",
+            "1351755001",
+            "1351767004",
+            "1351868004"
+          ]
+        },
+        {
+          "text": "banda fibrosa",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "fibrous band",
+          "relaxed": false,
+          "best": "51404004",
+          "best_fsn": "Fibrous bands (morphologic abnormality)",
+          "topk": [
+            "51404004",
+            "59996002",
+            "76576002",
+            "34433006",
+            "39983007"
+          ]
+        },
+        {
+          "text": "material queratósico",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "keratinous material",
+          "relaxed": false,
+          "best": "254666005",
+          "best_fsn": "Keratosis (disorder)",
+          "topk": [
+            "254666005",
+            "231944006",
+            "85363005",
+            "707209001",
+            "201040000"
+          ]
+        },
+        {
+          "text": "parénquima testicular adyacente",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "adjacent testicular parenchyma",
+          "relaxed": false,
+          "best": "75454004",
+          "best_fsn": "Structure of parenchyma of testis (body structure)",
+          "topk": [
+            "75454004",
+            "362278004",
+            "279603000",
+            "119232008",
+            "314349004"
+          ]
+        },
+        {
+          "text": "celularidad germinal tubular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "tubular germinal cell proliferation",
+          "relaxed": false,
+          "best": "127215001",
+          "best_fsn": "Progressively transformed germinal centers (disorder)",
+          "topk": [
+            "127215001",
+            "444408007",
+            "237047009",
+            "109863007",
+            "237677002"
+          ]
+        }
+      ],
+      "hit_best": [],
+      "hit_topk": [],
+      "hit_best_hier": [
+        "87860000"
+      ],
+      "hit_topk_hier": [
+        "87860000"
+      ],
+      "recall_best": 0.0,
+      "recall_topk": 0.0,
+      "recall_best_hier": 1.0,
+      "recall_topk_hier": 1.0
+    },
+    {
+      "file": "es-S0004-06142008000600013-1",
+      "gold_codes": [
+        "129680003",
+        "16779801000119101",
+        "27925004",
+        "301777002",
+        "76917005",
+        "79688008"
+      ],
+      "gold_in_release": [
+        "129680003",
+        "16779801000119101",
+        "27925004",
+        "301777002",
+        "79688008"
+      ],
+      "entities": [
+        {
+          "text": "nódulo tiroideo derecho",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "thyroid nodule",
+          "relaxed": false,
+          "best": "237495005",
+          "best_fsn": "Thyroid nodule (disorder)",
+          "topk": [
+            "237495005",
+            "1137355002",
+            "443821001",
+            "237570007",
+            "190237002"
+          ]
+        },
+        {
+          "text": "signos de compresión de vía aérea",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "airway compression",
+          "relaxed": false,
+          "best": "3304005",
+          "best_fsn": "Bronchial compression (disorder)",
+          "topk": [
+            "3304005",
+            "44416002",
+            "405495005",
+            "718446005",
+            "1366717009"
+          ]
+        },
+        {
+          "text": "ecografía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "ultrasound",
+          "relaxed": false,
+          "best": "16310003",
+          "best_fsn": "Ultrasonography (procedure)",
+          "topk": [
+            "16310003",
+            "89002000",
+            "61593002",
+            "113113000",
+            "373671009"
+          ]
+        },
+        {
+          "text": "bocio multinodular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "multinodular goiter",
+          "relaxed": false,
+          "best": "237570007",
+          "best_fsn": "Multinodular goiter (disorder)",
+          "topk": [
+            "237570007",
+            "36241006",
+            "26389007",
+            "1279836009",
+            "190247004"
+          ]
+        },
+        {
+          "text": "nódulo sólido",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "solid nodule",
+          "relaxed": false,
+          "best": "253151003",
+          "best_fsn": "Nodular heterotopia (disorder)",
+          "topk": [
+            "253151003",
+            "300848003",
+            "240882007",
+            "248527007",
+            "413678004"
+          ]
+        },
+        {
+          "text": "gammagrafía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "scintigraphy",
+          "relaxed": false,
+          "best": "373205008",
+          "best_fsn": "Nuclear medicine imaging procedure (procedure)",
+          "topk": [
+            "373205008",
+            "444629008",
+            "46798003",
+            "371572003",
+            "169159009"
+          ]
+        },
+        {
+          "text": "área fría",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cold nodule",
+          "relaxed": false,
+          "best": "95319004",
+          "best_fsn": "Skin nodule (disorder)",
+          "topk": [
+            "95319004",
+            "1382102005",
+            "402366007",
+            "413678004",
+            "400961003"
+          ]
+        },
+        {
+          "text": "PAAF",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "fine needle aspiration biopsy",
+          "relaxed": false,
+          "best": "48635004",
+          "best_fsn": "Fine needle biopsy (procedure)",
+          "topk": [
+            "48635004",
+            "69902009",
+            "62845000",
+            "442973008",
+            "445317004"
+          ]
+        },
+        {
+          "text": "hiperplasia folicular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "follicular hyperplasia",
+          "relaxed": false,
+          "best": "127218004",
+          "best_fsn": "Reactive follicular hyperplasia in the elderly (disorder)",
+          "topk": [
+            "127218004",
+            "247539002",
+            "367373003",
+            "254698004",
+            "27382006"
+          ]
+        },
+        {
+          "text": "hemitiroidectomía derecha",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "right hemithyroidectomy",
+          "relaxed": false,
+          "best": "744855001",
+          "best_fsn": "Excision of right lobe of thyroid gland (procedure)",
+          "topk": [
+            "744855001",
+            "735941002",
+            "302338000",
+            "13619001",
+            "24443003"
+          ]
+        },
+        {
+          "text": "nodulo parduzco, pálido",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "thyroid nodule",
+          "relaxed": false,
+          "best": "237495005",
+          "best_fsn": "Thyroid nodule (disorder)",
+          "topk": [
+            "237495005",
+            "1137355002",
+            "443821001",
+            "237570007",
+            "190237002"
+          ]
+        },
+        {
+          "text": "nefrectomía radical derecha",
+          "type": "procedure",
+          "context": "past",
+          "clinicalTerm": "right radical nephrectomy",
+          "relaxed": false,
+          "best": "443869003",
+          "best_fsn": "Total nephrectomy of right kidney (procedure)",
+          "topk": [
+            "443869003",
+            "1370910005",
+            "116033007",
+            "765473008",
+            "175905003"
+          ]
+        },
+        {
+          "text": "carcinoma renal",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "renal cell carcinoma",
+          "relaxed": false,
+          "best": "702391001",
+          "best_fsn": "Renal cell carcinoma (disorder)",
+          "topk": [
+            "702391001",
+            "1259489002",
+            "702392008",
+            "764694005",
+            "254915003"
+          ]
+        },
+        {
+          "text": "hinchazón cervical",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cervical swelling",
+          "relaxed": false,
+          "best": "298400009",
+          "best_fsn": "Swelling of soft tissue of cervical spine (finding)",
+          "topk": [
+            "298400009",
+            "298399002",
+            "289796004",
+            "289762006",
+            "289830002"
+          ]
+        },
+        {
+          "text": "adenopatías cervicales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cervical lymphadenopathy",
+          "relaxed": false,
+          "best": "127086001",
+          "best_fsn": "Cervical lymphadenopathy (disorder)",
+          "topk": [
+            "127086001",
+            "127087005",
+            "127090004",
+            "3502005",
+            "238405002"
+          ]
+        },
+        {
+          "text": "imágenes ocupantes de espacio en seno piriforme izquierdo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass in left jugular venous space",
+          "relaxed": false,
+          "best": "92121009",
+          "best_fsn": "Benign neoplasm of glomus jugulare (disorder)",
+          "topk": [
+            "92121009",
+            "400034001",
+            "896923002",
+            "127030001",
+            "461293002"
+          ]
+        },
+        {
+          "text": "traqueotomía",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "tracheotomy",
+          "relaxed": false,
+          "best": "48387007",
+          "best_fsn": "Incision of trachea (procedure)",
+          "topk": [
+            "48387007",
+            "1303805000",
+            "232604000",
+            "386625001",
+            "86800006"
+          ]
+        }
+      ],
+      "hit_best": [],
+      "hit_topk": [],
+      "hit_best_hier": [
+        "301777002"
+      ],
+      "hit_topk_hier": [
+        "16779801000119101",
+        "301777002"
+      ],
+      "recall_best": 0.0,
+      "recall_topk": 0.0,
+      "recall_best_hier": 0.167,
+      "recall_topk_hier": 0.333
+    },
+    {
+      "file": "es-S0004-06142008000600014-1",
+      "gold_codes": [
+        "16217341000119101",
+        "267062003",
+        "274718005",
+        "285384003",
+        "300493001",
+        "300503008",
+        "300848003",
+        "309305008",
+        "33809001",
+        "399406009",
+        "399643001",
+        "408573005",
+        "64882008",
+        "84387000",
+        "87860000"
+      ],
+      "gold_in_release": [
+        "16217341000119101",
+        "274718005",
+        "285384003",
+        "300493001",
+        "300503008",
+        "300848003",
+        "33809001",
+        "399406009",
+        "399643001",
+        "408573005",
+        "84387000",
+        "87860000"
+      ],
+      "entities": [
+        {
+          "text": "dolor",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "pain",
+          "relaxed": false,
+          "best": "22253000",
+          "best_fsn": "Pain (finding)",
+          "topk": [
+            "22253000",
+            "27635008",
+            "8708008",
+            "1144586002",
+            "301371003"
+          ]
+        },
+        {
+          "text": "inflamación del testículo izquierdo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "left testicular inflammation",
+          "relaxed": false,
+          "best": "274718005",
+          "best_fsn": "Orchitis (disorder)",
+          "topk": [
+            "274718005",
+            "1285641001",
+            "197983000",
+            "45082006",
+            "128478005"
+          ]
+        },
+        {
+          "text": "fiebre",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "fever",
+          "relaxed": false,
+          "best": "386661006",
+          "best_fsn": "Fever (finding)",
+          "topk": [
+            "386661006",
+            "271751000",
+            "102496004",
+            "240513003",
+            "248447001"
+          ]
+        },
+        {
+          "text": "síntomas urológicos acompañantes",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "urinary symptoms",
+          "relaxed": false,
+          "best": "249274008",
+          "best_fsn": "Urinary symptoms (finding)",
+          "topk": [
+            "249274008",
+            "307541003",
+            "247382002",
+            "30041000119101",
+            "16844001"
+          ]
+        },
+        {
+          "text": "afectación del estado general",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "general malaise",
+          "relaxed": false,
+          "best": "367391008",
+          "best_fsn": "Malaise (finding)",
+          "topk": [
+            "367391008",
+            "213257006",
+            "271795006",
+            "214264003",
+            "162408000"
+          ]
+        },
+        {
+          "text": "testículo izquierdo indurado",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "induration of left testicle",
+          "relaxed": false,
+          "best": "60524008",
+          "best_fsn": "Fibrosis of testis (disorder)",
+          "topk": [
+            "60524008",
+            "438457000",
+            "64910008",
+            "300492006",
+            "198068005"
+          ]
+        },
+        {
+          "text": "epidídimo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "epididymis",
+          "relaxed": false,
+          "best": "87644002",
+          "best_fsn": "Epididymis structure (body structure)",
+          "topk": [
+            "87644002",
+            "181432000",
+            "72720006",
+            "279619007",
+            "74475002"
+          ]
+        },
+        {
+          "text": "testículo derecho",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "right testicle",
+          "relaxed": false,
+          "best": "15598003",
+          "best_fsn": "Structure of right testis (body structure)",
+          "topk": [
+            "15598003",
+            "1365724001",
+            "1217281007",
+            "367719007",
+            "1052334000"
+          ]
+        },
+        {
+          "text": "ecografía testicular",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "testicular ultrasound",
+          "relaxed": false,
+          "best": "303918003",
+          "best_fsn": "Ultrasonography of male genital system (procedure)",
+          "topk": [
+            "303918003",
+            "440495009",
+            "25630002",
+            "1220587009",
+            "1287898007"
+          ]
+        },
+        {
+          "text": "lesión nodular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "nodule",
+          "relaxed": false,
+          "best": "413678004",
+          "best_fsn": "Bohn's nodule (disorder)",
+          "topk": [
+            "413678004",
+            "95319004",
+            "400961003",
+            "403747000",
+            "1382102005"
+          ]
+        },
+        {
+          "text": "áreas quísticas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "cystic areas",
+          "relaxed": false,
+          "best": "441457006",
+          "best_fsn": "Cyst (disorder)",
+          "topk": [
+            "441457006",
+            "369746007",
+            "109608003",
+            "89988002",
+            "25418001"
+          ]
+        },
+        {
+          "text": "áreas con fino contenido ecogénico",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "hyperechoic areas",
+          "relaxed": false,
+          "best": "83464003",
+          "best_fsn": "Increased markings (finding)",
+          "topk": [
+            "83464003",
+            "95688008",
+            "414639009",
+            "370483001",
+            "247143009"
+          ]
+        },
+        {
+          "text": "lesiones nodulares sólidas",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "solid nodules",
+          "relaxed": false,
+          "best": "125132005",
+          "best_fsn": "Abnormal radiologic density, nodular (finding)",
+          "topk": [
+            "125132005",
+            "253151003",
+            "315249005",
+            "240882007",
+            "400961003"
+          ]
+        },
+        {
+          "text": "neoplasia testicular bilateral",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "bilateral testicular neoplasm",
+          "relaxed": false,
+          "best": "15955181000119109",
+          "best_fsn": "Neoplasm of uncertain behavior of bilateral testes (disorder)",
+          "topk": [
+            "15955181000119109",
+            "895361003",
+            "15955621000119104",
+            "15955381000119106",
+            "15955301000119103"
+          ]
+        },
+        {
+          "text": "α-FTP",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "alpha-fetoprotein",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "391878002",
+            "786963003",
+            "788397008",
+            "109042006"
+          ]
+        },
+        {
+          "text": "β-HCG",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "beta-human chorionic gonadotropin",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "20577002",
+            "391877007",
+            "391878002",
+            "786800001"
+          ]
+        },
+        {
+          "text": "LDH",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "lactate dehydrogenase",
+          "relaxed": false,
+          "best": "398659005",
+          "best_fsn": "Product containing lactic acid (medicinal product)",
+          "topk": [
+            "398659005",
+            "398789008",
+            "317599009",
+            "55015008",
+            "420923009"
+          ]
+        },
+        {
+          "text": "TAC toraco-abdómino-pélvico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "CT scan of chest, abdomen and pelvis",
+          "relaxed": false,
+          "best": "418023006",
+          "best_fsn": "Computed tomography of chest, abdomen and pelvis (procedure)",
+          "topk": [
+            "418023006",
+            "433761009",
+            "16462121000119108",
+            "418891003",
+            "1148700003"
+          ]
+        },
+        {
+          "text": "criopreservación seminal",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "semen cryopreservation",
+          "relaxed": false,
+          "best": "870572003",
+          "best_fsn": "Cryopreservation of spermatozoa (procedure)",
+          "topk": [
+            "870572003",
+            "441198005",
+            "441209003",
+            "439247007",
+            "441222006"
+          ]
+        },
+        {
+          "text": "orquiectomía inguinal izquierda",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "left inguinal orchiectomy",
+          "relaxed": false,
+          "best": "767335007",
+          "best_fsn": "Excision of entire left testis by inguinal approach (procedure)",
+          "topk": [
+            "767335007",
+            "735027008",
+            "116171002",
+            "767347001",
+            "176417003"
+          ]
+        },
+        {
+          "text": "ligadura alta de cordón",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "high cord ligation",
+          "relaxed": false,
+          "best": "39349007",
+          "best_fsn": "Transection of artery with ligation (procedure)",
+          "topk": [
+            "39349007",
+            "7365008",
+            "408695000",
+            "86749008",
+            "90010006"
+          ]
+        },
+        {
+          "text": "biopsia testicular derecha",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "right testicular biopsy",
+          "relaxed": false,
+          "best": "118958009",
+          "best_fsn": "Biopsy of testis (procedure)",
+          "topk": [
+            "118958009",
+            "29865007",
+            "274363009",
+            "69443001",
+            "708619003"
+          ]
+        },
+        {
+          "text": "clampaje del cordón espermático",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "spermatic cord clamping",
+          "relaxed": false,
+          "best": "81229002",
+          "best_fsn": "Ligation of spermatic cord (procedure)",
+          "topk": [
+            "81229002",
+            "5983006",
+            "120022004",
+            "176486002",
+            "276486001"
+          ]
+        },
+        {
+          "text": "orquiectomía inguinal derecha",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "right inguinal orchiectomy",
+          "relaxed": false,
+          "best": "767336008",
+          "best_fsn": "Excision of entire right testis by inguinal approach (procedure)",
+          "topk": [
+            "767336008",
+            "116171002",
+            "446481000",
+            "735028003",
+            "767344008"
+          ]
+        },
+        {
+          "text": "células malignas germinales",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "germ cell malignancy",
+          "relaxed": false,
+          "best": "145831000119103",
+          "best_fsn": "Primary malignant germ cell neoplasm (disorder)",
+          "topk": [
+            "145831000119103",
+            "402878003",
+            "713646001",
+            "713577007",
+            "254869000"
+          ]
+        },
+        {
+          "text": "estudio anatomopatológico",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "histopathological examination",
+          "relaxed": false,
+          "best": "252416005",
+          "best_fsn": "Histopathology test (procedure)",
+          "topk": [
+            "252416005",
+            "714797009",
+            "108257001",
+            "113041004",
+            "116783008"
+          ]
+        },
+        {
+          "text": "tumoración",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "mass",
+          "relaxed": false,
+          "best": "300848003",
+          "best_fsn": "Mass of body structure (finding)",
+          "topk": [
+            "300848003",
+            "441845009",
+            "443607001",
+            "309529002",
+            "440299000"
+          ]
+        },
+        {
+          "text": "carcinoma embrionario adulto",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "adult embryonal carcinoma",
+          "relaxed": false,
+          "best": "1156454002",
+          "best_fsn": "Embryonal carcinoma (disorder)",
+          "topk": [
+            "1156454002",
+            "254872007",
+            "1196839006",
+            "1196881000",
+            "721602000"
+          ]
+        },
+        {
+          "text": "teratoma",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "teratoma",
+          "relaxed": false,
+          "best": "36591000119102",
+          "best_fsn": "Teratoma (disorder)",
+          "topk": [
+            "36591000119102",
+            "189847002",
+            "768937006",
+            "255106001",
+            "716077006"
+          ]
+        },
+        {
+          "text": "seminoma de variedad clásica",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "classical variant seminoma",
+          "relaxed": false,
+          "best": "443675005",
+          "best_fsn": "Seminoma (disorder)",
+          "topk": [
+            "443675005",
+            "255107005",
+            "1268700009",
+            "1286766002",
+            "313428008"
+          ]
+        },
+        {
+          "text": "neoplasia intratubular",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "intratubular neoplasia",
+          "relaxed": false,
+          "best": "444408007",
+          "best_fsn": "Tubular adenoma (disorder)",
+          "topk": [
+            "444408007",
+            "721597007",
+            "733603009",
+            "253151003",
+            "1187379001"
+          ]
+        },
+        {
+          "text": "albugínea",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "tunica albuginea",
+          "relaxed": false,
+          "best": "279604006",
+          "best_fsn": "Entire tunica albuginea of testis (body structure)",
+          "topk": [
+            "279604006",
+            "58552002",
+            "28057003",
+            "258409003",
+            "4651005"
+          ]
+        },
+        {
+          "text": "epidídimo",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "epididymis",
+          "relaxed": false,
+          "best": "87644002",
+          "best_fsn": "Epididymis structure (body structure)",
+          "topk": [
+            "87644002",
+            "181432000",
+            "72720006",
+            "279619007",
+            "74475002"
+          ]
+        },
+        {
+          "text": "cordón espermático",
+          "type": "body structure",
+          "context": "present",
+          "clinicalTerm": "spermatic cord",
+          "relaxed": false,
+          "best": "49957000",
+          "best_fsn": "Spermatic cord structure (body structure)",
+          "topk": [
+            "49957000",
+            "181433005",
+            "279647006",
+            "279645003",
+            "279653006"
+          ]
+        },
+        {
+          "text": "BEP modificado",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "modified BEP chemotherapy regimen",
+          "relaxed": false,
+          "best": "427812009",
+          "best_fsn": "Product containing bendamustine (medicinal product)",
+          "topk": [
+            "427812009",
+            "76591000",
+            "714212001",
+            "398907002",
+            "1208444004"
+          ]
+        },
+        {
+          "text": "α-FTP",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "alpha-fetoprotein",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "391878002",
+            "786963003",
+            "788397008",
+            "109042006"
+          ]
+        },
+        {
+          "text": "β-HCG",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "beta-human chorionic gonadotropin",
+          "relaxed": false,
+          "best": "412126005",
+          "best_fsn": "Product containing human chorionic gonadotropin (medicinal product)",
+          "topk": [
+            "412126005",
+            "20577002",
+            "391877007",
+            "391878002",
+            "786800001"
+          ]
+        },
+        {
+          "text": "LDH",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "lactate dehydrogenase",
+          "relaxed": false,
+          "best": "398659005",
+          "best_fsn": "Product containing lactic acid (medicinal product)",
+          "topk": [
+            "398659005",
+            "398789008",
+            "317599009",
+            "55015008",
+            "420923009"
+          ]
+        },
+        {
+          "text": "testosterona",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "testosterone",
+          "relaxed": false,
+          "best": "109033004",
+          "best_fsn": "Product containing testosterone (medicinal product)",
+          "topk": [
+            "109033004",
+            "768758009",
+            "768996004",
+            "777722004",
+            "346600009"
+          ]
+        }
+      ],
+      "hit_best": [
+        "274718005",
+        "300848003"
+      ],
+      "hit_topk": [
+        "274718005",
+        "300848003"
+      ],
+      "hit_best_hier": [
+        "274718005",
+        "300848003",
+        "87860000"
+      ],
+      "hit_topk_hier": [
+        "274718005",
+        "300848003",
+        "87860000"
+      ],
+      "recall_best": 0.133,
+      "recall_topk": 0.133,
+      "recall_best_hier": 0.2,
+      "recall_topk_hier": 0.2
+    }
+  ]
+}
