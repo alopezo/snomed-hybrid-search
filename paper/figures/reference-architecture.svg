@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2380" viewBox="0 0 1200 1190" role="img" aria-labelledby="title desc">
+  <title id="title">Generalizable reference architecture for hybrid SNOMED CT concept retrieval</title>
+  <desc id="desc">A clinical query or note passes through optional query interpretation, parallel lexical and semantic retrieval, rank or score fusion, optional candidate re-ranking, terminology-aware constraints, and produces ranked SNOMED CT concepts.</desc>
+  <defs>
+    <style>
+      .title { font-family: Helvetica, Arial, sans-serif; font-size: 28px; font-weight: 700; fill: #20262d; letter-spacing: 0; }
+      .step { font-family: Helvetica, Arial, sans-serif; font-size: 26px; font-weight: 700; fill: #20262d; letter-spacing: 0; }
+      .detail { font-family: Helvetica, Arial, sans-serif; font-size: 21px; font-weight: 400; fill: #39424e; letter-spacing: 0; }
+      .label { font-family: Helvetica, Arial, sans-serif; font-size: 18px; font-weight: 700; fill: #59636f; letter-spacing: 0; }
+      .arrow { fill: none; stroke: #374151; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+      .arrowhead { fill: #374151; }
+      .box { stroke-width: 3; rx: 8; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="1190" fill="#ffffff"/>
+  <text x="600" y="35" text-anchor="middle" class="title">GENERALIZABLE REFERENCE ARCHITECTURE</text>
+
+  <rect x="350" y="70" width="500" height="86" class="box" fill="#f7f8fa" stroke="#56616d"/>
+  <text x="600" y="121" text-anchor="middle" class="step">Clinical query or free-text note</text>
+
+  <path d="M 600 156 L 600 205" class="arrow"/>
+  <path d="M 589 189 L 611 189 L 600 205 z" class="arrowhead"/>
+  <rect x="300" y="205" width="600" height="116" class="box" fill="#fff4d6" stroke="#966515" stroke-dasharray="11 8"/>
+  <text x="600" y="252" text-anchor="middle" class="step">Query interpretation / preprocessing</text>
+  <text x="600" y="288" text-anchor="middle" class="detail">normalization, translation, or entity extraction</text>
+  <text x="880" y="226" text-anchor="end" class="label">OPTIONAL</text>
+
+  <path d="M 600 321 L 600 362 L 315 362 L 315 405" class="arrow"/>
+  <path d="M 600 362 L 885 362 L 885 405" class="arrow"/>
+  <path d="M 304 389 L 326 389 L 315 405 z" class="arrowhead"/>
+  <path d="M 874 389 L 896 389 L 885 405 z" class="arrowhead"/>
+
+  <rect x="80" y="405" width="470" height="136" class="box" fill="#e3f2ed" stroke="#176b5b"/>
+  <text x="315" y="458" text-anchor="middle" class="step">Lexical retrieval path</text>
+  <text x="315" y="495" text-anchor="middle" class="detail">exact, prefix, or other</text>
+  <text x="315" y="524" text-anchor="middle" class="detail">algorithmic matching</text>
+
+  <rect x="650" y="405" width="470" height="136" class="box" fill="#e7eff9" stroke="#285f9b"/>
+  <text x="885" y="458" text-anchor="middle" class="step">Semantic retrieval path</text>
+  <text x="885" y="495" text-anchor="middle" class="detail">embedding or model-based</text>
+  <text x="885" y="524" text-anchor="middle" class="detail">similarity</text>
+
+  <path d="M 315 541 L 315 590 L 600 590 L 600 635" class="arrow"/>
+  <path d="M 885 541 L 885 590 L 600 590" class="arrow"/>
+  <path d="M 589 619 L 611 619 L 600 635 z" class="arrowhead"/>
+  <rect x="350" y="635" width="500" height="96" class="box" fill="#f0f1f3" stroke="#4b5563"/>
+  <text x="600" y="694" text-anchor="middle" class="step">Rank or score fusion</text>
+
+  <path d="M 600 731 L 600 786" class="arrow"/>
+  <path d="M 589 770 L 611 770 L 600 786 z" class="arrowhead"/>
+  <rect x="350" y="786" width="500" height="104" class="box" fill="#fff0e7" stroke="#a55430" stroke-dasharray="11 8"/>
+  <text x="600" y="844" text-anchor="middle" class="step">Candidate re-ranking</text>
+  <text x="830" y="808" text-anchor="end" class="label">OPTIONAL</text>
+
+  <path d="M 600 890 L 600 945" class="arrow"/>
+  <path d="M 589 929 L 611 929 L 600 945 z" class="arrowhead"/>
+  <rect x="300" y="945" width="600" height="116" class="box" fill="#f7f8fa" stroke="#56616d"/>
+  <text x="600" y="993" text-anchor="middle" class="step">Terminology-aware constraints</text>
+  <text x="600" y="1031" text-anchor="middle" class="detail">hierarchy filters and deterministic safeguards</text>
+
+  <path d="M 600 1061 L 600 1106" class="arrow"/>
+  <path d="M 589 1090 L 611 1090 L 600 1106 z" class="arrowhead"/>
+  <rect x="350" y="1106" width="500" height="72" class="box" fill="#e9f3e3" stroke="#4c7334"/>
+  <text x="600" y="1152" text-anchor="middle" class="step">Ranked SNOMED CT concepts</text>
+</svg>
