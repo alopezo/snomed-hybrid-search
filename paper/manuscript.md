@@ -1,7 +1,9 @@
 ---
 title: "From lexical search to semantic matching: a multi-model architecture for SNOMED CT concept retrieval"
 author:
-  - Alejandro López Osornio
+  - |
+    Alejandro López Osornio\
+    \small Senior Implementation Support Specialist, SNOMED International
   - "[co-authors TBD]"
 date: "DRAFT, \\today"
 abstract: |
@@ -92,7 +94,7 @@ We used the RF2 Snapshot view of the 1 June 2026 SNOMED CT International Edition
 
 ## External evaluation
 
-**Choice of corpus.** Openly licensed gold standards that link *free clinical text* to SNOMED CT are scarce. Most English clinical-note resources that normalize to SNOMED CT or the UMLS require a data-use agreement, and general clinical NLP corpora do not target SNOMED CT. The Spanish corpora produced by the Barcelona Supercomputing Center for the BioASQ/BioCreative shared tasks are a notable exception: they are released under CC BY 4.0 and every mention is normalized to SNOMED CT. We evaluated on **DisTEMIST** (BioASQ 2022) — 1,000 Spanish clinical case reports with disease mentions linked to SNOMED CT [@mirandaescalada2022distemist] — because diseases map cleanly onto the *Clinical finding* hierarchy; the companion **SympTEMIST** (symptoms, signs and findings) [@limalopez2023symptemist] shares the same format. Two caveats follow from this choice and we treat them explicitly rather than hide them. First, the corpus is **Spanish**; for a multilingual system this is less a limitation than a cross-lingual stress test, since the query and the terminology descriptions are in different languages. Second, the texts are drawn from **published case reports**, whose language is more edited than bedside notes; the evaluation therefore probes concept normalization more than the full messiness of real electronic health record text. We use this corpus because it is among the few open, SNOMED-CT-linked options, and read the results with these limits in mind.
+**Choice of corpus.** Openly licensed gold standards that link *free clinical text* to SNOMED CT are scarce. Most English clinical-note resources that normalize to SNOMED CT or the UMLS require a data-use agreement, and general clinical NLP corpora do not target SNOMED CT. The Spanish corpora produced by the Barcelona Supercomputing Center for the BioASQ/BioCreative shared tasks are a notable exception: they are released under CC BY 4.0 and every mention is normalized to SNOMED CT. We evaluated on **DisTEMIST** (BioASQ 2022) — 1,000 Spanish clinical case reports with disease mentions linked to SNOMED CT [@mirandaescalada2022distemist] — because diseases map cleanly onto the *Clinical finding* hierarchy. Two caveats follow from this choice and we treat them explicitly rather than hide them. First, the corpus is **Spanish**; for a multilingual system this is less a limitation than a cross-lingual stress test, since the query and the terminology descriptions are in different languages. Second, the texts are drawn from **published case reports**, whose language is more edited than bedside notes; the evaluation therefore probes concept normalization more than the full messiness of real electronic health record text. We use this corpus because it is among the few open, SNOMED-CT-linked options, and read the results with these limits in mind.
 
 **Task and configurations.** To measure the *search* capability independently of our entity extractor, we ran a **search-only** evaluation: each gold mention's verbatim span is submitted as a query and we record the rank of the gold SNOMED CT code — this is the corpus's own entity-linking (normalization) subtask. We swept the two learned, optional components of the search pipeline as a 2×2 design — LLM query pre-processing (gemma normalization/translation) on/off × cross-encoder re-ranking on/off — and report three of the four cells. The lexical and semantic channels and their RRF fusion were always active; the hierarchy filter was fixed to *Clinical finding* (the corpus is diseases); and we retrieved *k* = 10 candidates.
 
@@ -116,15 +118,21 @@ The examples exposed complementary roles for the components rather than a consis
 
 We evaluated the first 100 DisTEMIST training documents, which contain 588 unique disease mentions; 20 gold codes were recovered through historical associations and 46 mentions were scoped out as non-disorder/finding, leaving **542** mentions. Table 1 reports the three search configurations.
 
-: Search-only linking on 542 DisTEMIST disease mentions (Spanish, zero-shot). "Pre-proc." = LLM query normalization; "Re-rank" = cross-encoder. Metrics use the strict rule (exact concept identifier); recall@5 and recall@10 are the picker-list framing (is the gold concept on the screen the user would see?). *near-miss@10* is the additional fraction whose top-10 held an ancestor or descendant of the gold. Best strict value per column in **bold**.
+\footnotesize
 
-| Pre-proc. | Re-rank | acc@1 | recall@5 | recall@10 | MRR | near-miss@10 |
-|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| off | **on**  | **0.60** | **0.76** | **0.80** | **0.67** | +0.09 |
-| on  | off | 0.54 | 0.70 | 0.75 | 0.60 | +0.12 |
-| on  | on  | 0.54 | 0.69 | 0.75 | 0.61 | +0.12 |
+: Search-only linking on 542 DisTEMIST disease mentions (Spanish, zero-shot). *PP* = LLM query pre-processing (normalization); *RR* = cross-encoder re-ranking. *MRR* = mean reciprocal rank of the gold concept. The strict columns *acc@1*, *R@5* and *R@10* (accuracy@1, recall@5, recall@10) require the exact concept identifier and read as a picker list — is the gold concept on the screen the user would see? *+near@10* is the additional fraction whose top-10 held an ancestor or descendant of the gold (the near-miss increment), and *=lin@10* is the two summed (same-lineage@10): the most optimistic reading, in which any hierarchical neighbour counts as acceptable. Best value per column in **bold**.
+
+| PP | RR | MRR | acc@1 | R@5 | R@10 | +near@10 | =lin@10 |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| off | **on**  | **0.67** | **0.60** | **0.76** | **0.80** | +0.09 | **0.89** |
+| on  | off | 0.60 | 0.54 | 0.70 | 0.75 | +0.12 | 0.87 |
+| on  | on  | 0.61 | 0.54 | 0.69 | 0.75 | +0.12 | 0.87 |
+
+\normalsize
 
 Read the numbers as a concept picker: recall@5 and recall@10 are the chance that the intended concept is on the short list a clinician would scan and select from, while accuracy@1 is the chance the system's first candidate is already correct. Three findings stand out. First, the **cheapest configuration is also the best**: with query pre-processing *off* and re-ranking *on*, the exact concept is the top candidate for 60% of mentions (accuracy@1 = 0.60) and appears within the top-10 picker list for 80% (recall@10 = 0.80); for a further 9% of mentions a parent or child of the intended concept is in that list (near-miss@10 = +0.09). Because this configuration makes no per-query LLM call, it is simultaneously the most accurate and the least expensive to run. Second, **LLM query pre-processing hurts on this task**: enabling it lowers accuracy@1 from 0.60 to 0.54. The gold mentions are already clean, terminology-like disease terms, and the multilingual embedding maps them cross-lingually without help; the LLM's normalization to English instead shifts the semantic neighbourhood (for example, *infertilidad* → *infertility* pulls the specific "X infertility" disorders above the exact generic *Infertile*). The LLM's value is for the dirty, lay or abbreviated input of interactive use, not for well-formed terminology strings. Third, **re-ranking helps** when it is not preceded by aggressive normalization, improving both accuracy@1 and MRR; the two components are genuinely optional and the optimal configuration is task-dependent.
+
+The **MRR of 0.67** for the best configuration is worth reading carefully, because it characterizes the ordering rather than mere presence. MRR is a mean of reciprocal ranks in which unretrieved mentions score zero, so it cannot simply be inverted into an "average rank." Its value here is only 0.07 above accuracy@1 (0.60), and that small gap is the informative part: of the mentions the system does retrieve, almost all sit at or immediately below the top, and very few correct concepts are buried deep in the list. Decomposing the 542 mentions, roughly 60% are exact at rank 1, about 20% are retrieved but at a lower rank (contributing an average reciprocal rank near 0.35, i.e. around rank 3), and the remaining 20% are not retrieved within the disorder/finding scope at all. The practical implication is that the residual difficulty is one of *recall* — concepts the system never surfaces — not of *ranking*: when the intended concept is present, the picker rarely makes the clinician scroll for it. Read together, the columns bound the outcome from both sides: strict accuracy@1 = 0.60 is the pessimistic floor (the first candidate is exactly right), while same-lineage@10 = 0.89 is the optimistic ceiling (the top-10 holds the exact concept or a hierarchical neighbour a clinician might accept), with the true operational value depending on how a given workflow treats near-misses.
 
 These are **zero-shot** results — no training or fine-tuning on the corpus — yet accuracy and recall fall in the range reported by the *supervised* systems of the original shared task [@mirandaescalada2022distemist]. The near-miss rate shows that a meaningful share of the strict "errors" are not wrong answers but hierarchically adjacent ones: at rank 1, beyond the 0.60 exact matches, a further 0.15 of mentions have a parent or child concept as the top candidate, and across the top-10 the near-miss increment is 0.09–0.12. Whether such a neighbour is acceptable is a clinical judgement, so we treat this as an upper bound rather than as accuracy. A further residual class, credited by neither the exact nor the near-miss count, is the annotators' choice of a *substance* or *morphologic-abnormality* concept where the system returns the corresponding *disorder* — a genuine representation difference in the gold itself, not a retrieval failure.
 
@@ -148,18 +156,18 @@ SNOMED CT's curated lexical content can serve as the foundation for an interface
 
 # Acknowledgements
 
-OpenAI Codex was used during manuscript preparation to assist with language editing, structural revision and drafting. All AI-assisted content was critically reviewed, verified and revised by the authors, who take full responsibility for the final manuscript.
+AI coding and writing assistants were used during this work. OpenAI Codex and Claude Code (Anthropic) were both used during manuscript preparation to assist with language editing, structural revision and drafting; Claude Code was additionally used as a programming assistant to help develop the reference implementation, tooling and evaluation frameworks. All AI-assisted content and code was critically reviewed, verified and revised by the authors, who take full responsibility for the final manuscript.
 
 # Funding
 
-[TBD]
+This work was funded by SNOMED International.
 
 # Competing interests
 
-[TBD]
+The author is employed by SNOMED International, the organization that develops and maintains SNOMED CT, the terminology studied in this work. SNOMED International funded the work. The author declares no other competing interests.
 
 # Data and code availability
 
-The reference implementation, configuration and evaluation materials are available as open-source software [TODO: repository URL]. They are provided to make the architectural choices inspectable and to support adaptation and re-evaluation in other environments. DisTEMIST [@mirandaescalada2022distemist] and SympTEMIST [@limalopez2023symptemist] are available under CC BY 4.0 from their authors and are not redistributed here.
+The reference implementation, configuration and evaluation materials are available as open-source software [TODO: repository URL]. They are provided to make the architectural choices inspectable and to support adaptation and re-evaluation in other environments. DisTEMIST [@mirandaescalada2022distemist] is available under CC BY 4.0 from its authors and is not redistributed here.
 
 # References
