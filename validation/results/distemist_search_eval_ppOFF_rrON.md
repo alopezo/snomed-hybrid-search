@@ -24,11 +24,15 @@
 
 ## Results
 
-| metric | strict | hierarchy-aware |
-|---|---|---|
-| acc@1 | 0.601 | 0.747 |
-| recall@5 | 0.764 | 0.873 |
-| recall@10 | 0.797 | 0.893 |
+Read recall@5/@10 as a concept picker: is the gold on the short list the user would scan?
+*near-miss* is the extra fraction whose top-k holds a parent/child of the gold (strict + near-miss
+= same-lineage).
+
+| metric | strict | + near-miss | = same-lineage |
+|---|---|---|---|
+| acc@1 | 0.601 | +0.146 | 0.747 |
+| recall@5 | 0.764 | +0.109 | 0.873 |
+| recall@10 | 0.797 | +0.096 | 0.893 |
 
 MRR 0.669 · 20 gold resolved via history · 46 scoped out (non-disorder,finding) · elapsed 158.6s
 

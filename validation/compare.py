@@ -35,12 +35,14 @@ def main() -> None:
          f"Search-only normalization on the first-100-doc sample (n = {n} scoped mentions; gemma query",
          "normalization and cross-encoder rerank toggled). Gold resolved via historical associations and",
          "scoped to disorder/finding (see the per-config reports for methodology).\n",
-         "| config | acc@1 | recall@5 | recall@10 | hier@1 | hier@5 | hier@10 | MRR |",
-         "|---|---|---|---|---|---|---|---|"]
+         "| config | acc@1 | recall@5 | recall@10 | MRR | near-miss@10 |",
+         "|---|---|---|---|---|---|"]
     for s in runs:
+        nm = round(s["hier@10"] - s["recall@10"], 3)
         L.append(f"| **{label(s)}** | {s['acc@1']} | {s['recall@5']} | {s['recall@10']} | "
-                 f"{s['hier@1']} | {s['hier@5']} | {s['hier@10']} | {s['MRR']} |")
-    L.append("\n*strict = exact code; hier = exact/ancestor/descendant. Higher is better.*")
+                 f"{s['MRR']} | +{nm} |")
+    L.append("\n*Strict exact-concept metrics; recall@5/@10 = the picker-list framing (gold on the short "
+             "list the user sees). near-miss@10 = extra fraction whose top-10 holds a parent/child of the gold.*")
     out = RES / f"{args.corpus}_search_eval_comparison.md"
     out.write_text("\n".join(L) + "\n", encoding="utf-8")
     print("\n".join(L))
