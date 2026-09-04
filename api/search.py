@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import threading
 import time
 import unicodedata
@@ -270,11 +271,61 @@ EXTRACT_SYSTEM = (
 )
 
 
-def extract_entities(text: str, timeout: float = 180.0) -> list[dict]:
-    """Extract structured clinical entities from a free-text note via the LLM (JSON mode).
-    Returns the list of entity dicts (see EXTRACT_SYSTEM for the shape); best-effort: [] on error.
-    Each entity's `clinicalTerm` is the normalized English query for the hybrid engine, and `type`
-    maps to a hierarchy filter via TYPE_TO_HIERARCHY."""
+def _parse_terms(content: str) -> list[dict]:
+    """Parse the LLM's JSON entity list, tolerating malformed output. The small model occasionally
+    emits an invalid value (e.g. `"laterality":"null}`) or degenerates into repeated whitespace, which
+    breaks the whole document; rather than dropping the note, salvage every well-formed entity object."""
+    try:
+        data = json.loads(content)
+        terms = data.get("terms", data) if isinstance(data, dict) else data
+        if isinstance(terms, list):
+            return [t for t in terms if isinstance(t, dict)]
+    except Exception:
+        pass
+    # Salvage: brace-match individual {...} objects (entities are flat, no nesting) and keep the ones
+    # that parse and look like an entity. Starts after the "terms" key to skip the wrapper object.
+    out: list[dict] = []
+    i0 = content.find('"terms"')
+    scan = content[i0:] if i0 != -1 else content
+    depth, start = 0, None
+    for i, ch in enumerate(scan):
+        if ch == "{":
+            if depth == 0:
+                start = i
+            depth += 1
+        elif ch == "}" and depth > 0:
+            depth -= 1
+            if depth == 0 and start is not None:
+                try:
+                    obj = json.loads(scan[start:i + 1])
+                    if isinstance(obj, dict) and "text" in obj:
+                        out.append(obj)
+                except Exception:
+                    pass
+                start = None
+    return out
+
+
+def _chunks(text: str, max_chars: int = 800) -> list[str]:
+    """Split a note into sentence-aligned chunks under max_chars. The small model degenerates on long,
+    dense structured outputs — it can loop mid-generation and never emit the tail of the note — so we
+    extract chunk-by-chunk and merge. Short notes return a single chunk."""
+    sents = re.split(r"(?<=[.;\n])\s+", text.strip())
+    chunks: list[str] = []
+    cur = ""
+    for s in sents:
+        if cur and len(cur) + len(s) + 1 > max_chars:
+            chunks.append(cur)
+            cur = s
+        else:
+            cur = f"{cur} {s}".strip() if cur else s
+    if cur:
+        chunks.append(cur)
+    return chunks or [text]
+
+
+def _extract_one(text: str, timeout: float) -> list[dict]:
+    """One LLM extraction call over a (short) piece of text. Best-effort: [] on error."""
     try:
         r = httpx.post(
             f"{GEMMA_URL}/chat/completions",
@@ -292,11 +343,34 @@ def extract_entities(text: str, timeout: float = 180.0) -> list[dict]:
         )
         r.raise_for_status()
         content = r.json()["choices"][0]["message"]["content"]
-        data = json.loads(content)
     except Exception:
         return []
-    terms = data.get("terms", data) if isinstance(data, dict) else data
-    return terms if isinstance(terms, list) else []
+    terms = _parse_terms(content)
+    for t in terms:  # the model sometimes emits the string "null" instead of a JSON null
+        for k in ("severity", "laterality"):
+            if isinstance(t.get(k), str) and t[k].strip().lower() in ("null", "none", ""):
+                t[k] = None
+    return terms
+
+
+def extract_entities(text: str, timeout: float = 180.0) -> list[dict]:
+    """Extract structured clinical entities from a free-text note via the LLM (JSON mode). Long notes
+    are split into chunks and the results merged (deduplicated by text + clinicalTerm), so the small
+    model does not degenerate and drop the tail of the note. Best-effort: [] on error. Each entity's
+    `clinicalTerm` is the normalized English query for the hybrid engine, and `type` maps to a hierarchy
+    filter via TYPE_TO_HIERARCHY."""
+    chunks = _chunks(text)
+    if len(chunks) == 1:
+        return _extract_one(chunks[0], timeout)
+    out: list[dict] = []
+    seen: set = set()
+    for ch in chunks:
+        for e in _extract_one(ch, timeout):
+            key = ((e.get("text") or "").strip().lower(), (e.get("clinicalTerm") or "").strip().lower())
+            if key not in seen:
+                seen.add(key)
+                out.append(e)
+    return out
 
 
 @lru_cache(maxsize=1)
