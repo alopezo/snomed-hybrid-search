@@ -140,7 +140,10 @@ def main() -> None:
     # channel="both" keeps the original stem (the pp/rr ablation); single-channel runs get a ch* prefix
     # so they live in a separate namespace and do not collide with the pp/rr comparison glob.
     ch = "" if args.channel == "both" else f"ch{args.channel}_"
-    stem = f"{args.corpus}_search_eval_{ch}pp{pp}_rr{rr}"
+    # default filter (Clinical finding) keeps the original stem; other filters get a marker so an
+    # unfiltered (or differently-filtered) ablation does not overwrite the baseline files.
+    fl = "" if args.filter == "404684003" else ("fnone_" if filt is None else f"f{filt}_")
+    stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     write_md(HERE / "results" / f"{stem}.md", summary, rows)
