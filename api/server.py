@@ -101,8 +101,9 @@ def api_search(
     gemma: bool = Query(True),
     rerank: bool = Query(False),
     filter: int | None = Query(None),
+    channel: str = Query("both", pattern="^(both|lexical|semantic)$"),
 ):
-    return search(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter)
+    return search(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter, channel=channel)
 
 
 @app.get("/api/search_stream")

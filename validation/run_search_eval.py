@@ -58,6 +58,8 @@ def main() -> None:
     ap.add_argument("--n", type=int, default=10)
     ap.add_argument("--gemma", default="true")
     ap.add_argument("--rerank", default="false")
+    ap.add_argument("--channel", default="both", choices=["both", "lexical", "semantic"],
+                    help="retrieval channel to rank on (ablation): both = RRF fusion")
     ap.add_argument("--filter", default="404684003")   # Clinical finding; "none" to disable
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--scope", default="disorder,finding",
@@ -80,7 +82,7 @@ def main() -> None:
 
     def search(q: str) -> list[dict]:
         u = (f"{API}/api/search?q={urllib.parse.quote(q)}&k={args.k}"
-             f"&gemma={args.gemma}&rerank={args.rerank}")
+             f"&gemma={args.gemma}&rerank={args.rerank}&channel={args.channel}")
         if filt is not None:
             u += f"&filter={filt}"
         return httpx.get(u, timeout=90).json().get("results", [])
@@ -125,7 +127,8 @@ def main() -> None:
     r = lambda x: round(x / n, 3)
     summary = {
         "corpus": args.corpus,
-        "config": {"gemma": args.gemma, "rerank": args.rerank, "filter": filt, "k": args.k, "scope": args.scope},
+        "config": {"gemma": args.gemma, "rerank": args.rerank, "channel": args.channel,
+                   "filter": filt, "k": args.k, "scope": args.scope},
         "mentions": agg["total"], "scoped_out": agg["scoped_out"], "resolved_via_history": agg["resolved"],
         "elapsed_s": round(time.time() - t0, 1),
         "acc@1": r(agg["hit1"]), "recall@5": r(agg["hit5"]), "recall@10": r(agg["hit10"]),
@@ -134,7 +137,10 @@ def main() -> None:
     }
     pp = "ON" if args.gemma.lower() == "true" else "OFF"
     rr = "ON" if args.rerank.lower() == "true" else "OFF"
-    stem = f"{args.corpus}_search_eval_pp{pp}_rr{rr}"
+    # channel="both" keeps the original stem (the pp/rr ablation); single-channel runs get a ch* prefix
+    # so they live in a separate namespace and do not collide with the pp/rr comparison glob.
+    ch = "" if args.channel == "both" else f"ch{args.channel}_"
+    stem = f"{args.corpus}_search_eval_{ch}pp{pp}_rr{rr}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     write_md(HERE / "results" / f"{stem}.md", summary, rows)

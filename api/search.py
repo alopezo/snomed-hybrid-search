@@ -62,7 +62,7 @@ TYPE_TO_HIERARCHY = {
     "drug": 763158003, "substance": 105590001,
 }
 
-RRF_SQL = """
+RRF_SQL_TEMPLATE = """
 WITH q AS (SELECT to_tsquery('unaccent_simple', %(tsq)s) AS ts),
 lex AS (
     -- Rank with native ts_rank, normalized by length AND unique-word count (flags 1|8): divide by
@@ -98,9 +98,10 @@ fused AS (
 ),
 scored AS (
     SELECT d.concept_id, d.term, d.semantic_tag,
-           f.lex_s + f.vec_s + (d.pref_us::int * %(pref_boost)s) AS score,
+           {score_expr} + (d.pref_us::int * %(pref_boost)s) AS score,
            f.in_lex, f.in_vec
     FROM fused f JOIN descriptions d ON d.id = f.id
+    WHERE {row_filter}
 ),
 best AS (
     SELECT DISTINCT ON (concept_id)
@@ -120,6 +121,18 @@ LEFT JOIN LATERAL (
 ORDER BY b.score DESC
 LIMIT %(k_out)s
 """
+
+# Retrieval-channel selection (for ablation). "both" = the served RRF fusion; "lexical"/"semantic"
+# isolate a single channel by scoring on that channel's RRF term only and dropping rows the other
+# channel contributed. The score expressions and row filters are from a fixed whitelist (no user input).
+_CHANNEL_SCORE = {"both": "f.lex_s + f.vec_s", "lexical": "f.lex_s", "semantic": "f.vec_s"}
+_CHANNEL_FILTER = {"both": "TRUE", "lexical": "f.in_lex", "semantic": "f.in_vec"}
+
+
+def _rrf_sql(channel: str = "both") -> str:
+    if channel not in _CHANNEL_SCORE:
+        raise ValueError(f"channel must be one of {sorted(_CHANNEL_SCORE)}, got {channel!r}")
+    return RRF_SQL_TEMPLATE.format(score_expr=_CHANNEL_SCORE[channel], row_filter=_CHANNEL_FILTER[channel])
 
 
 def normalize(term: str) -> str:
@@ -415,10 +428,11 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
 
 
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-                  filter_concept: int | None = None):
+                  filter_concept: int | None = None, channel: str = "both"):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
     then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
-    `filter_concept`: if set, restrict results to descendants-or-self of that concept id."""
+    `filter_concept`: if set, restrict results to descendants-or-self of that concept id.
+    `channel`: retrieval channel(s) to rank on — "both" (RRF fusion), "lexical", or "semantic"."""
     t: dict[str, float] = {}
     t0 = time.perf_counter()
 
@@ -450,7 +464,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
             cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
-        cur.execute(RRF_SQL, {
+        cur.execute(_rrf_sql(channel), {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
             "filter": filter_concept,
@@ -493,11 +507,11 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
 
 
 def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-           filter_concept: int | None = None) -> dict:
+           filter_concept: int | None = None, channel: str = "both") -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
     for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank,
-                               filter_concept=filter_concept):
+                               filter_concept=filter_concept, channel=channel):
         final = event
     final = dict(final)
     final.pop("stage", None)
