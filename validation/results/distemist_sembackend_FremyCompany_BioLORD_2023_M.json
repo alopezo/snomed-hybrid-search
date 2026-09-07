@@ -1,0 +1,21 @@
+{
+  "corpus": "distemist",
+  "model": "FremyCompany/BioLORD-2023-M",
+  "column": "embedding",
+  "config": {
+    "filter": 404684003,
+    "k": 10,
+    "scope": "disorder,finding"
+  },
+  "mentions": 542,
+  "scoped_out": 46,
+  "resolved_via_history": 20,
+  "elapsed_s": 96.1,
+  "acc@1": 0.638,
+  "recall@5": 0.775,
+  "recall@10": 0.804,
+  "hier@1": 0.762,
+  "hier@5": 0.873,
+  "hier@10": 0.893,
+  "MRR": 0.696
+}

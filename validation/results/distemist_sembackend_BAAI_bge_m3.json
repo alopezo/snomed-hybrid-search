@@ -1,0 +1,21 @@
+{
+  "corpus": "distemist",
+  "model": "BAAI/bge-m3",
+  "column": "embedding_bge",
+  "config": {
+    "filter": 404684003,
+    "k": 10,
+    "scope": "disorder,finding"
+  },
+  "mentions": 542,
+  "scoped_out": 46,
+  "resolved_via_history": 20,
+  "elapsed_s": 98.7,
+  "acc@1": 0.5,
+  "recall@5": 0.618,
+  "recall@10": 0.642,
+  "hier@1": 0.616,
+  "hier@5": 0.749,
+  "hier@10": 0.777,
+  "MRR": 0.55
+}

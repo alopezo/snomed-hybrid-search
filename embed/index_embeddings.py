@@ -34,6 +34,9 @@ def main() -> None:
     ap.add_argument("--limit", type=int, default=0, help="process only N unique terms (test)")
     ap.add_argument("--batch", type=int, default=256, help="encode batch size")
     ap.add_argument("--chunk", type=int, default=20000, help="terms per dump to staging")
+    ap.add_argument("--column", default="embedding",
+                    help="target vector column in descriptions (e.g. embedding_bge for an A/B encoder)")
+    ap.add_argument("--dim", type=int, default=768, help="embedding dimensionality of the model")
     args = ap.parse_args()
 
     load_dotenv()
@@ -43,10 +46,17 @@ def main() -> None:
 
     from sentence_transformers import SentenceTransformer  # noqa: WPS433
 
-    print(f"Loading {model_name} (device={device})...")
+    print(f"Loading {model_name} (device={device}) -> descriptions.{args.column} vector({args.dim})...")
     model = SentenceTransformer(model_name, device=device)
 
     with psycopg.connect(dsn) as conn:
+        # For a non-default (A/B experiment) column, ensure it exists — reversible with DROP COLUMN.
+        # The default production column is never touched by DDL here.
+        if args.column != "embedding":
+            with conn.cursor() as cur:
+                cur.execute(f"ALTER TABLE descriptions ADD COLUMN IF NOT EXISTS {args.column} vector({args.dim})")
+            conn.commit()
+            print(f"ensured column descriptions.{args.column} vector({args.dim})")
         with conn.cursor() as cur:
             cur.execute("SELECT DISTINCT term_norm FROM descriptions")
             terms = [r[0] for r in cur.fetchall()]
@@ -56,11 +66,11 @@ def main() -> None:
         print(f"Unique terms to encode: {total:,}")
 
         with conn.cursor() as cur:
+            cur.execute("DROP TABLE IF EXISTS emb_stage")
             cur.execute(
-                "CREATE UNLOGGED TABLE IF NOT EXISTS emb_stage "
-                "(term_norm TEXT PRIMARY KEY, embedding vector(768))"
+                f"CREATE UNLOGGED TABLE emb_stage "
+                f"(term_norm TEXT PRIMARY KEY, embedding vector({args.dim}))"
             )
-            cur.execute("TRUNCATE emb_stage")
         conn.commit()
 
         t0 = time.time()
@@ -82,22 +92,22 @@ def main() -> None:
             eta = (total - done) / rate if rate else 0
             print(f"  {done:,}/{total:,}  ({rate:.0f}/s, ETA {eta/60:.1f} min)")
 
-        print("Propagating vectors to descriptions (UPDATE join)...")
+        print(f"Propagating vectors to descriptions.{args.column} (UPDATE join)...")
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE descriptions d SET embedding = s.embedding "
+                f"UPDATE descriptions d SET {args.column} = s.embedding "
                 "FROM emb_stage s WHERE d.term_norm = s.term_norm"
             )
             cur.execute("DROP TABLE emb_stage")
         conn.commit()
 
         with conn.cursor() as cur:
-            cur.execute("SELECT count(*) FILTER (WHERE embedding IS NOT NULL), count(*) FROM descriptions")
+            cur.execute(f"SELECT count(*) FILTER (WHERE {args.column} IS NOT NULL), count(*) FROM descriptions")
             with_emb, total_rows = cur.fetchone()
-    print(f"\nDone. Rows with embedding: {with_emb:,}/{total_rows:,}")
-    print("Next: create HNSW -> "
-          "docker compose exec -T db psql -U snomed -d snomed_search "
-          "-c \"CREATE INDEX ix_desc_emb ON descriptions USING hnsw (embedding vector_cosine_ops);\"")
+    idx = "ix_desc_emb" if args.column == "embedding" else f"ix_desc_{args.column}"
+    print(f"\nDone. Rows with {args.column}: {with_emb:,}/{total_rows:,}")
+    print(f"Next: create HNSW -> docker compose exec -T db psql -U snomed -d snomed_search "
+          f"-c \"CREATE INDEX {idx} ON descriptions USING hnsw ({args.column} vector_cosine_ops);\"")
 
 
 if __name__ == "__main__":

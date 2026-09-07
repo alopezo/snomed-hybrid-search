@@ -226,7 +226,7 @@
     <div class="pipe">
       <div class="stage"><span class="tag">input</span><span class="name">Clinician note</span><span class="sub">any lang · acronyms · typos</span></div>
       <div class="arrow">›</div>
-      <div class="stage model gemma" style="--c:var(--gemma)"><span class="tag">① decode</span><span class="name">Pre-process</span><span class="sub">gemma → 1 canonical EN term<br>T=0 · ~1.2 s</span></div>
+      <div class="stage model gemma" style="--c:var(--gemma)"><span class="tag">① decode</span><span class="name">Pre-process</span><span class="sub">gemma → 1 canonical EN term<br>T=0 · ~1.0 s</span></div>
       <div class="arrow">›</div>
       <div class="retrieve">
         <div class="rh"><span class="tag">retrieve · top-200 / channel</span><span class="oneq">1 SQL plan</span></div>
@@ -320,7 +320,7 @@
           <tr><th scope="row">Scales to 1 M rows</th><td class="no">—</td><td class="yes">yes · ANN index</td><td class="no">no · rerank top-k only</td></tr>
           <tr><th scope="row">Domain-adapted</th><td class="no">no (general)</td><td class="yes">yes (UMLS/SNOMED)</td><td class="no">no (general)</td></tr>
           <tr><th scope="row">Invocations / query</th><td class="mono">1</td><td class="mono">1 (+1.02 M offline)</td><td class="mono">k = 15</td></tr>
-          <tr><th scope="row">Latency (warm)</th><td class="mono">~1.2 s</td><td class="mono">~30 ms</td><td class="mono">~0.2–0.4 s</td></tr>
+          <tr><th scope="row">Latency (warm)</th><td class="mono">~1.0 s</td><td class="mono">~30 ms</td><td class="mono">~0.2–0.4 s</td></tr>
           <tr><th scope="row">Params</th><td class="mono">~12 B</td><td class="mono">~110–200 M</td><td class="mono">~560 M</td></tr>
           <tr><th scope="row">On disk</th><td class="mono">7.2 GB</td><td class="mono">1.1 GB</td><td class="mono">2.1 GB</td></tr>
           <tr class="foot-row"><th scope="row">VRAM/RAM (loaded)</th><td class="mono">7.8 GB</td><td class="mono">~0.5–1 GB</td><td class="mono">~2.2 GB</td></tr>
