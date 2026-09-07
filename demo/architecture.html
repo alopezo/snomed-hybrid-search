@@ -250,16 +250,16 @@
     <div class="cards">
       <div class="card gemma">
         <span class="idx">① generative LLM · decoder</span>
-        <h3>gemma3:12b</h3>
+        <h3>gemma4:12b</h3>
         <span class="kind">General-purpose</span>
-        <p class="role">Decoder-only transformer (Google Gemma 3), <b>Q4_K_M</b>-quantized GGUF, 32K
+        <p class="role">Decoder-only transformer (Google Gemma 4), <b>q4_0 QAT</b>-quantized GGUF, 32K
           context. <b>Prompt-engineered, not fine-tuned:</b> greedy decode (<code>T=0</code>) to
           language-detect, translate to English, and normalize the note to <b>one canonical clinical
           term</b> that feeds both retrieval channels.</p>
         <dl>
           <dt>Params</dt><dd>~12 B</dd>
-          <dt>Quant</dt><dd>Q4_K_M</dd>
-          <dt>On disk</dt><dd>8.1 GB</dd>
+          <dt>Quant</dt><dd>q4_0 QAT</dd>
+          <dt>On disk</dt><dd>7.2 GB</dd>
           <dt>VRAM/RAM</dt><dd>7.8 GB</dd>
           <dt>Biomedical</dt><dd>no</dd>
         </dl>
@@ -308,7 +308,7 @@
         <thead>
           <tr>
             <th scope="col"></th>
-            <th scope="col" class="m g">① gemma3:12b</th>
+            <th scope="col" class="m g">① gemma4:12b</th>
             <th scope="col" class="m b">② BioLORD-2023-M</th>
             <th scope="col" class="m r">③ bge-reranker-v2-m3</th>
           </tr>
@@ -322,7 +322,7 @@
           <tr><th scope="row">Invocations / query</th><td class="mono">1</td><td class="mono">1 (+1.02 M offline)</td><td class="mono">k = 15</td></tr>
           <tr><th scope="row">Latency (warm)</th><td class="mono">~1.2 s</td><td class="mono">~30 ms</td><td class="mono">~0.2–0.4 s</td></tr>
           <tr><th scope="row">Params</th><td class="mono">~12 B</td><td class="mono">~110–200 M</td><td class="mono">~560 M</td></tr>
-          <tr><th scope="row">On disk</th><td class="mono">8.1 GB</td><td class="mono">1.1 GB</td><td class="mono">2.1 GB</td></tr>
+          <tr><th scope="row">On disk</th><td class="mono">7.2 GB</td><td class="mono">1.1 GB</td><td class="mono">2.1 GB</td></tr>
           <tr class="foot-row"><th scope="row">VRAM/RAM (loaded)</th><td class="mono">7.8 GB</td><td class="mono">~0.5–1 GB</td><td class="mono">~2.2 GB</td></tr>
         </tbody>
       </table>
@@ -344,7 +344,7 @@
           <span class="pill g">:11434</span>. It owns weight loading, quantization and
           <code>OLLAMA_KEEP_ALIVE</code>; the app issues an <b>HTTP</b> <code>chat/completions</code>
           call. Any compatible endpoint is a drop-in — the LLM is <b>swappable and optional</b>.</p>
-        <div class="who"><span class="pill g">① gemma3:12b</span></div>
+        <div class="who"><span class="pill g">① gemma4:12b</span></div>
       </div>
       <div class="sbox">
         <span class="lab">In-process · MPS</span>
@@ -398,6 +398,13 @@
       (<code>tsvector</code>/<code>tsquery</code>/<code>ts_rank</code>/GIN), the <code>bigint[]</code>
       ancestor arrays, and RRF. No fork, no Elasticsearch, no separate vector DB — a managed Postgres that
       offers pgvector runs this unchanged.</p>
+    <p class="pg-ext"><b>Scaling note:</b> at this size the semantic search is <b>not</b> the bottleneck —
+      the HNSW index (≈4 GB for 1.02 M vectors) fits in memory and answers in <b>~0.5 ms</b>, far below the
+      LLM and cross-encoder stages. If the corpus outgrew RAM (many editions, languages or extensions) or
+      needed high concurrent throughput, <a href="https://github.com/timescale/pgvectorscale" target="_blank"
+      rel="noopener">pgvectorscale</a>'s StreamingDiskANN (disk-resident graph) and SBQ vector compression
+      would be the drop-in path — at the cost of the "any managed pgvector runs this" portability above. It is
+      a scaling option, not a current need.</p>
   </section>
 
   <section>
@@ -427,8 +434,8 @@
       <div class="ref">
         <span class="rtag t-g">① LLM</span>
         <div class="rbody">
-          <div class="rtitle"><a href="https://arxiv.org/abs/2503.19786" target="_blank" rel="noopener">Gemma 3 Technical Report</a></div>
-          <div class="rmeta">Gemma Team, Google DeepMind · 2025 · the generative model used for pre-processing</div>
+          <div class="rtitle"><a href="https://arxiv.org/abs/2607.02770" target="_blank" rel="noopener">Gemma 4 Technical Report</a></div>
+          <div class="rmeta">Gemma Team, Google DeepMind · 2026 · the generative model used for pre-processing</div>
         </div>
       </div>
       <div class="ref">
@@ -442,7 +449,7 @@
         <span class="rtag t-n">prior art</span>
         <div class="rbody">
           <div class="rtitle"><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8861757/" target="_blank" rel="noopener">Semantic Search for Large Scale Clinical Ontologies</a></div>
-          <div class="rmeta">Chang, Mai, et al. (CSIRO) · closest prior work — Triplet-BERT semantic retrieval over SNOMED CT</div>
+          <div class="rmeta">Ngo, Koopman, et al. (CSIRO) · closest prior work — Triplet-BERT semantic retrieval over SNOMED CT</div>
         </div>
       </div>
     </div>
@@ -450,7 +457,7 @@
 
   <section>
     <div class="sec-head"><span class="n">07</span><h2>Building on prior art</h2></div>
-    <p class="prior">The closest prior work — <span class="who">Chang, Mai et al. (CSIRO)</span> — established that
+    <p class="prior">The closest prior work — <span class="who">Ngo, Koopman et al. (CSIRO)</span> — established that
       semantic <b>Triplet-BERT</b> retrieval over SNOMED beats lexical baselines on <b>low-lexical-overlap</b>
       queries, trained from the ontology's own synonyms. We keep that thesis — it <em>is</em> our semantic
       channel — but extend a single-stage, English, semantic-only retriever into a full system:</p>

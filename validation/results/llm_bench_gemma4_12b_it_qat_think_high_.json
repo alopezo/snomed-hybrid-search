@@ -1,0 +1,173 @@
+{
+  "summary": {
+    "model": "gemma4:12b-it-qat [think=high]",
+    "norm": {
+      "mean_ms": 2875.1,
+      "median_ms": 2873.5,
+      "total_ms": 23000.5
+    },
+    "extract": {
+      "mean_ms": 104297.1,
+      "median_ms": 95226.3,
+      "total_ms": 417188.3,
+      "total_entities": 15
+    }
+  },
+  "norm": [
+    {
+      "query": "radiografia de torax",
+      "out": "",
+      "ms": 2869.9
+    },
+    {
+      "query": "EPOC",
+      "out": "",
+      "ms": 2897.3
+    },
+    {
+      "query": "inf myo",
+      "out": "",
+      "ms": 2881.3
+    },
+    {
+      "query": "dolor abdominal",
+      "out": "",
+      "ms": 2877.0
+    },
+    {
+      "query": "chest xray",
+      "out": "",
+      "ms": 2867.5
+    },
+    {
+      "query": "htn",
+      "out": "",
+      "ms": 2881.2
+    },
+    {
+      "query": "IAM",
+      "out": "",
+      "ms": 2865.1
+    },
+    {
+      "query": "insuf renal cronica",
+      "out": "",
+      "ms": 2861.2
+    }
+  ],
+  "extract": {
+    "negation_history": {
+      "n": 4,
+      "ms": 46701.5,
+      "entities": [
+        {
+          "text": "stroke",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "stroke"
+        },
+        {
+          "text": "chest pain",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "chest pain"
+        },
+        {
+          "text": "fever",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "fever"
+        },
+        {
+          "text": "shortness of breath",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "dyspnea"
+        }
+      ]
+    },
+    "spanish": {
+      "n": 5,
+      "ms": 104402.2,
+      "entities": [
+        {
+          "text": "diabetes mellitus tipo 2",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "type 2 diabetes mellitus"
+        },
+        {
+          "text": "disnea de esfuerzo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "exertional dyspnea"
+        },
+        {
+          "text": "EPOC",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "chronic obstructive pulmonary disease"
+        },
+        {
+          "text": "radiografía de tórax",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "chest x-ray"
+        },
+        {
+          "text": "dolor torácico",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "chest pain"
+        }
+      ]
+    },
+    "abbrev_imaging": {
+      "n": 6,
+      "ms": 86050.4,
+      "entities": [
+        {
+          "text": "COPD exacerbation",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "chronic obstructive pulmonary disease exacerbation"
+        },
+        {
+          "text": "CT chest",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "computed tomography of chest"
+        },
+        {
+          "text": "PE",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "pulmonary embolism"
+        },
+        {
+          "text": "MI",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "myocardial infarction"
+        },
+        {
+          "text": "furosemide",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "furosemide"
+        },
+        {
+          "text": "prednisone",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "prednisone"
+        }
+      ]
+    },
+    "long_note": {
+      "n": 0,
+      "ms": 180034.2,
+      "entities": []
+    }
+  }
+}

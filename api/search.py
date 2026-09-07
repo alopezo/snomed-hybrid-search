@@ -34,6 +34,16 @@ EMBED_DEVICE = os.environ.get("EMBED_DEVICE", "cpu")
 RERANK_MODEL = os.environ.get("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 GEMMA_URL = os.environ.get("GEMMA_URL", "http://127.0.0.1:8080/v1")
 GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma-4-26b-a4b-it")
+# For reasoning ("thinking") models served through the OpenAI-compatible endpoint: pass a
+# reasoning_effort ("none" disables the chain-of-thought; "low"/"medium"/"high" enable it). Unset =>
+# omit the field, so non-reasoning models (e.g. gemma 3) are unaffected. Reasoning tokens count
+# against max_tokens, so EXTRACT_MAX_TOKENS is configurable to leave room for thinking + JSON.
+GEMMA_REASONING = os.environ.get("GEMMA_REASONING") or None
+EXTRACT_MAX_TOKENS = int(os.environ.get("EXTRACT_MAX_TOKENS", "4000"))
+
+
+def _reasoning_field() -> dict:
+    return {"reasoning_effort": GEMMA_REASONING} if GEMMA_REASONING else {}
 
 RRF_K = 60
 CANDIDATES = 200  # top-N per channel before fusing
@@ -236,6 +246,7 @@ def gemma_expand(query: str, timeout: float = 25.0) -> str | None:
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.0,
                 "max_tokens": 60,
+                **_reasoning_field(),
             },
             timeout=timeout,
         )
@@ -349,8 +360,9 @@ def _extract_one(text: str, timeout: float) -> list[dict]:
                     {"role": "user", "content": "Extract clinical entities from this note:\n" + text},
                 ],
                 "temperature": 0.0,
-                "max_tokens": 4000,
+                "max_tokens": EXTRACT_MAX_TOKENS,
                 "response_format": {"type": "json_object"},
+                **_reasoning_field(),
             },
             timeout=timeout,
         )

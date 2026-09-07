@@ -1,0 +1,330 @@
+{
+  "summary": {
+    "model": "gemma3:12b [think=default]",
+    "norm": {
+      "mean_ms": 1039.9,
+      "median_ms": 1040.8,
+      "total_ms": 8318.9
+    },
+    "extract": {
+      "mean_ms": 19717.5,
+      "median_ms": 11392.1,
+      "total_ms": 78870.0,
+      "total_entities": 41
+    }
+  },
+  "norm": [
+    {
+      "query": "radiografia de torax",
+      "out": "chest x-ray",
+      "ms": 1086.3
+    },
+    {
+      "query": "EPOC",
+      "out": "Chronic obstructive pulmonary disease",
+      "ms": 1087.5
+    },
+    {
+      "query": "inf myo",
+      "out": "Muscle inflammation",
+      "ms": 986.5
+    },
+    {
+      "query": "dolor abdominal",
+      "out": "abdominal pain",
+      "ms": 992.9
+    },
+    {
+      "query": "chest xray",
+      "out": "chest x-ray",
+      "ms": 1054.3
+    },
+    {
+      "query": "htn",
+      "out": "hypertension",
+      "ms": 1023.2
+    },
+    {
+      "query": "IAM",
+      "out": "acute myocardial infarction",
+      "ms": 1027.4
+    },
+    {
+      "query": "insuf renal cronica",
+      "out": "Chronic kidney disease",
+      "ms": 1060.8
+    }
+  ],
+  "extract": {
+    "negation_history": {
+      "n": 4,
+      "ms": 9303.4,
+      "entities": [
+        {
+          "text": "stroke",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Stroke"
+        },
+        {
+          "text": "chest pain",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Chest Pain"
+        },
+        {
+          "text": "fever",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Fever"
+        },
+        {
+          "text": "shortness of breath",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Dyspnea"
+        }
+      ]
+    },
+    "spanish": {
+      "n": 5,
+      "ms": 10695.3,
+      "entities": [
+        {
+          "text": "diabetes mellitus tipo 2",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Type 2 diabetes mellitus"
+        },
+        {
+          "text": "disnea de esfuerzo",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "exertional dyspnea"
+        },
+        {
+          "text": "EPOC",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Chronic obstructive pulmonary disease"
+        },
+        {
+          "text": "radiografía de tórax",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Chest X-ray"
+        },
+        {
+          "text": "dolor torácico",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "chest pain"
+        }
+      ]
+    },
+    "abbrev_imaging": {
+      "n": 6,
+      "ms": 12088.8,
+      "entities": [
+        {
+          "text": "COPD exacerbation",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Chronic obstructive pulmonary disease exacerbation"
+        },
+        {
+          "text": "CT chest",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Computed tomography of the chest"
+        },
+        {
+          "text": "PE",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Pulmonary embolism"
+        },
+        {
+          "text": "MI",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Myocardial infarction"
+        },
+        {
+          "text": "furosemide",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Furosemide"
+        },
+        {
+          "text": "prednisone",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Prednisone"
+        }
+      ]
+    },
+    "long_note": {
+      "n": 26,
+      "ms": 46782.4,
+      "entities": [
+        {
+          "text": "pneumonia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Pneumonia"
+        },
+        {
+          "text": "diabetes mellitus",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Type 2 Diabetes Mellitus"
+        },
+        {
+          "text": "hypertension",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Hypertension"
+        },
+        {
+          "text": "chronic kidney disease",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Chronic Kidney Disease"
+        },
+        {
+          "text": "myocardial infarction",
+          "type": "finding",
+          "context": "past",
+          "clinicalTerm": "Myocardial Infarction"
+        },
+        {
+          "text": "PCI",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Percutaneous Coronary Intervention"
+        },
+        {
+          "text": "cough",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Cough"
+        },
+        {
+          "text": "fever",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Fever"
+        },
+        {
+          "text": "pleuritic chest pain",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Pleuritic Chest Pain"
+        },
+        {
+          "text": "hemoptysis",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Hemoptysis"
+        },
+        {
+          "text": "Chest X-ray",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Radiography of Chest"
+        },
+        {
+          "text": "consolidation",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Consolidation"
+        },
+        {
+          "text": "blood cultures",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Blood Culture"
+        },
+        {
+          "text": "ceftriaxone",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Ceftriaxone"
+        },
+        {
+          "text": "azithromycin",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Azithromycin"
+        },
+        {
+          "text": "acute kidney injury",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Acute Kidney Injury"
+        },
+        {
+          "text": "hyperkalemia",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Hyperkalemia"
+        },
+        {
+          "text": "echocardiogram",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Echocardiography"
+        },
+        {
+          "text": "ejection fraction",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Reduced Ejection Fraction"
+        },
+        {
+          "text": "ischemic cardiomyopathy",
+          "type": "finding",
+          "context": "present",
+          "clinicalTerm": "Ischemic Cardiomyopathy"
+        },
+        {
+          "text": "deep vein thrombosis",
+          "type": "finding",
+          "context": "absent",
+          "clinicalTerm": "Deep Vein Thrombosis"
+        },
+        {
+          "text": "lower-limb ultrasound",
+          "type": "procedure",
+          "context": "present",
+          "clinicalTerm": "Ultrasound of Lower Extremity"
+        },
+        {
+          "text": "metformin",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Metformin"
+        },
+        {
+          "text": "lisinopril",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Lisinopril"
+        },
+        {
+          "text": "atorvastatin",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Atorvastatin"
+        },
+        {
+          "text": "prednisone",
+          "type": "medication",
+          "context": "present",
+          "clinicalTerm": "Prednisone"
+        }
+      ]
+    }
+  }
+}
