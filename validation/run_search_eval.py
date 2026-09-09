@@ -34,6 +34,20 @@ import history  # noqa: E402
 
 BROWSER = "https://browser.ihtsdotools.org/?perspective=full&conceptId1={}&edition=MAIN&languages=en"
 
+# Map a gold concept's FSN semantic tag to the SNOMED CT top-level domain used to scope the search.
+# With --scope-by-type this simulates a *field-scoped* data-entry UI (typeahead/dropdown): the entry
+# field (diagnosis / procedure / medication / …) determines the domain, so each query is constrained to
+# its own domain. The domain comes from the gold's TYPE (a ~100k-concept hierarchy), not the gold concept,
+# so it stands in for the field the clinician chose — application context, not the answer.
+TAG_TO_FILTER = {
+    "disorder": 404684003, "finding": 404684003,                 # Clinical finding
+    "procedure": 71388002, "regime/therapy": 71388002,           # Procedure
+    "body structure": 123037004, "morphologic abnormality": 123037004, "cell structure": 123037004,
+    "product": 763158003, "medicinal product": 763158003,        # Medicinal product
+    "substance": 105590001,                                      # Substance
+    "organism": 410607006,                                       # Organism
+}
+
 
 def load_mentions(cfg: dict, n: int) -> list[tuple[str, str, str]]:
     """All (file, span, code) with a single numeric code across the first n files, deduped by span+code."""
@@ -61,6 +75,9 @@ def main() -> None:
     ap.add_argument("--channel", default="both", choices=["both", "lexical", "semantic"],
                     help="retrieval channel to rank on (ablation): both = RRF fusion")
     ap.add_argument("--filter", default="404684003")   # Clinical finding; "none" to disable
+    ap.add_argument("--scope-by-type", action="store_true",
+                    help="per-mention domain filter derived from the gold's top-level type (simulates a "
+                         "field-scoped typeahead); overrides --filter")
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--scope", default="disorder,finding",
                     help="keep only gold whose (resolved) FSN tag is in this set; 'all' to disable")
@@ -80,12 +97,21 @@ def main() -> None:
         r = cur.fetchone()
         return r[0] if r else None
 
-    def search(q: str) -> list[dict]:
+    def search(q: str, mfilt) -> list[dict]:
+        q = " ".join(q.split())                       # collapse newlines/whitespace in EHR spans
+        if not q:
+            return []
         u = (f"{API}/api/search?q={urllib.parse.quote(q)}&k={args.k}"
              f"&gemma={args.gemma}&rerank={args.rerank}&channel={args.channel}")
-        if filt is not None:
-            u += f"&filter={filt}"
-        return httpx.get(u, timeout=90).json().get("results", [])
+        if mfilt is not None:
+            u += f"&filter={mfilt}"
+        try:                                           # a single dirty span must not kill the run
+            r = httpx.get(u, timeout=90)
+            r.raise_for_status()
+            return r.json().get("results", [])
+        except Exception as e:
+            print(f"    [search error on {q!r}: {str(e)[:80]}]")
+            return []
 
     mentions = load_mentions(cfg, args.n)
     assoc = history.load_assoc({c for _, _, c in mentions})   # historical associations for gold codes
@@ -93,24 +119,29 @@ def main() -> None:
           f"(gemma={args.gemma} rerank={args.rerank} filter={filt} k={args.k} scope={args.scope})\n")
 
     rows, t0 = [], time.time()
-    agg = {"total": 0, "resolved": 0, "scoped_out": 0, "hit1": 0, "hit5": 0, "hit10": 0,
-           "h1": 0, "h5": 0, "h10": 0, "rr": 0.0}
+    agg = {"total": 0, "resolved": 0, "scoped_out": 0, "unresolved": 0, "hit1": 0, "hit5": 0,
+           "hit10": 0, "h1": 0, "h5": 0, "h10": 0, "rr": 0.0}
     for i, (fn, span, code) in enumerate(mentions, 1):
         rcode, tag = history.resolve(cur, code, assoc)      # current active code + FSN tag
+        if rcode is None:                                   # inactive gold with no successor in our release
+            agg["unresolved"] += 1
+            continue
         if scope is not None and (tag is None or tag not in scope):
             agg["scoped_out"] += 1
             continue
         gold = rcode                                        # score against the resolved (current) code
-        res = search(span)
+        mfilt = TAG_TO_FILTER.get(tag) if args.scope_by_type else filt   # per-mention domain, or the fixed filter
+        res = search(span, mfilt)
         ids = [r["concept_id"] for r in res]
         rank = ids.index(gold) + 1 if gold in ids else None
-        h1 = bool(hierarchy_hits({gold}, set(ids[:1]), dsn))
-        h5 = bool(hierarchy_hits({gold}, set(ids[:5]), dsn))
-        h10 = bool(hierarchy_hits({gold}, set(ids[:args.k]), dsn))
+        h1 = bool(hierarchy_hits({gold}, set(ids[:1]), cur=cur))
+        h5 = bool(hierarchy_hits({gold}, set(ids[:5]), cur=cur))
+        h10 = bool(hierarchy_hits({gold}, set(ids[:args.k]), cur=cur))
         top = res[0] if res else None
         rows.append({"file": fn, "span": span, "gold": code, "resolved": (rcode if rcode != code else None),
-                     "tag": tag, "gold_fsn": fsn(gold), "rank": rank,
+                     "tag": tag, "domain": mfilt, "gold_fsn": fsn(gold), "rank": rank,
                      "top1": top["concept_id"] if top else None, "top1_fsn": top["fsn"] if top else None,
+                     "topk": [[r["concept_id"], r["fsn"]] for r in res[:5]],   # for discrepancy review
                      "hit1": rank == 1, "hit5": bool(rank and rank <= 5), "hit10": bool(rank),
                      "hier1": h1, "hier5": h5, "hier10": h10})
         agg["total"] += 1
@@ -128,8 +159,10 @@ def main() -> None:
     summary = {
         "corpus": args.corpus,
         "config": {"gemma": args.gemma, "rerank": args.rerank, "channel": args.channel,
-                   "filter": filt, "k": args.k, "scope": args.scope},
-        "mentions": agg["total"], "scoped_out": agg["scoped_out"], "resolved_via_history": agg["resolved"],
+                   "filter": ("by-type" if args.scope_by_type else filt),
+                   "k": args.k, "scope": args.scope},
+        "mentions": agg["total"], "scoped_out": agg["scoped_out"], "unresolved": agg["unresolved"],
+        "resolved_via_history": agg["resolved"],
         "elapsed_s": round(time.time() - t0, 1),
         "acc@1": r(agg["hit1"]), "recall@5": r(agg["hit5"]), "recall@10": r(agg["hit10"]),
         "hier@1": r(agg["h1"]), "hier@5": r(agg["h5"]), "hier@10": r(agg["h10"]),
@@ -142,7 +175,10 @@ def main() -> None:
     ch = "" if args.channel == "both" else f"ch{args.channel}_"
     # default filter (Clinical finding) keeps the original stem; other filters get a marker so an
     # unfiltered (or differently-filtered) ablation does not overwrite the baseline files.
-    fl = "" if args.filter == "404684003" else ("fnone_" if filt is None else f"f{filt}_")
+    if args.scope_by_type:
+        fl = "bytype_"
+    else:
+        fl = "" if args.filter == "404684003" else ("fnone_" if filt is None else f"f{filt}_")
     stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")

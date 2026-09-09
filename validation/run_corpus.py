@@ -32,9 +32,11 @@ load_dotenv(HERE.parent / ".env")
 
 _SYMP = HERE / "symptemist/extracted/symptemist-train_all_subtasks+gazetteer+multilingual+test_all_subtasks+bg_231006/symptemist_train"
 _DIST = HERE / "distemist/extracted/distemist/training"
+_SNEL = HERE / "snomed_el"
 
 CORPORA = {
-    # name: {tsv, txt, text_col, code_col} — 0-based column indices in the linking TSV
+    # BSC (BioCreative/BioASQ) corpora: a linking TSV with a mention span + SNOMED code per row
+    # (0-based column indices), one .txt per case. Spanish, disease/finding scope.
     "symptemist": {
         "tsv": _SYMP / "subtask2-linking/symptemist_tsv_train_subtask2.tsv",
         "txt": _SYMP / "subtask1-ner/txt",
@@ -45,21 +47,38 @@ CORPORA = {
         "txt": _DIST / "text_files",
         "text_col": 5, "code_col": 6,
     },
+    # SNOMED CT Entity Linking Challenge (DrivenData / PhysioNet, MIMIC-IV discharge notes). English,
+    # real EHR text, broad concept space (not just disorders). Gold = one CSV of (note_id, span,
+    # start, end, concept_id, annotation_type). git-ignored (MIMIC DUA forbids redistribution).
+    "snomed_el": {
+        "format": "csv",
+        "csv": _SNEL / "train_annotations.csv",
+        "notes": _SNEL / "train_notes.csv",       # for the end-to-end path (note_id -> text)
+        "id_col": "note_id", "text_col": "span", "code_col": "concept_id",
+    },
 }
 
 
 def load_gold(cfg: dict, n: int) -> "dict[str, list[tuple[str, str]]]":
     """file -> [(mention_text, gold_code)] for the first n files by filename.
-    Read the whole TSV (rows may be sorted by mention, not grouped by file), then pick n files."""
-    tc, cc = cfg["text_col"], cfg["code_col"]
+    Two source shapes: a linking TSV (BSC corpora, column indices) or a single annotations CSV with
+    named columns (SNOMED EL challenge). Rows may be sorted by mention, not grouped by file."""
     allg: dict[str, list[tuple[str, str]]] = {}
-    with open(cfg["tsv"], encoding="utf-8") as f:
-        next(f)
-        for line in f:
-            c = line.rstrip("\n").split("\t")
-            if len(c) <= max(tc, cc):
-                continue
-            allg.setdefault(c[0], []).append((c[tc], c[cc]))
+    if cfg.get("format") == "csv":
+        import csv
+        csv.field_size_limit(10 ** 7)                      # spans can contain newlines
+        with open(cfg["csv"], newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                allg.setdefault(row[cfg["id_col"]], []).append((row[cfg["text_col"]], row[cfg["code_col"]]))
+    else:
+        tc, cc = cfg["text_col"], cfg["code_col"]
+        with open(cfg["tsv"], encoding="utf-8") as f:
+            next(f)
+            for line in f:
+                c = line.rstrip("\n").split("\t")
+                if len(c) <= max(tc, cc):
+                    continue
+                allg.setdefault(c[0], []).append((c[tc], c[cc]))
     files = sorted(allg)[:n]
     return {fn: allg[fn] for fn in files}
 
@@ -78,20 +97,31 @@ def codes_in_release(codes: set[str], dsn: str) -> set[str]:
         return {str(r[0]) for r in cur.fetchall()}
 
 
-def hierarchy_hits(gold: set[str], our: set[str], dsn: str) -> set[str]:
+def hierarchy_hits(gold: set[str], our: set[str], dsn: str | None = None, cur=None) -> set[str]:
     """Lenient, hierarchy-aware credit: the subset of gold codes for which some retrieved concept is
     the gold itself, an ancestor of it, or a descendant of it (same IS-A lineage). Uses concept_ancestors
     (ancestors-incl-self). This credits parent/child equivalents but NOT cross-hierarchy choices
-    (e.g. gold 'Renal stone (substance)' vs our 'Kidney stone (disorder)')."""
+    (e.g. gold 'Renal stone (substance)' vs our 'Kidney stone (disorder)').
+
+    Pass an already-open `cur` to avoid a fresh connection per call (this is invoked 3x per mention);
+    otherwise a short-lived connection is opened from `dsn`."""
     g_ids = [int(g) for g in gold]
     o_ids = [int(o) for o in our]
     if not g_ids or not o_ids:
         return set()
-    with psycopg.connect(dsn) as conn, conn.cursor() as cur:
-        cur.execute("SELECT concept_id, ancestors FROM concept_ancestors WHERE concept_id = ANY(%s)", (g_ids,))
-        anc_gold = {r[0]: set(r[1]) for r in cur.fetchall()}
-        cur.execute("SELECT concept_id, ancestors FROM concept_ancestors WHERE concept_id = ANY(%s)", (o_ids,))
-        anc_our = {r[0]: set(r[1]) for r in cur.fetchall()}
+
+    def _fetch(c):
+        c.execute("SELECT concept_id, ancestors FROM concept_ancestors WHERE concept_id = ANY(%s)", (g_ids,))
+        ag = {r[0]: set(r[1]) for r in c.fetchall()}
+        c.execute("SELECT concept_id, ancestors FROM concept_ancestors WHERE concept_id = ANY(%s)", (o_ids,))
+        ao = {r[0]: set(r[1]) for r in c.fetchall()}
+        return ag, ao
+
+    if cur is not None:
+        anc_gold, anc_our = _fetch(cur)
+    else:
+        with psycopg.connect(dsn) as conn, conn.cursor() as c:
+            anc_gold, anc_our = _fetch(c)
     o_set = set(o_ids)
     hit = set()
     for g in g_ids:
