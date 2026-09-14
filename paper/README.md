@@ -24,8 +24,8 @@ pandoc --citeproc manuscript.md --bibliography references.bib -o manuscript.docx
 ```
 
 ## Open items (before the next version / journal submission)
-- [ ] Verify `VERIFY`-flagged citations (rosenbloom2011tension pages/doi; remy2024biolord end page;
-      snomedllm2024scoping authors/volume; zhao2023pmcpatients article no.).
+- [x] Citations verified against published sources (2026-09-14): rosenbloom2011tension,
+      remy2024biolord, snomedllm2024scoping, zhao2023pmcpatients (titles aligned to journal versions).
 - [ ] For a journal submission, trim the main text toward the target venue's word limit
       (~4,000 words for JAMIA Research and Applications); consider moving some detail to a supplement.
 - [ ] Update the citation and add the journal DOI once (and if) published.
