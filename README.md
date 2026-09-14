@@ -19,6 +19,20 @@ Full design, evaluation notes, and Mermaid diagrams are in [`docs/`](docs/) — 
 
 ---
 
+## Preprint & citation
+
+This repository is the reference implementation accompanying the preprint:
+
+> Lopez Osornio A, Randorff Højen A, Kewley K. *Hybrid lexical-semantic retrieval over SNOMED CT:
+> combining two retrieval paradigms to facilitate clinical data entry.* medRxiv 2026.09.10.26362796.
+> doi: [10.64898/2026.09.10.26362796](https://doi.org/10.64898/2026.09.10.26362796)
+
+Preprint: <https://medrxiv.org/cgi/content/short/2026.09.10.26362796v1>
+
+<!-- TODO: update the citation with the journal DOI once published. -->
+
+---
+
 ## Requirements
 
 - **Docker** (runs Postgres 16 + pgvector; nothing else needs a container)
@@ -217,7 +231,7 @@ at `/static/tests.html`.
 
 ## Licensing
 
-- **Code:** MIT (suggested — set the license you want before publishing).
+- **Code:** [Apache License 2.0](LICENSE). Copyright 2026 SNOMED International.
 - **SNOMED CT content is NOT included in this repo** and must not be committed. Use of SNOMED CT
   requires a license from **SNOMED International** (free for Members or affiliates). Download your own RF2 release and point
   `SNOMED_SNAPSHOT_DIR` at it.
