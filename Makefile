@@ -51,6 +51,18 @@ index-hnsw: ## Build the semantic (HNSW) index
 all: db-up install etl hierarchy index-lexical embed index-hnsw ## Full reproduction pipeline
 	@echo ">> Pipeline complete. Start the app with: make serve"
 
+load-extension: ## Add an extension on top of the base edition: make load-extension EXT=/path/to/Ext/Snapshot [INTL=...]
+	@test -n "$(EXT)" || { echo "ERROR: set EXT=/path/to/<Extension>/Snapshot"; exit 1; }
+	$(eval INTL ?= $(shell grep -E '^SNOMED_SNAPSHOT_DIR=' .env | cut -d= -f2-))
+	@echo ">> Appending extension descriptions ($(EXT))..."
+	$(PY) etl/load_descriptions.py --snapshot "$(EXT)" --append
+	@echo ">> Rebuilding transitive closure over UNION of base edition + extension..."
+	$(PY) etl/load_hierarchy.py --snapshot "$(INTL)" --snapshot "$(EXT)"
+	@echo ">> Embedding only the new terms..."
+	$(PY) embed/index_embeddings.py --only-missing
+	$(PSQL) -c "ANALYZE descriptions; ANALYZE concept_ancestors;"
+	@echo ">> Extension loaded. (HNSW/GIN indexes update incrementally; no rebuild needed.)"
+
 llm: ## Start a small local LLM (Ollama) for translation + rerank (see docs/llm-setup.md)
 	bash scripts/serve-llm.sh
 

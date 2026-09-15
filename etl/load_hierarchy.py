@@ -7,12 +7,19 @@ IS-A ancestor of the concept PLUS the concept itself (descendant-or-self / `<<` 
 index makes "is C under X?" a single indexed lookup: `ancestors @> ARRAY[X]` — no per-query
 hierarchy traversal. Rebuild once per SNOMED release (like the rest of the ETL).
 
+Multiple snapshots (edition + extensions): pass several --snapshot dirs. The active concepts and IS-A
+edges are UNIONed across all of them BEFORE the closure is computed, so an extension's IS-A links that
+point up into the International edition (e.g. LOINC Extension -> International parents) resolve to their
+full transitive ancestry. Computing the extension alone would truncate those cross-edition edges.
+
 Usage:
     cd snomed-search && source .venv/bin/activate
-    python etl/load_hierarchy.py
+    python etl/load_hierarchy.py                                 # International only (SNOMED_SNAPSHOT_DIR)
+    python etl/load_hierarchy.py --snapshot INTL --snapshot EXT  # edition + extension, unioned
 """
 from __future__ import annotations
 
+import argparse
 import glob
 import os
 import sys
@@ -78,19 +85,30 @@ def build_ancestors(active: set[int], parents: dict[int, list[int]]) -> dict[int
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--snapshot", action="append", default=[],
+                    help="Snapshot dir (repeatable). Defaults to SNOMED_SNAPSHOT_DIR if none given.")
+    args = ap.parse_args()
+
     load_dotenv()
     dsn = os.environ["PG_DSN"]
-    snapshot = os.environ["SNOMED_SNAPSHOT_DIR"]
+    snapshots = args.snapshot or [os.environ["SNOMED_SNAPSHOT_DIR"]]
 
-    concept_file = find_file(snapshot, "sct2_Concept_Snapshot_*.txt")
-    rel_file = find_file(snapshot, "sct2_Relationship_Snapshot_*.txt")
+    # UNION active concepts across every snapshot first, so cross-edition IS-A edges (e.g. an extension
+    # concept -> an International parent) survive the "parent in active" filter in load_parents.
+    print(f"Active concepts (union of {len(snapshots)} snapshot(s))...")
+    active: set[int] = set()
+    for s in snapshots:
+        part = load_active_concepts(find_file(s, "sct2_Concept_Snapshot_*.txt"))
+        active |= part
+        print(f"  {os.path.basename(s.rstrip('/'))}: +{len(part):,}  (total {len(active):,})")
 
-    print("Active concepts...")
-    active = load_active_concepts(concept_file)
-    print(f"  active: {len(active):,}")
-
-    print("Loading IS-A edges...")
-    parents = load_parents(rel_file, active)
+    print("Loading IS-A edges (union)...")
+    parents: dict[int, list[int]] = {}
+    for s in snapshots:
+        part = load_parents(find_file(s, "sct2_Relationship_Snapshot_*.txt"), active)
+        for child, ps in part.items():
+            parents.setdefault(child, []).extend(ps)
     print(f"  concepts with a parent: {len(parents):,}")
 
     print("Computing transitive ancestors (incl. self)...")

@@ -13,12 +13,14 @@ What it does:
 Usage:
     cd snomed-search
     source .venv/bin/activate
-    python etl/load_descriptions.py
+    python etl/load_descriptions.py                      # full rebuild from SNOMED_SNAPSHOT_DIR
+    python etl/load_descriptions.py --snapshot DIR --append   # add an extension on top (no TRUNCATE)
 
 Config via .env (see .env.example): PG_DSN, SNOMED_SNAPSHOT_DIR.
 """
 from __future__ import annotations
 
+import argparse
 import glob
 import os
 import re
@@ -90,8 +92,13 @@ def build_fsn_tags(path: str, active_concepts: set[str]) -> dict[str, str]:
     return tags
 
 
-def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict[str, str]) -> int:
-    """Pass 2: COPY of active descriptions (FSN + synonym) of active concepts."""
+def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict[str, str],
+                      skip_ids: set[int] | None = None) -> int:
+    """Pass 2: COPY of active descriptions (FSN + synonym) of active concepts.
+
+    In append mode, skip_ids holds description ids already in the table (a few extension descriptions
+    are shipped in the International edition too); we keep the existing row and don't re-COPY them.
+    """
     n = 0
     copy_sql = (
         "COPY descriptions (id, concept_id, term, term_norm, type_id, semantic_tag) FROM STDIN"
@@ -107,6 +114,8 @@ def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict
                 continue
             concept_id = cols[4]
             if concept_id not in active_concepts:
+                continue
+            if skip_ids is not None and int(cols[0]) in skip_ids:
                 continue
             term = cols[7]
             cp.write_row((
@@ -158,11 +167,17 @@ def mark_preferred(conn, path: str) -> None:
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--snapshot", help="Snapshot dir to load (default: SNOMED_SNAPSHOT_DIR from .env)")
+    ap.add_argument("--append", action="store_true",
+                    help="add these descriptions on top of what's loaded (skip TRUNCATE) — for extensions")
+    args = ap.parse_args()
+
     load_dotenv()
     dsn = os.environ.get("PG_DSN")
-    snapshot_dir = os.environ.get("SNOMED_SNAPSHOT_DIR")
+    snapshot_dir = args.snapshot or os.environ.get("SNOMED_SNAPSHOT_DIR")
     if not dsn or not snapshot_dir:
-        sys.exit("ERROR: set PG_DSN and SNOMED_SNAPSHOT_DIR in .env")
+        sys.exit("ERROR: set PG_DSN and SNOMED_SNAPSHOT_DIR in .env (or pass --snapshot)")
 
     concept_file = find_file(snapshot_dir, "sct2_Concept_Snapshot_*.txt")
     desc_file = find_file(snapshot_dir, "sct2_Description_Snapshot-en_*.txt")
@@ -177,17 +192,30 @@ def main() -> None:
     print(f"  tags: {len(fsn_tags):,}")
 
     with psycopg.connect(dsn) as conn:
-        print("Truncating descriptions table...")
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE descriptions")
+        if args.append:
+            print("Append mode: keeping existing rows (no TRUNCATE).")
+        else:
+            print("Truncating descriptions table...")
+            with conn.cursor() as cur:
+                cur.execute("TRUNCATE descriptions")
+
+        skip_ids: set[int] | None = None
+        if args.append:
+            with conn.cursor() as cur:
+                cur.execute("SELECT id FROM descriptions")
+                skip_ids = {r[0] for r in cur}
+            print(f"  existing description ids to skip on conflict: {len(skip_ids):,}")
 
         print("Pass 2: COPY of descriptions...")
-        total = copy_descriptions(conn, desc_file, active_concepts, fsn_tags)
+        total = copy_descriptions(conn, desc_file, active_concepts, fsn_tags, skip_ids)
         print(f"  total copied: {total:,}")
 
         print("Building term_tsv (lexical channel)...")
         with conn.cursor() as cur:
-            cur.execute("UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term)")
+            # In append mode only the newly-copied rows are missing term_tsv; don't reprocess the rest.
+            cur.execute("UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term) "
+                        "WHERE term_tsv IS NULL" if args.append else
+                        "UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term)")
 
         print("Marking preferred terms (US/GB)...")
         mark_preferred(conn, lang_file)

@@ -37,6 +37,8 @@ def main() -> None:
     ap.add_argument("--column", default="embedding",
                     help="target vector column in descriptions (e.g. embedding_bge for an A/B encoder)")
     ap.add_argument("--dim", type=int, default=768, help="embedding dimensionality of the model")
+    ap.add_argument("--only-missing", action="store_true",
+                    help="encode only terms whose column is still NULL (incremental — e.g. after an extension)")
     args = ap.parse_args()
 
     load_dotenv()
@@ -58,7 +60,10 @@ def main() -> None:
             conn.commit()
             print(f"ensured column descriptions.{args.column} vector({args.dim})")
         with conn.cursor() as cur:
-            cur.execute("SELECT DISTINCT term_norm FROM descriptions")
+            if args.only_missing:
+                cur.execute(f"SELECT DISTINCT term_norm FROM descriptions WHERE {args.column} IS NULL")
+            else:
+                cur.execute("SELECT DISTINCT term_norm FROM descriptions")
             terms = [r[0] for r in cur.fetchall()]
         if args.limit:
             terms = terms[: args.limit]
