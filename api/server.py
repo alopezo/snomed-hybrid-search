@@ -11,12 +11,16 @@ from __future__ import annotations
 import os
 
 import json
+import tempfile
 import time
+import uuid
 
-from fastapi import Body, FastAPI, Query
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi import Body, FastAPI, File, Form, Query, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.background import BackgroundTask
 
+from api.mapper import best_match, read_table, resolve_columns, write_table
 from api.search import (
     TYPE_TO_HIERARCHY,
     extract_entities,
@@ -27,6 +31,9 @@ from api.search import (
     search_stream,
     warmup,
 )
+
+# token -> (path, download_name, media_type) for generated mapping files (served once, then removed).
+MAP_JOBS: dict[str, tuple[str, str, str]] = {}
 
 app = FastAPI(title="SNOMED hybrid search")
 
@@ -118,6 +125,93 @@ def api_search_stream(
         for event in search_stream(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter):
             yield json.dumps(event) + "\n"
     return StreamingResponse(gen(), media_type="application/x-ndjson")
+
+
+@app.post("/api/map/preview")
+async def api_map_preview(file: UploadFile = File(...)):
+    """Parse an uploaded .csv/.xlsx and report its columns + a small sample, so the page can confirm
+    which column is `code` and which is `term` before running the (potentially long) mapping."""
+    try:
+        headers, data, fmt = read_table(await file.read(), file.filename or "")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    code_idx, term_idx = resolve_columns(headers)
+    return {"columns": headers, "n_rows": len(data), "filetype": fmt,
+            "code_idx": code_idx, "term_idx": term_idx, "sample": data[:5]}
+
+
+@app.post("/api/map")
+async def api_map(
+    file: UploadFile = File(...),
+    code_col: str | None = Form(None),
+    term_col: str | None = Form(None),
+    out_format: str | None = Form(None),
+    filter: str | None = Form(None),
+    channel: str = Form("semantic"),
+    rerank: bool = Form(False),
+):
+    """Map every row's term to its best SNOMED concept and append `snomed_code` + `snomed_term`.
+    `filter` scopes every row to descendants-or-self of a hierarchy root (e.g. 363787002 Observable
+    entity or 386053000 Evaluation procedure for a lab-test catalog). `channel` ("semantic"|"both"|
+    "lexical") and `rerank` let dirtier vocabularies use lexical fusion + the cross-encoder; gemma stays
+    off. Streams NDJSON progress (one line per row) and a final {"stage":"done", token} line; the file is
+    fetched from /api/map/download/{token}."""
+    try:
+        headers, data, fmt = read_table(await file.read(), file.filename or "")
+    except ValueError as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    code_idx, term_idx = resolve_columns(headers, code_col, term_col)
+    out_fmt = (out_format or fmt).lower()
+    if out_fmt not in ("csv", "xlsx", "ods"):
+        out_fmt = "csv"
+    if channel not in ("semantic", "both", "lexical"):
+        channel = "semantic"
+    try:
+        filter_concept = int(filter) if filter not in (None, "", "none") else None
+    except ValueError:
+        filter_concept = None
+    base = os.path.splitext(os.path.basename(file.filename or "table"))[0]
+    n = len(data)
+    width = len(headers)
+
+    def gen():
+        out_rows: list[list[str]] = []
+        t0 = time.perf_counter()
+        for i, row in enumerate(data, 1):
+            row = [str(c) for c in row] + [""] * (width - len(row))
+            term = row[term_idx] if term_idx < len(row) else ""
+            match_code, match_term = best_match(term, filter_concept, channel, rerank)
+            out_rows.append(row + [match_code, match_term])
+            yield json.dumps({"stage": "row", "i": i, "n": n,
+                              "code": row[code_idx] if code_idx < len(row) else "",
+                              "term": term, "match_code": match_code,
+                              "match_term": match_term}) + "\n"
+        token = uuid.uuid4().hex
+        path = os.path.join(tempfile.gettempdir(), f"snomedmap_{token}.{out_fmt}")
+        write_table(headers, out_rows, out_fmt, path)
+        media = {"xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                 "ods": "application/vnd.oasis.opendocument.spreadsheet",
+                 "csv": "text/csv"}[out_fmt]
+        MAP_JOBS[token] = (path, f"{base}_mapped.{out_fmt}", media)
+        yield json.dumps({"stage": "done", "token": token, "n": n,
+                          "elapsed_s": round(time.perf_counter() - t0, 1)}) + "\n"
+
+    return StreamingResponse(gen(), media_type="application/x-ndjson")
+
+
+@app.get("/api/map/download/{token}")
+def api_map_download(token: str):
+    job = MAP_JOBS.pop(token, None)
+    if not job:
+        return JSONResponse({"error": "unknown or expired download token"}, status_code=404)
+    path, name, media = job
+    return FileResponse(path, media_type=media, filename=name,
+                        background=BackgroundTask(lambda: os.path.exists(path) and os.remove(path)))
+
+
+@app.get("/map")
+def map_page() -> FileResponse:
+    return FileResponse(os.path.join(DEMO_DIR, "map.html"))
 
 
 @app.get("/")

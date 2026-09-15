@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Batch Concept Mapping</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#212530; --inset:#14171d;
+    --ink:#e6e6e6; --muted:#9aa0aa; --line:#2b2f38;
+    --accent:#4f9cf9; --sem:#b57be0;
+    --pass:#5bbd62; --fail:#e5645a; --skip:#c9a24b;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 22px rgba(0,0,0,.28);
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans);
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; padding:clamp(20px,4vw,48px) 20px}
+  .wrap{max-width:1000px; margin:0 auto}
+  code{font-family:var(--mono); font-size:.9em}
+  a{color:var(--accent); text-decoration:none} a:hover{text-decoration:underline}
+
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--sem); margin:0 0 12px}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.5vw,42px); margin:0 0 10px; letter-spacing:-.01em}
+  .lede{color:var(--muted); font-size:15px; max-width:74ch; margin:0}
+  .lede b{color:var(--ink)}
+  .nav{margin-top:10px; font-size:13px}
+
+  .panel{margin:24px 0 8px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px}
+  .health{font-family:var(--mono); font-size:12px; color:var(--muted); margin:0 0 4px}
+  .health b.ok{color:var(--pass)} .health b.off{color:var(--fail)}
+
+  /* drop zone */
+  .drop{border:1.5px dashed var(--line); border-radius:10px; background:var(--inset); padding:26px 18px;
+    text-align:center; color:var(--muted); cursor:pointer; transition:border-color .15s, background .15s}
+  .drop:hover, .drop.over{border-color:var(--sem); background:color-mix(in srgb,var(--sem) 8%,var(--inset))}
+  .drop b{color:var(--ink)} .drop .hint{font-family:var(--mono); font-size:11.5px; margin-top:6px}
+  .drop.has{border-style:solid; border-color:var(--sem)}
+  input[type=file]{display:none}
+
+  .controls{display:flex; flex-wrap:wrap; align-items:center; gap:14px; margin-top:14px}
+  select{font-family:var(--mono); font-size:13px; color:var(--ink); background:var(--inset);
+    border:1px solid var(--line); border-radius:7px; padding:6px 9px}
+  select:focus{outline:2px solid var(--sem); outline-offset:1px}
+  label.fld{display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); font-family:var(--mono)}
+  button.run{font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; background:var(--sem);
+    border:2px solid transparent; border-radius:8px; padding:7px 16px; cursor:pointer}
+  button.run:disabled{opacity:.5; cursor:default}
+  button.ghost{font-family:var(--sans); font-size:13px; color:var(--muted); background:transparent;
+    border:1px solid var(--line); border-radius:8px; padding:6px 13px; cursor:pointer}
+  button.ghost:hover{border-color:var(--fail); color:var(--fail)}
+  a.dl{font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; background:var(--pass);
+    border-radius:8px; padding:8px 17px; display:inline-block}
+  a.dl:hover{text-decoration:none; filter:brightness(1.06)}
+  .spin{width:14px; height:14px; border-radius:50%; display:inline-block; vertical-align:-3px; margin-right:7px;
+    background:conic-gradient(from 0deg, var(--sem), var(--accent), var(--pass), var(--sem));
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+            mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+    animation:spin .85s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){ .spin{animation:none} }
+  #status{margin-left:auto; font-family:var(--mono); font-size:13px; color:var(--muted)}
+  #status b{color:var(--ink); font-weight:600}
+
+  h2.sec{font-size:16px; font-weight:600; margin:30px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line)}
+  h2.sec .n{font-family:var(--mono); font-size:12px; color:var(--muted); margin-right:8px}
+  h2.sec .cnt{font-family:var(--mono); font-size:12px; color:var(--muted); font-weight:400; margin-left:8px}
+
+  /* progress bar */
+  .bar{height:8px; border-radius:6px; background:var(--inset); overflow:hidden; border:1px solid var(--line)}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--sem),var(--accent)); transition:width .2s}
+  .prog-line{display:flex; gap:16px; font-family:var(--mono); font-size:12px; color:var(--muted); margin:8px 2px 0}
+  .prog-line b{color:var(--ink)} .prog-line .ok{color:var(--pass)} .prog-line .no{color:var(--skip)}
+
+  /* tables */
+  table{width:100%; border-collapse:collapse; font-size:13px; margin-top:6px}
+  th,td{text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); vertical-align:top}
+  th{font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:600}
+  td.mono, .cid{font-family:var(--mono); font-size:12px; color:var(--muted)}
+  td .fsn{color:var(--ink)} td .miss{color:var(--skip); font-family:var(--mono); font-size:12px}
+  .tbl-wrap{max-height:460px; overflow:auto; border:1px solid var(--line); border-radius:10px}
+  .tbl-wrap table{margin:0} .tbl-wrap thead th{position:sticky; top:0; background:var(--surface-2)}
+  .err{color:var(--fail); font-family:var(--mono); font-size:13px}
+
+  footer{margin-top:40px; padding-top:14px; border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="eyebrow">SNOMED CT hybrid search · batch mapping</p>
+  <h1>Batch concept mapping</h1>
+  <p class="lede">Upload a two-column table (<code>code</code>, <code>term</code>). Each term is mapped to
+    its best SNOMED CT concept through the <b>semantic channel</b> (no rerank, no LLM) — the right regime
+    for terminology-to-terminology maps, where source terms are already curated clinical phrases. Two
+    columns are appended (<code>snomed_code</code>, <code>snomed_term</code>) and you download the result.</p>
+  <p class="nav"><a href="/">‹ back to search</a> · <a href="/extract" target="_blank" rel="noopener">extract ↗</a> · <a href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a> · <a href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a></p>
+
+  <p class="health" id="health">checking API…</p>
+
+  <div class="panel">
+    <div class="drop" id="drop">
+      <b>Drop a .csv, .xlsx or .ods here</b>, or click to choose
+      <div class="hint">two columns: code + term · legacy .xls not supported</div>
+    </div>
+    <input type="file" id="file" accept=".csv,.xlsx,.ods">
+    <div id="config" hidden></div>
+  </div>
+
+  <div id="out"></div>
+
+  <footer>server-side <code>POST /api/map</code> · semantic channel, gemma off, rerank off · streamed NDJSON progress → <code>/api/map/download</code></footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let FILE = null, PREVIEW = null, ABORT = null;
+
+// Curated SNOMED CT top-level hierarchies (validated to exist in concept_ancestors). Scoping every row
+// to one hierarchy sharply improves precision when the whole catalog is of one kind (e.g. lab tests).
+const HIERARCHIES = [
+  ['', 'No filter (all hierarchies)'],
+  ['363787002', 'Observable entity'],
+  ['386053000', 'Evaluation procedure'],
+  ['404684003', 'Clinical finding'],
+  ['71388002',  'Procedure'],
+  ['123037004', 'Body structure'],
+  ['105590001', 'Substance'],
+  ['373873005', 'Pharmaceutical / biologic product'],
+  ['410607006', 'Organism'],
+  ['260787004', 'Physical object'],
+  ['243796009', 'Situation with explicit context'],
+  ['272379006', 'Event'],
+];
+
+function searchHref(q, filter, chan='semantic', rerank=false){
+  let h = `/?q=${encodeURIComponent(q)}&gemma=0&rerank=${rerank?1:0}&channel=${chan}`;
+  if(filter) h += `&filter=${filter}`;
+  return h;
+}
+
+// ---- file selection + preview ----
+async function onFile(f){
+  if(!f) return;
+  FILE = f;
+  const drop = $('#drop');
+  drop.classList.add('has');
+  drop.innerHTML = `<b>${esc(f.name)}</b> <span class="hint">(${(f.size/1024).toFixed(0)} KB) · click to replace</span>`;
+  $('#config').hidden = true; $('#out').innerHTML = '';
+  try{
+    const fd = new FormData(); fd.append('file', f);
+    const r = await fetch('/api/map/preview', {method:'POST', body:fd});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || ('HTTP '+r.status));
+    PREVIEW = data;
+    renderConfig(data);
+  }catch(err){
+    $('#config').hidden = false;
+    $('#config').innerHTML = `<p class="err">Could not read file: ${esc(err.message)}</p>`;
+  }
+}
+
+function colOptions(cols, sel){
+  return cols.map((c,i) => `<option value="${esc(c)}" ${i===sel?'selected':''}>${esc(c||('col '+i))}</option>`).join('');
+}
+
+function renderConfig(d){
+  const cfg = $('#config'); cfg.hidden = false;
+  const fmt = d.filetype;
+  const OTHER = ['csv','xlsx','ods'].filter(x => x !== fmt);
+  const outOpts = `<option value="${fmt}" selected>${fmt.toUpperCase()} (same)</option>` +
+    OTHER.map(x => `<option value="${x}">${x.toUpperCase()}</option>`).join('');
+  const hierOpts = HIERARCHIES.map(([v,l]) => `<option value="${v}">${esc(l)}</option>`).join('');
+  cfg.innerHTML =
+    `<div class="controls">
+       <label class="fld">code column <select id="codeCol">${colOptions(d.columns, d.code_idx)}</select></label>
+       <label class="fld">term column <select id="termCol">${colOptions(d.columns, d.term_idx)}</select></label>
+       <label class="fld" style="color:var(--sem)">hierarchy filter <select id="hier">${hierOpts}</select></label>
+       <label class="fld">channel <select id="chan">
+         <option value="semantic" selected>semantic</option>
+         <option value="both">hybrid (lexical + semantic)</option>
+         <option value="lexical">lexical</option>
+       </select></label>
+       <label class="fld"><input type="checkbox" id="rerank"> rerank</label>
+       <label class="fld">output <select id="outFmt">${outOpts}</select></label>
+       <button class="run" id="run">Map ${d.n_rows.toLocaleString()} rows</button>
+       <span id="status"></span>
+     </div>
+     <p class="hint" style="font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:8px 2px 0">
+       Scope every row to one SNOMED hierarchy for higher precision — e.g. <b style="color:var(--sem)">Observable entity</b> or <b style="color:var(--sem)">Evaluation procedure</b> for a lab-test catalog.
+       For dirty source vocabularies, try <b>hybrid</b> + <b>rerank</b> (slower, but tolerant of abbreviations and messy phrasing).</p>`;
+  // sample preview
+  let s = `<h2 class="sec"><span class="n">01</span>Preview<span class="cnt">${d.n_rows.toLocaleString()} rows · ${fmt.toUpperCase()}</span></h2>`;
+  s += `<div class="tbl-wrap"><table><thead><tr>` +
+       d.columns.map(c => `<th>${esc(c)}</th>`).join('') + `</tr></thead><tbody>` +
+       d.sample.map(row => `<tr>` + d.columns.map((_,i) => `<td>${esc(row[i] ?? '')}</td>`).join('') + `</tr>`).join('') +
+       `</tbody></table></div>`;
+  $('#out').innerHTML = s;
+  $('#run').onclick = run;
+}
+
+// ---- run mapping (streamed NDJSON) ----
+async function run(){
+  if(!FILE) return;
+  const codeCol = $('#codeCol').value, termCol = $('#termCol').value, outFmt = $('#outFmt').value;
+  const hier = $('#hier').value, chan = $('#chan').value, rerank = $('#rerank').checked;
+  const n = PREVIEW.n_rows;
+  $('#run').disabled = true;
+  $('#status').innerHTML = '<span class="spin"></span> mapping…';
+
+  $('#out').innerHTML =
+    `<h2 class="sec"><span class="n">02</span>Mapping<span class="cnt" id="mcnt"></span>
+       <button class="ghost" id="cancel" style="float:right">cancel</button></h2>
+     <div class="bar"><i id="bar"></i></div>
+     <div class="prog-line"><span>row <b id="i">0</b> / ${n.toLocaleString()}</span>
+       <span class="ok">matched <b id="mok">0</b></span><span class="no">empty <b id="mno">0</b></span>
+       <span id="eta"></span></div>
+     <div class="tbl-wrap" style="margin-top:14px"><table><thead><tr>
+       <th>code</th><th>term</th><th>→ snomed_code</th><th>→ snomed_term</th></tr></thead>
+       <tbody id="rows"></tbody></table></div>`;
+
+  ABORT = new AbortController();
+  $('#cancel').onclick = () => { ABORT.abort(); };
+
+  const fd = new FormData();
+  fd.append('file', FILE); fd.append('code_col', codeCol);
+  fd.append('term_col', termCol); fd.append('out_format', outFmt);
+  fd.append('filter', hier); fd.append('channel', chan); fd.append('rerank', rerank);
+
+  const t0 = performance.now();
+  let ok = 0, no = 0;
+  const rowsEl = $('#rows');
+  try{
+    const resp = await fetch('/api/map', {method:'POST', body:fd, signal:ABORT.signal});
+    if(!resp.ok){ const e = await resp.json().catch(()=>({})); throw new Error(e.error || ('HTTP '+resp.status)); }
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder(); let buf = '';
+    while(true){
+      const {value, done} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value, {stream:true});
+      let nl;
+      while((nl = buf.indexOf('\n')) >= 0){
+        const line = buf.slice(0, nl); buf = buf.slice(nl+1);
+        if(!line.trim()) continue;
+        const ev = JSON.parse(line);
+        if(ev.stage === 'row'){
+          if(ev.match_code) ok++; else no++;
+          const pct = (ev.i/ev.n*100).toFixed(1);
+          $('#bar').style.width = pct + '%';
+          $('#i').textContent = ev.i.toLocaleString();
+          $('#mok').textContent = ok.toLocaleString(); $('#mno').textContent = no.toLocaleString();
+          if(ev.i % 5 === 0 || ev.i === ev.n){
+            const rate = ev.i / ((performance.now()-t0)/1000);
+            const eta = rate ? Math.max(0,(ev.n-ev.i)/rate) : 0;
+            $('#eta').textContent = `~${rate.toFixed(0)}/s · ETA ${eta<60?eta.toFixed(0)+'s':(eta/60).toFixed(1)+'m'}`;
+          }
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td class="mono">${esc(ev.code)}</td><td>${esc(ev.term)}</td>` +
+            (ev.match_code
+              ? `<td class="mono"><a href="${searchHref(ev.term, hier, chan, rerank)}" target="_blank" rel="noopener">${esc(ev.match_code)}</a></td><td class="fsn">${esc(ev.match_term)}</td>`
+              : `<td colspan="2" class="miss">no match</td>`);
+          rowsEl.appendChild(tr);
+          // keep the DOM light on huge files: cap visible rows to the last 300
+          if(rowsEl.childElementCount > 300) rowsEl.removeChild(rowsEl.firstChild);
+        } else if(ev.stage === 'done'){
+          const secs = ((performance.now()-t0)/1000).toFixed(1);
+          $('#mcnt').textContent = `${ev.n.toLocaleString()} rows · ${ok.toLocaleString()} matched · ${secs}s`;
+          $('#status').innerHTML = `done in <b>${secs}s</b>`;
+          $('#cancel').remove();
+          const dl = document.createElement('a');
+          dl.className = 'dl'; dl.href = `/api/map/download/${ev.token}`;
+          dl.textContent = '↓ Download result';
+          const h = document.createElement('h2'); h.className = 'sec';
+          h.innerHTML = `<span class="n">03</span>Result `;
+          h.appendChild(dl);
+          $('#out').appendChild(h);
+        }
+      }
+    }
+  }catch(err){
+    if(err.name === 'AbortError'){ $('#status').textContent = 'cancelled'; }
+    else{ $('#status').innerHTML = `<span class="err">error: ${esc(err.message)}</span>`; }
+  }
+  $('#run').disabled = false;
+}
+
+// ---- drag & drop wiring ----
+const drop = $('#drop'), fileInput = $('#file');
+drop.onclick = () => fileInput.click();
+fileInput.onchange = () => onFile(fileInput.files[0]);
+['dragenter','dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => { if(e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]); });
+
+async function health(){
+  try{
+    const h = await fetch('/api/health').then(r => r.json());
+    $('#health').innerHTML =
+      `DB <b class="${h.db.ok?'ok':'off'}">${h.db.ok?'up':'down'}</b> · `
+      + `embeddings <b class="${h.embeddings.ok?'ok':'off'}">${h.embeddings.ok?'loaded':'—'}</b>`;
+  }catch(e){ $('#health').innerHTML = `<b class="off">API unreachable</b> — run <code>make up</code>`; }
+}
+health();
+</script>
+</body>
+</html>
