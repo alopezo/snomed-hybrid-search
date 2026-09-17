@@ -12,3 +12,4 @@ validation/distemist/
 validation/snomed_el/
 # SNOMED EL result files contain MIMIC-derived spans — do not redistribute
 validation/results/snomed_el*
+validation/snomed_el_e2e/results/
