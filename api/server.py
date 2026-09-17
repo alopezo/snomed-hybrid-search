@@ -109,8 +109,12 @@ def api_search(
     rerank: bool = Query(False),
     filter: int | None = Query(None),
     channel: str = Query("both", pattern="^(both|lexical|semantic)$"),
+    llm_select: bool = Query(False),
+    context: str = Query(""),
+    exclude_module: int | None = Query(None),
 ):
-    return search(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter, channel=channel)
+    return search(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter, channel=channel,
+                  use_llm_select=llm_select, context=context, exclude_module=exclude_module)
 
 
 @app.get("/api/search_stream")
@@ -120,9 +124,14 @@ def api_search_stream(
     gemma: bool = Query(True),
     rerank: bool = Query(False),
     filter: int | None = Query(None),
+    llm_select: bool = Query(False),
+    context: str = Query(""),
+    exclude_module: int | None = Query(None),
 ):
     def gen():
-        for event in search_stream(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter):
+        for event in search_stream(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter,
+                                   use_llm_select=llm_select, context=context,
+                                   exclude_module=exclude_module):
             yield json.dumps(event) + "\n"
     return StreamingResponse(gen(), media_type="application/x-ndjson")
 

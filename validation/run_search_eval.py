@@ -49,6 +49,41 @@ TAG_TO_FILTER = {
 }
 
 
+_NOTE_CACHE: dict = {}
+_HDR_RE = re.compile(r"^([A-Z][A-Za-z0-9 ()/,'&-]{1,40}):")
+
+
+def get_note(cfg: dict, fn: str) -> str:
+    """Source note text for a file id — from the notes CSV (SNOMED EL) or the per-case .txt (BSC)."""
+    if cfg.get("format") == "csv":
+        if "notes" not in _NOTE_CACHE:
+            import csv
+            csv.field_size_limit(10 ** 7)
+            with open(cfg["notes"], newline="", encoding="utf-8") as f:
+                _NOTE_CACHE["notes"] = {r["note_id"]: r["text"] for r in csv.DictReader(f)}
+        return _NOTE_CACHE["notes"].get(fn, "")
+    p = cfg["txt"] / f"{fn}.txt"
+    return p.read_text(encoding="utf-8") if p.exists() else ""
+
+
+def sentence_context(note: str, span: str) -> str:
+    """'Section: <nearest preceding header>. Sentence: <sentence containing the mention>' — the local
+    context the LLM selection layer discarded. Falls back to the generic string if the span isn't found."""
+    i = note.find(span)
+    if i < 0:
+        return "Clinical data entry in an EHR"
+    start = max(note.rfind(".", 0, i), note.rfind("\n", 0, i)) + 1
+    end = note.find(".", i + len(span))
+    sent = " ".join(note[start:(end if end > 0 else i + len(span) + 80)].split())
+    sec = ""
+    for line in reversed(note[:i].splitlines()):
+        m = _HDR_RE.match(line.strip())
+        if m:
+            sec = m.group(1)
+            break
+    return f"Section: {sec or 'note'}. Sentence: {sent[:300]}"
+
+
 def load_mentions(cfg: dict, n: int) -> list[tuple[str, str, str]]:
     """All (file, span, code) with a single numeric code across the first n files, deduped by span+code."""
     gold = load_gold(cfg, n)
@@ -81,6 +116,20 @@ def main() -> None:
     ap.add_argument("--k", type=int, default=10)
     ap.add_argument("--scope", default="disorder,finding",
                     help="keep only gold whose (resolved) FSN tag is in this set; 'all' to disable")
+    ap.add_argument("--llm-select", action="store_true",
+                    help="add the context-aware LLM selection layer (third rerank) over the top-k; "
+                         "pins its pick to rank 1. Uses the generic default context.")
+    ap.add_argument("--context", default="Clinical data entry in an EHR",
+                    help="fixed context string for the LLM selection layer (used when --context-mode generic)")
+    ap.add_argument("--context-mode", choices=["generic", "sentence"], default="generic",
+                    help="generic = the fixed --context string; sentence = per-mention 'Section: <hdr>. "
+                         "Sentence: <sentence containing the mention>' recovered from the source note")
+    ap.add_argument("--tag", default="",
+                    help="extra suffix on the output stem, to keep comparison runs from overwriting the "
+                         "stored paper baselines (e.g. --tag _sub for a subset run)")
+    ap.add_argument("--exclude-module", type=int, default=None,
+                    help="drop descriptions of this SNOMED module from retrieval (e.g. 11010000107 for "
+                         "the LOINC Extension), to reproduce the paper's LOINC-free index")
     args = ap.parse_args()
     scope = None if args.scope.lower() == "all" else {t.strip() for t in args.scope.split(",")}
     cfg = CORPORA[args.corpus]
@@ -97,7 +146,7 @@ def main() -> None:
         r = cur.fetchone()
         return r[0] if r else None
 
-    def search(q: str, mfilt) -> list[dict]:
+    def search(q: str, mfilt, ctx: str | None = None) -> list[dict]:
         q = " ".join(q.split())                       # collapse newlines/whitespace in EHR spans
         if not q:
             return []
@@ -105,8 +154,12 @@ def main() -> None:
              f"&gemma={args.gemma}&rerank={args.rerank}&channel={args.channel}")
         if mfilt is not None:
             u += f"&filter={mfilt}"
+        if args.llm_select:
+            u += f"&llm_select=true&context={urllib.parse.quote(ctx if ctx is not None else args.context)}"
+        if args.exclude_module is not None:
+            u += f"&exclude_module={args.exclude_module}"
         try:                                           # a single dirty span must not kill the run
-            r = httpx.get(u, timeout=90)
+            r = httpx.get(u, timeout=120)
             r.raise_for_status()
             return r.json().get("results", [])
         except Exception as e:
@@ -131,7 +184,9 @@ def main() -> None:
             continue
         gold = rcode                                        # score against the resolved (current) code
         mfilt = TAG_TO_FILTER.get(tag) if args.scope_by_type else filt   # per-mention domain, or the fixed filter
-        res = search(span, mfilt)
+        ctx = (sentence_context(get_note(cfg, fn), span)
+               if args.llm_select and args.context_mode == "sentence" else None)
+        res = search(span, mfilt, ctx)
         ids = [r["concept_id"] for r in res]
         rank = ids.index(gold) + 1 if gold in ids else None
         h1 = bool(hierarchy_hits({gold}, set(ids[:1]), cur=cur))
@@ -160,7 +215,10 @@ def main() -> None:
         "corpus": args.corpus,
         "config": {"gemma": args.gemma, "rerank": args.rerank, "channel": args.channel,
                    "filter": ("by-type" if args.scope_by_type else filt),
-                   "k": args.k, "scope": args.scope},
+                   "k": args.k, "scope": args.scope,
+                   "llm_select": args.llm_select,
+                   "context_mode": (args.context_mode if args.llm_select else None),
+                   "exclude_module": args.exclude_module},
         "mentions": agg["total"], "scoped_out": agg["scoped_out"], "unresolved": agg["unresolved"],
         "resolved_via_history": agg["resolved"],
         "elapsed_s": round(time.time() - t0, 1),
@@ -179,7 +237,10 @@ def main() -> None:
         fl = "bytype_"
     else:
         fl = "" if args.filter == "404684003" else ("fnone_" if filt is None else f"f{filt}_")
-    stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}"
+    ls = "_llmsel" if args.llm_select else ""
+    cm = "_sentctx" if (args.llm_select and args.context_mode == "sentence") else ""
+    xm = "_noloinc" if args.exclude_module is not None else ""
+    stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}{ls}{cm}{xm}{args.tag}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     write_md(HERE / "results" / f"{stem}.md", summary, rows)

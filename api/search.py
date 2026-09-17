@@ -86,6 +86,7 @@ lex AS (
       AND (%(filter)s::bigint IS NULL OR EXISTS (
           SELECT 1 FROM concept_ancestors ca
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
+      AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
     LIMIT %(cand)s
 ),
 vec AS (
@@ -95,6 +96,7 @@ vec AS (
       AND (%(filter)s::bigint IS NULL OR EXISTS (
           SELECT 1 FROM concept_ancestors ca
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
+      AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
     ORDER BY d.embedding <=> %(qvec)s::vector
     LIMIT %(cand)s
 ),
@@ -439,12 +441,69 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
                  combined_score=round(combined[i], 4)) for i in order]
 
 
+def llm_select(query: str, context: str, results: list[dict], top_n: int = 8,
+               timeout: float = 30.0) -> list[dict] | None:
+    """Third rerank layer: a context-aware LLM SELECTION over the top candidates. Given the query, a
+    free-text clinical `context` (the surrounding note / data-entry setting) and the current top-`top_n`
+    candidates, the local LLM picks the single best-fitting concept BY INDEX — it can only choose from the
+    numbered list, never emits a concept id, so it cannot hallucinate. The picked candidate is pinned to
+    the top and annotated with `llm_pick`/`llm_reason`; the rest keep their order. Returns the reordered
+    list, or None on failure (caller keeps the original order).
+
+    Unlike crossencoder_rerank (string similarity between the query term and each FSN), this layer sees
+    the CONTEXT the query discarded, so it disambiguates homonyms by use (e.g. 'MR' -> mitral regurgitation
+    in a cardiac exam vs an MRI scan when imaging is discussed)."""
+    if len(results) < 2:
+        return results
+    head = results[:top_n]
+    listing = "\n".join(
+        f"{i}. {r.get('fsn') or r.get('matched_term')}"
+        f"{' (' + r['semantic_tag'] + ')' if r.get('semantic_tag') else ''}  [id {r['concept_id']}]"
+        for i, r in enumerate(head, 1))
+    ctx = (context or "").strip() or "Clinical data entry in an EHR"
+    system = (
+        "You select the single SNOMED CT concept that best matches a clinician's query IN CONTEXT. You are "
+        "given the query, the context it appears in, and a numbered list of candidate concepts. Choose the "
+        "ONE candidate that fits how the query is used in this context — use the context to disambiguate "
+        "abbreviations and homonyms (e.g. 'MR' = mitral regurgitation in a cardiac exam vs an MRI scan when "
+        "imaging is discussed). Pick ONLY from the numbered list. "
+        "For anatomy, SNOMED CT names a body site as 'Structure of X' (or 'X structure') by default; the "
+        "'Entire X' concept means the whole/complete organ and is rarely what a mention intends — prefer "
+        "the 'Structure of X' form unless the text explicitly means the entire organ. "
+        'Reply with STRICT JSON: {"index": <a number from the list, or 0 if none fit>, '
+        '"reason": "<max 12 words>"}. No other text.')
+    user = f"Query: {query}\nContext: {ctx}\n\nCandidates:\n{listing}"
+    try:
+        r = httpx.post(
+            f"{GEMMA_URL}/chat/completions",
+            json={"model": GEMMA_MODEL,
+                  "messages": [{"role": "system", "content": system},
+                               {"role": "user", "content": user}],
+                  "temperature": 0.0, "max_tokens": 120,
+                  "response_format": {"type": "json_object"}, **_reasoning_field()},
+            timeout=timeout)
+        r.raise_for_status()
+        data = json.loads(r.json()["choices"][0]["message"]["content"])
+        idx = int(data.get("index", 0))
+        reason = str(data.get("reason", "")).strip()
+    except Exception:
+        return None
+    if idx < 1 or idx > len(head):
+        return results                                  # LLM abstained / out of range: keep order
+    chosen = dict(head[idx - 1], llm_pick=True, llm_reason=reason)
+    rest = [r for j, r in enumerate(head, 1) if j != idx] + results[top_n:]
+    return [chosen] + rest
+
+
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-                  filter_concept: int | None = None, channel: str = "both"):
+                  filter_concept: int | None = None, channel: str = "both",
+                  use_llm_select: bool = False, context: str = "", exclude_module: int | None = None):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
     then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
     `filter_concept`: if set, restrict results to descendants-or-self of that concept id.
-    `channel`: retrieval channel(s) to rank on — "both" (RRF fusion), "lexical", or "semantic"."""
+    `channel`: retrieval channel(s) to rank on — "both" (RRF fusion), "lexical", or "semantic".
+    `exclude_module`: if set, drop descriptions whose module_id equals it (e.g. exclude an appended
+    extension such as the LOINC Extension) from both retrieval channels."""
     t: dict[str, float] = {}
     t0 = time.perf_counter()
 
@@ -479,7 +538,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         cur.execute(_rrf_sql(channel), {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
-            "filter": filter_concept,
+            "filter": filter_concept, "excl_module": exclude_module,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)
@@ -512,18 +571,38 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
             results = exact_first(new_order)   # rerank the rest, but keep exact matches on top
             reranked = True
         t["rerank_ms"] = round((time.perf_counter() - trr) * 1000, 1)
+        # If a further LLM-selection pass will run, surface the reranked order NOW so the UI animates the
+        # rerank reorder first, then the (separate) LLM-pick reorder — two distinct animations.
+        if reranked and use_llm_select:
+            yield {"stage": "reranked", "query": query, "expansion": expansion, "tsquery": tsq,
+                   "reranked": True, "timings": dict(t), "results": results}
+
+    # Third layer: context-aware LLM selection over the top candidates. Runs last so it can override the
+    # cheaper layers with a context-driven pick (the chosen concept is pinned to the very top).
+    llm_selected = False
+    if use_llm_select and len(results) > 1:
+        yield {"stage": "llm_select"}
+        tls = time.perf_counter()
+        picked = llm_select(query, context, results)
+        if picked is not None:
+            results = picked
+            llm_selected = any(r.get("llm_pick") for r in results)
+        t["llm_select_ms"] = round((time.perf_counter() - tls) * 1000, 1)
 
     t["total_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     yield {"stage": "done", "query": query, "expansion": expansion, "tsquery": tsq,
-           "reranked": reranked, "timings": t, "results": results}
+           "reranked": reranked, "llm_selected": llm_selected, "timings": t, "results": results}
 
 
 def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
-           filter_concept: int | None = None, channel: str = "both") -> dict:
+           filter_concept: int | None = None, channel: str = "both",
+           use_llm_select: bool = False, context: str = "", exclude_module: int | None = None) -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
     for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank,
-                               filter_concept=filter_concept, channel=channel):
+                               filter_concept=filter_concept, channel=channel,
+                               use_llm_select=use_llm_select, context=context,
+                               exclude_module=exclude_module):
         final = event
     final = dict(final)
     final.pop("stage", None)
