@@ -550,6 +550,12 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     # query on purpose: both channels are single-digit ms, so splitting them into parallel queries
     # would only add a 2nd-connection round-trip, not save time (the embed above dominates anyway).
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
+        # pgvector's HNSW scan returns at most `hnsw.ef_search` rows (default 40). Left unset, the
+        # semantic channel would silently cap at 40 candidates, far below CANDIDATES, and a query that
+        # lands the graph traversal in the wrong region would leak unrelated neighbours into the fused
+        # top (RRF ranks by position, not distance). Match ef_search to the candidate budget so the
+        # semantic channel actually retrieves the full set. Negligible latency at this scale.
+        cur.execute("SET LOCAL hnsw.ef_search = %s" % CANDIDATES)
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
             cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")

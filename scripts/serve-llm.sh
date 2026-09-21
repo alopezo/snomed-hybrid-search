@@ -4,16 +4,18 @@
 #
 # Usage:
 #   scripts/serve-llm.sh                 # uses GEMMA_MODEL from .env, or the default below
-#   scripts/serve-llm.sh gemma3:1b       # override the model tag
+#   scripts/serve-llm.sh gemma3:4b       # override the model tag (lighter/faster)
 #
 # See docs/llm-setup.md for alternatives (MLX, llama.cpp) and model options.
+# NOTE: gemma4 tags need a recent Ollama (>= 0.18). Older versions (e.g. 0.17) fail the pull with
+# HTTP 412; upgrade with `brew upgrade ollama` (or re-download) if you hit that.
 set -euo pipefail
 
 # Load GEMMA_MODEL from .env if present (without exporting the whole file).
 if [ -f .env ]; then
   ENV_MODEL="$(grep -E '^GEMMA_MODEL=' .env | tail -1 | cut -d= -f2- || true)"
 fi
-MODEL="${1:-${ENV_MODEL:-gemma3:4b}}"
+MODEL="${1:-${ENV_MODEL:-gemma4:12b-it-qat}}"
 
 if ! command -v ollama >/dev/null 2>&1; then
   echo "Ollama is not installed. Install it, then re-run this script:"

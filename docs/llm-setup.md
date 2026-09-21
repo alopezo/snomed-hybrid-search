@@ -37,6 +37,10 @@ brew install ollama                 # or download from https://ollama.com/downlo
 scripts/serve-llm.sh                # starts ollama + pulls the model (reads GEMMA_MODEL from .env)
 ```
 
+> **Ollama version.** `gemma4` tags require a recent Ollama (>= 0.18). Older versions (e.g. 0.17) fail
+> the pull with `HTTP 412`. Upgrade with `brew upgrade ollama` (or re-download from the site). Check with
+> `ollama --version`.
+
 `scripts/serve-llm.sh` starts `ollama serve` (at `http://localhost:11434`, OpenAI-compatible under
 `/v1`) and pulls the model. Pass a tag to override: `scripts/serve-llm.sh gemma3:1b`.
 

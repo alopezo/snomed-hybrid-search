@@ -4,6 +4,16 @@ Backfill a `module_id` column on the `descriptions` table from the RF2 Descripti
 can be scoped to (or filtered against) a SNOMED module — e.g. to EXCLUDE an appended extension such as the
 LOINC Extension (module 11010000107) without deleting its rows or rebuilding embeddings.
 
+Fresh loads no longer need this: `load_descriptions.py` now populates `module_id` at COPY time from the
+same RF2 col 3, and `sql/01_schema.sql` declares the column. Use this script ONLY to backfill a database
+that was loaded BEFORE that change, or to (re)assign modules after appending an extension to an existing
+base without a full reload.
+
+WARNING — run this before building the HNSW index, or expect a long, blocking run. The `embedding` column
+lives on `descriptions`, so UPDATEing every row rewrites each tuple into the HNSW graph (MVCC): on a base
+with the index already built this took >10 min and held an exclusive lock on the table the whole time.
+On a fresh load the column is filled at COPY time (before `make index-hnsw`), so this cost never arises.
+
 Pure metadata backfill: it reads `id` (col 0) and `moduleId` (col 3) from each snapshot's
 `sct2_Description_Snapshot*` file, loads them into a temp table, and UPDATEs `descriptions.module_id`
 by matching description `id`. It never touches term/embedding/tsvector.

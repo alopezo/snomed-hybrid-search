@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS descriptions (
     term_norm    TEXT   NOT NULL,           -- unaccent(lower(term))
     type_id      BIGINT NOT NULL,           -- 900000000000013009 sinónimo / 900000000000003001 FSN
     semantic_tag TEXT,                       -- p.ej. "disorder", "finding" (del FSN)
+    module_id    BIGINT,                      -- moduleId (RF2 col 3): distingue International de extensiones (p.ej. LOINC)
     pref_us      BOOLEAN NOT NULL DEFAULT false,
     pref_gb      BOOLEAN NOT NULL DEFAULT false,
     term_tsv     tsvector,                   -- canal léxico (multi-prefix ignore-order)

@@ -6,7 +6,8 @@ What it does:
   1. Reads sct2_Concept_Snapshot          -> set of ACTIVE concepts.
   2. Reads sct2_Description_Snapshot (pass 1) -> conceptId -> semantic_tag map (from the FSN).
   3. Reads sct2_Description_Snapshot (pass 2) -> bulk COPY of active descriptions
-     (synonyms + FSN) of active concepts, with term_norm and semantic_tag.
+     (synonyms + FSN) of active concepts, with term_norm, semantic_tag and module_id
+     (moduleId, RF2 col 3; used by exclude_module scoping to tell International from extensions).
   4. Builds term_tsv = to_tsvector('unaccent_simple', term)  (lexical channel, accent-insensitive).
   5. Reads der2_cRefset_LanguageSnapshot   -> marks pref_us / pref_gb (preferred term per dialect).
 
@@ -101,7 +102,7 @@ def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict
     """
     n = 0
     copy_sql = (
-        "COPY descriptions (id, concept_id, term, term_norm, type_id, semantic_tag) FROM STDIN"
+        "COPY descriptions (id, concept_id, term, term_norm, type_id, semantic_tag, module_id) FROM STDIN"
     )
     with conn.cursor() as cur, cur.copy(copy_sql) as cp, open(path, encoding="utf-8") as f:
         next(f)
@@ -125,6 +126,7 @@ def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict
                 normalize(term),              # term_norm
                 int(type_id),                 # type_id
                 fsn_tags.get(concept_id),     # semantic_tag (may be None)
+                int(cols[3]),                 # module_id (RF2 col 3: moduleId) -> exclude_module scoping
             ))
             n += 1
             if n % 200_000 == 0:
