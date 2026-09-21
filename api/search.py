@@ -87,6 +87,7 @@ lex AS (
           SELECT 1 FROM concept_ancestors ca
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
       AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
+      AND {desc_filter}
     LIMIT %(cand)s
 ),
 vec AS (
@@ -97,6 +98,7 @@ vec AS (
           SELECT 1 FROM concept_ancestors ca
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
       AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
+      AND {desc_filter}
     ORDER BY d.embedding <=> %(qvec)s::vector
     LIMIT %(cand)s
 ),
@@ -140,11 +142,26 @@ LIMIT %(k_out)s
 _CHANNEL_SCORE = {"both": "f.lex_s + f.vec_s", "lexical": "f.lex_s", "semantic": "f.vec_s"}
 _CHANNEL_FILTER = {"both": "TRUE", "lexical": "f.in_lex", "semantic": "f.in_vec"}
 
+# Description-scope ablation: restrict retrieval (both channels) to a subset of descriptions per concept,
+# to measure the value of SNOMED CT synonyms. "all" = FSN + every synonym (served default); "fsn" = the
+# Fully Specified Name only; "fsn_pt" = FSN plus the preferred term (dropping only the extra acceptable
+# synonyms, so it isolates their contribution beyond the preferred term). Whitelisted SQL, no user input.
+_FSN_TYPE = "900000000000003001"
+_DESC_FILTER = {
+    "all": "TRUE",
+    "fsn": f"d.type_id = {_FSN_TYPE}",
+    "fsn_pt": f"(d.type_id = {_FSN_TYPE} OR d.pref_us OR d.pref_gb)",
+}
 
-def _rrf_sql(channel: str = "both") -> str:
+
+def _rrf_sql(channel: str = "both", desc_scope: str = "all") -> str:
     if channel not in _CHANNEL_SCORE:
         raise ValueError(f"channel must be one of {sorted(_CHANNEL_SCORE)}, got {channel!r}")
-    return RRF_SQL_TEMPLATE.format(score_expr=_CHANNEL_SCORE[channel], row_filter=_CHANNEL_FILTER[channel])
+    if desc_scope not in _DESC_FILTER:
+        raise ValueError(f"desc_scope must be one of {sorted(_DESC_FILTER)}, got {desc_scope!r}")
+    return RRF_SQL_TEMPLATE.format(score_expr=_CHANNEL_SCORE[channel],
+                                   row_filter=_CHANNEL_FILTER[channel],
+                                   desc_filter=_DESC_FILTER[desc_scope])
 
 
 def normalize(term: str) -> str:
@@ -497,7 +514,8 @@ def llm_select(query: str, context: str, results: list[dict], top_n: int = 8,
 
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
                   filter_concept: int | None = None, channel: str = "both",
-                  use_llm_select: bool = False, context: str = "", exclude_module: int | None = None):
+                  use_llm_select: bool = False, context: str = "", exclude_module: int | None = None,
+                  desc_scope: str = "all"):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
     then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
     `filter_concept`: if set, restrict results to descendants-or-self of that concept id.
@@ -535,7 +553,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
             cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
-        cur.execute(_rrf_sql(channel), {
+        cur.execute(_rrf_sql(channel, desc_scope), {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
             "filter": filter_concept, "excl_module": exclude_module,
@@ -596,13 +614,14 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
 
 def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
            filter_concept: int | None = None, channel: str = "both",
-           use_llm_select: bool = False, context: str = "", exclude_module: int | None = None) -> dict:
+           use_llm_select: bool = False, context: str = "", exclude_module: int | None = None,
+           desc_scope: str = "all") -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
     for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank,
                                filter_concept=filter_concept, channel=channel,
                                use_llm_select=use_llm_select, context=context,
-                               exclude_module=exclude_module):
+                               exclude_module=exclude_module, desc_scope=desc_scope):
         final = event
     final = dict(final)
     final.pop("stage", None)

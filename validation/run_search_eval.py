@@ -130,6 +130,10 @@ def main() -> None:
     ap.add_argument("--exclude-module", type=int, default=None,
                     help="drop descriptions of this SNOMED module from retrieval (e.g. 11010000107 for "
                          "the LOINC Extension), to reproduce the paper's LOINC-free index")
+    ap.add_argument("--desc-scope", default="all", choices=["all", "fsn", "fsn_pt"],
+                    help="which descriptions to retrieve over (synonym-value ablation): all = FSN + every "
+                         "synonym (default); fsn = FSN only; fsn_pt = FSN + preferred term (drops only the "
+                         "extra synonyms)")
     args = ap.parse_args()
     scope = None if args.scope.lower() == "all" else {t.strip() for t in args.scope.split(",")}
     cfg = CORPORA[args.corpus]
@@ -158,6 +162,8 @@ def main() -> None:
             u += f"&llm_select=true&context={urllib.parse.quote(ctx if ctx is not None else args.context)}"
         if args.exclude_module is not None:
             u += f"&exclude_module={args.exclude_module}"
+        if args.desc_scope != "all":
+            u += f"&desc_scope={args.desc_scope}"
         try:                                           # a single dirty span must not kill the run
             r = httpx.get(u, timeout=120)
             r.raise_for_status()
@@ -218,7 +224,7 @@ def main() -> None:
                    "k": args.k, "scope": args.scope,
                    "llm_select": args.llm_select,
                    "context_mode": (args.context_mode if args.llm_select else None),
-                   "exclude_module": args.exclude_module},
+                   "exclude_module": args.exclude_module, "desc_scope": args.desc_scope},
         "mentions": agg["total"], "scoped_out": agg["scoped_out"], "unresolved": agg["unresolved"],
         "resolved_via_history": agg["resolved"],
         "elapsed_s": round(time.time() - t0, 1),
@@ -240,7 +246,8 @@ def main() -> None:
     ls = "_llmsel" if args.llm_select else ""
     cm = "_sentctx" if (args.llm_select and args.context_mode == "sentence") else ""
     xm = "_noloinc" if args.exclude_module is not None else ""
-    stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}{ls}{cm}{xm}{args.tag}"
+    ds = "" if args.desc_scope == "all" else f"_{args.desc_scope}"
+    stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}{ls}{cm}{xm}{ds}{args.tag}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")
     write_md(HERE / "results" / f"{stem}.md", summary, rows)
