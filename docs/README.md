@@ -15,7 +15,7 @@ retrieve *Myocardial infarction* even though they share no lexical overlap.
   translates to English (no manual language picker). SNOMED terms are in English. Note: dropping the explicit
   language means language-specific acronyms (e.g. ES "EPOC") can be mis-read — the trade-off was deemed worth it.
 - **Embedding model:** **BioLORD-2023-M** (biomedical + multilingual, 768 dims). See [02-biolord-notes.md](02-biolord-notes.md).
-- **Role of the local LLM (gemma via Ollama, e.g. gemma3:12b):** does NOT vectorize (no `/v1/embeddings`). It is used for
+- **Role of the local LLM (gemma via Ollama, e.g. gemma4:12b-it-qat):** does NOT vectorize (no `/v1/embeddings`). It is used for
   query translation/expansion and optional re-ranking. See [llm-setup.md](llm-setup.md).
 - **Scale:** ~1.02M active descriptions loaded from International 20260601.
 

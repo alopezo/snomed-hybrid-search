@@ -11,14 +11,19 @@ you lose reliable handling of short non-English lay phrases and acronyms.
 
 > **Model size vs quality (measured).** A very small model (e.g. `gemma3:4b`) is fastest (~0.6–1 s)
 > but terse/inconsistent — it can drop the key term or invent details, which hurts retrieval.
-> `gemma3:12b` (~1–2 s) recovers quality close to a large 26B-class model and is the recommended
-> default. Go bigger (`gemma3:27b`) only if you need the last bit of quality and have the RAM.
+> A 12B-class model (~1–2 s) recovers quality close to a large 26B-class model and is the recommended
+> default; the current default is `gemma4:12b-it-qat`. Go bigger (`gemma3:27b`) only if you need the
+> last bit of quality and have the RAM.
+>
+> **Reasoning models.** `gemma4` is a reasoning model. Set `GEMMA_REASONING=none` to disable the
+> chain-of-thought (fast, direct, matches gemma3 latency); leave it unset for non-reasoning models.
 
-The app reads two variables from `.env`:
+The app reads these variables from `.env`:
 
 ```
 GEMMA_URL=http://localhost:11434/v1
-GEMMA_MODEL=gemma3:12b
+GEMMA_MODEL=gemma4:12b-it-qat
+GEMMA_REASONING=none          # gemma4 is a reasoning model; omit for non-reasoning models
 ```
 
 ---
@@ -38,10 +43,11 @@ scripts/serve-llm.sh                # starts ollama + pulls the model (reads GEM
 Set in `.env`:
 ```
 GEMMA_URL=http://localhost:11434/v1
-GEMMA_MODEL=gemma3:12b       # recommended; gemma3:4b faster/lighter, gemma3:27b highest quality
+GEMMA_MODEL=gemma4:12b-it-qat   # recommended; gemma3:4b faster/lighter, gemma3:27b highest quality
+GEMMA_REASONING=none           # gemma4 is a reasoning model; omit for non-reasoning models
 ```
 
-Model tags: see https://ollama.com/library/gemma3 (and `gemma2`). `ollama list` shows what you have.
+Model tags: see https://ollama.com/library/gemma4 (and `gemma3`). `ollama list` shows what you have.
 
 ---
 

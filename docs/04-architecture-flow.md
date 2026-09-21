@@ -9,7 +9,7 @@ The three components:
 | # | Component | Nature | Role | Technology |
 |---|-----------|--------|------|------------|
 | 1 | **Algorithmic (lexical)** | Deterministic | Multi-word prefix matching, order-independent | PostgreSQL `tsvector`/`to_tsquery` + GIN |
-| 2 | **LLM (query understanding / "pre-process")** | Generative | Auto-detects the source language, translates the note to English, and expands abbreviations/localisms | gemma via Ollama (e.g. gemma3:12b), local, OpenAI-compatible |
+| 2 | **LLM (query understanding / "pre-process")** | Generative | Auto-detects the source language, translates the note to English, and expands abbreviations/localisms | gemma via Ollama (e.g. gemma4:12b-it-qat), local, OpenAI-compatible |
 | 3 | **Semantic index** | Vector | Retrieves by *meaning*, not by letters | BioLORD-2023-M + pgvector HNSW (cosine) |
 
 The **RRF fusion** combines the rankings from (1) and (3); component (2) **prepares** the input for both.
