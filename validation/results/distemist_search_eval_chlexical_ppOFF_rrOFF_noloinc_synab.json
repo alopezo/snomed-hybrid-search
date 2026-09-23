@@ -17,7 +17,7 @@
     "scoped_out": 66,
     "unresolved": 6,
     "resolved_via_history": 37,
-    "elapsed_s": 52.2,
+    "elapsed_s": 59.4,
     "acc@1": 0.055,
     "recall@5": 0.06,
     "recall@10": 0.06,

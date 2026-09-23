@@ -34,7 +34,7 @@ Read recall@5/@10 as a concept picker: is the gold on the short list the user wo
 | recall@5 | 0.06 | +0.017 | 0.077 |
 | recall@10 | 0.06 | +0.017 | 0.077 |
 
-MRR 0.059 · 37 gold resolved via history · 66 scoped out (non-disorder,finding) · elapsed 155.9s
+MRR 0.059 · 37 gold resolved via history · 66 scoped out (non-disorder,finding) · elapsed 69.7s
 
 | # | mention (query) | gold (→ resolved) | gold FSN | our top-1 | top-1 FSN | rank | outcome |
 |---|---|---|---|---|---|---|---|

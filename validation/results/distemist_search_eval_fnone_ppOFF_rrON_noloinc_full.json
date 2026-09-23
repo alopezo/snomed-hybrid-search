@@ -10,20 +10,21 @@
       "scope": "disorder,finding",
       "llm_select": false,
       "context_mode": null,
-      "exclude_module": 11010000107
+      "exclude_module": 11010000107,
+      "desc_scope": "all"
     },
     "mentions": 985,
     "scoped_out": 66,
     "unresolved": 6,
     "resolved_via_history": 37,
-    "elapsed_s": 101.7,
-    "acc@1": 0.525,
-    "recall@5": 0.747,
+    "elapsed_s": 132.7,
+    "acc@1": 0.526,
+    "recall@5": 0.75,
     "recall@10": 0.782,
     "hier@1": 0.655,
-    "hier@5": 0.851,
-    "hier@10": 0.869,
-    "MRR": 0.62
+    "hier@5": 0.854,
+    "hier@10": 0.874,
+    "MRR": 0.621
   },
   "rows": [
     {
@@ -207,12 +208,12 @@
           "Uneven venous ectasia (morphologic abnormality)"
         ],
         [
-          "57052009",
-          "Bleeding varices (morphologic abnormality)"
-        ],
-        [
           "22341001",
           "Thrombosed varices (morphologic abnormality)"
+        ],
+        [
+          "57052009",
+          "Bleeding varices (morphologic abnormality)"
         ],
         [
           "248741001",
@@ -607,16 +608,16 @@
           "Tumor finding (finding)"
         ],
         [
-          "371480007",
-          "Anatomic location of neoplasm (observable entity)"
+          "419835002",
+          "Tumor progression (finding)"
         ],
         [
-          "258435002",
-          "Tumor tissue specimen (specimen)"
+          "413281002",
+          "Fungating tumor (finding)"
         ],
         [
-          "370612006",
-          "Excision of neoplasm (procedure)"
+          "72938002",
+          "Tumorlet (morphologic abnormality)"
         ]
       ],
       "hit1": false,
@@ -763,20 +764,20 @@
           "Metastatic malignant neoplasm (disorder)"
         ],
         [
-          "417957003",
-          "Uveal metastasis (tumor staging)"
-        ],
-        [
           "371497001",
           "pM category (observable entity)"
         ],
         [
-          "128747005",
-          "Metastasizing leiomyoma (morphologic abnormality)"
+          "417957003",
+          "Uveal metastasis (tumor staging)"
         ],
         [
-          "77879006",
-          "Metastatic to (attribute)"
+          "399409002",
+          "Distant metastasis present (finding)"
+        ],
+        [
+          "94222008",
+          "Metastatic malignant neoplasm to bone (disorder)"
         ]
       ],
       "hit1": true,
@@ -1175,8 +1176,8 @@
           "Bacterial sepsis (disorder)"
         ],
         [
-          "194394004",
-          "Gram positive sepsis (disorder)"
+          "12204111000119105",
+          "Sepsis due to and following procedure (disorder)"
         ]
       ],
       "hit1": true,
@@ -2003,20 +2004,20 @@
           "Parosteal osteosarcoma (disorder)"
         ],
         [
-          "128918008",
-          "Parosteal osteosarcoma (morphologic abnormality)"
-        ],
-        [
           "440397000",
           "Primary osteosarcoma of pelvis (disorder)"
         ],
         [
-          "449100005",
-          "Sarcoma of bone of pelvis (disorder)"
+          "128918008",
+          "Parosteal osteosarcoma (morphologic abnormality)"
         ],
         [
-          "723852001",
-          "Primary osteosarcoma of articular cartilage of pelvis (disorder)"
+          "372005006",
+          "Primary malignant neoplasm of penis (disorder)"
+        ],
+        [
+          "449100005",
+          "Sarcoma of bone of pelvis (disorder)"
         ]
       ],
       "hit1": false,
@@ -2274,29 +2275,29 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Kidney lesion (disorder)",
-      "rank": 3,
-      "top1": "236153004",
-      "top1_fsn": "Percutaneous removal of renal lesion (procedure)",
+      "rank": 4,
+      "top1": "175924000",
+      "top1_fsn": "Open destruction of renal lesion (procedure)",
       "topk": [
         [
-          "236153004",
-          "Percutaneous removal of renal lesion (procedure)"
+          "175924000",
+          "Open destruction of renal lesion (procedure)"
         ],
         [
           "40095003",
           "Injury of kidney (disorder)"
         ],
         [
+          "736616001",
+          "Local destruction of lesion of kidney (procedure)"
+        ],
+        [
           "79131000119100",
           "Kidney lesion (disorder)"
         ],
         [
-          "175969006",
-          "Percutaneous aspiration of renal lesion (procedure)"
-        ],
-        [
-          "175923006",
-          "Open excision of renal lesion (procedure)"
+          "236153004",
+          "Percutaneous removal of renal lesion (procedure)"
         ]
       ],
       "hit1": false,
@@ -2367,16 +2368,16 @@
           "Traumatic injury of left kidney (disorder)"
         ],
         [
-          "11800891000119109",
-          "Laceration of left kidney (disorder)"
-        ],
-        [
           "16675391000119106",
           "Ultrasonography of left kidney abnormal (finding)"
         ],
         [
-          "444954005",
-          "Left kidney present (finding)"
+          "11800891000119109",
+          "Laceration of left kidney (disorder)"
+        ],
+        [
+          "16705361000119104",
+          "Neoplasm of left kidney (disorder)"
         ]
       ],
       "hit1": true,
@@ -3515,34 +3516,34 @@
       "domain": null,
       "gold_fsn": "Clear cell carcinoma of kidney (disorder)",
       "rank": null,
-      "top1": "702391001",
-      "top1_fsn": "Renal cell carcinoma (disorder)",
+      "top1": "41607009",
+      "top1_fsn": "Renal cell carcinoma (morphologic abnormality)",
       "topk": [
-        [
-          "702391001",
-          "Renal cell carcinoma (disorder)"
-        ],
         [
           "41607009",
           "Renal cell carcinoma (morphologic abnormality)"
+        ],
+        [
+          "702391001",
+          "Renal cell carcinoma (disorder)"
         ],
         [
           "1259489002",
           "Primary renal cell carcinoma (disorder)"
         ],
         [
-          "702392008",
-          "Metastatic renal cell carcinoma (disorder)"
-        ],
-        [
           "838281000",
           "Metastatic renal cell carcinoma (morphologic abnormality)"
+        ],
+        [
+          "702392008",
+          "Metastatic renal cell carcinoma (disorder)"
         ]
       ],
       "hit1": false,
       "hit5": false,
       "hit10": false,
-      "hier1": true,
+      "hier1": false,
       "hier5": true,
       "hier10": true
     },
@@ -4007,12 +4008,12 @@
           "Paravesical urinoma (disorder)"
         ],
         [
-          "708484008",
-          "Vesiculoerosive lesion (disorder)"
-        ],
-        [
           "428090004",
           "Mass of urinary bladder (finding)"
+        ],
+        [
+          "708484008",
+          "Vesiculoerosive lesion (disorder)"
         ],
         [
           "45083001",
@@ -4095,8 +4096,8 @@
           "Diabetes mellitus type 2 in nonobese (disorder)"
         ],
         [
-          "199230006",
-          "Pre-existing type 2 diabetes mellitus (disorder)"
+          "237599002",
+          "Insulin treated type 2 diabetes mellitus (disorder)"
         ]
       ],
       "hit1": true,
@@ -4807,12 +4808,12 @@
           "Malignant adenomatous neoplasm (disorder)"
         ],
         [
-          "423595004",
-          "Adenocarcinoma carcinomatosis (disorder)"
-        ],
-        [
           "4590003",
           "Adenocarcinoma, metastatic (morphologic abnormality)"
+        ],
+        [
+          "423595004",
+          "Adenocarcinoma carcinomatosis (disorder)"
         ],
         [
           "115215004",
@@ -4887,16 +4888,16 @@
           "Polypoid urethritis (disorder)"
         ],
         [
-          "308006",
-          "Pearly penile papules (disorder)"
+          "701352009",
+          "Permanent polymeric urethral stent (physical object)"
+        ],
+        [
+          "700844008",
+          "Removable polymeric urethral stent (physical object)"
         ],
         [
           "6375001",
           "Structure of spongiose portion of urethra (body structure)"
-        ],
-        [
-          "254690006",
-          "Mucous cyst of penis (disorder)"
         ]
       ],
       "hit1": false,
@@ -7207,16 +7208,16 @@
           "Lues maligna (disorder)"
         ],
         [
+          "272749001",
+          "LU4 (body structure)"
+        ],
+        [
           "262429008",
           "Luis (qualifier value)"
         ],
         [
-          "388528002",
-          "Genus Lutra (organism)"
-        ],
-        [
-          "698279003",
-          "X-linked dystonia parkinsonism (disorder)"
+          "272751002",
+          "LU6 (body structure)"
         ]
       ],
       "hit1": true,
@@ -7255,8 +7256,8 @@
           "Chronic hepatitis (disorder)"
         ],
         [
-          "318191000009109",
-          "Hepatitis caused by bacteria (disorder)"
+          "427044009",
+          "Fulminant hepatitis (disorder)"
         ]
       ],
       "hit1": true,
@@ -7967,12 +7968,12 @@
           "Biliary papillomatosis (disorder)"
         ],
         [
-          "91991003",
-          "Benign neoplasm of biliary tract (disorder)"
-        ],
-        [
           "39471001",
           "Bile duct adenoma (morphologic abnormality)"
+        ],
+        [
+          "91991003",
+          "Benign neoplasm of biliary tract (disorder)"
         ],
         [
           "20239009",
@@ -8635,9 +8636,13 @@
       "domain": null,
       "gold_fsn": "Malakoplakia (disorder)",
       "rank": null,
-      "top1": "126902008",
-      "top1_fsn": "Neoplasm of epididymis (disorder)",
+      "top1": "236763001",
+      "top1_fsn": "Disorder of testis and epididymis (disorder)",
       "topk": [
+        [
+          "236763001",
+          "Disorder of testis and epididymis (disorder)"
+        ],
         [
           "126902008",
           "Neoplasm of epididymis (disorder)"
@@ -8653,10 +8658,6 @@
         [
           "93783009",
           "Primary malignant neoplasm of epididymis (disorder)"
-        ],
-        [
-          "1259695007",
-          "Primary carcinoma of epididymis and spermatic cord (disorder)"
         ]
       ],
       "hit1": false,
@@ -8731,12 +8732,12 @@
           "Viral meningitis (disorder)"
         ],
         [
-          "822031000000101",
-          "Acute meningitis (disorder)"
+          "1078248008",
+          "Recurrent meningitis (disorder)"
         ],
         [
-          "161478002",
-          "History of meningitis (situation)"
+          "822031000000101",
+          "Acute meningitis (disorder)"
         ]
       ],
       "hit1": true,
@@ -8874,10 +8875,14 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Local recurrence of malignant neoplasm of kidney (disorder)",
-      "rank": null,
-      "top1": "236441006",
-      "top1_fsn": "Acquired renal cyst with neoplastic change (disorder)",
+      "rank": 1,
+      "top1": "314967004",
+      "top1_fsn": "Local recurrence of malignant neoplasm of kidney (disorder)",
       "topk": [
+        [
+          "314967004",
+          "Local recurrence of malignant neoplasm of kidney (disorder)"
+        ],
         [
           "236441006",
           "Acquired renal cyst with neoplastic change (disorder)"
@@ -8891,18 +8896,14 @@
           "Renal tumor limited to kidney macroscopically (finding)"
         ],
         [
-          "309088003",
-          "Renal mass (finding)"
-        ],
-        [
           "41627005",
           "Renal cell adenoma (morphologic abnormality)"
         ]
       ],
-      "hit1": false,
-      "hit5": false,
-      "hit10": false,
-      "hier1": false,
+      "hit1": true,
+      "hit5": true,
+      "hit10": true,
+      "hier1": true,
       "hier5": true,
       "hier10": true
     },
@@ -8914,7 +8915,7 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Malignant fibromatous neoplasm (disorder)",
-      "rank": 10,
+      "rank": null,
       "top1": "53654007",
       "top1_fsn": "Fibrosarcoma (morphologic abnormality)",
       "topk": [
@@ -8941,7 +8942,7 @@
       ],
       "hit1": false,
       "hit5": false,
-      "hit10": true,
+      "hit10": false,
       "hier1": false,
       "hier5": true,
       "hier10": true
@@ -9327,16 +9328,16 @@
           "Genus Faecalibacterium (organism)"
         ],
         [
+          "363236004",
+          "Fetal neurodevelopmental disorder (disorder)"
+        ],
+        [
           "363070008",
           "Developmental hereditary disorder (disorder)"
         ],
         [
           "797937000",
           "Genus Faecalicoccus (organism)"
-        ],
-        [
-          "734257003",
-          "Genus Faecalitalea (organism)"
         ]
       ],
       "hit1": false,
@@ -9371,12 +9372,12 @@
           "Nephrocystin 3-related Meckel-like syndrome (disorder)"
         ],
         [
-          "787410005",
-          "Hereditary mixed polyposis syndrome (disorder)"
+          "86092005",
+          "Cystic fibrosis with meconium ileus (disorder)"
         ],
         [
-          "773579007",
-          "Congenital chronic diarrhea with protein-losing enteropathy (disorder)"
+          "787410005",
+          "Hereditary mixed polyposis syndrome (disorder)"
         ]
       ],
       "hit1": false,
@@ -11243,20 +11244,20 @@
           "Structure of intraculminate fissure (body structure)"
         ],
         [
-          "451032004",
-          "Structure of subpial space of brain (body structure)"
-        ],
-        [
           "86766005",
           "Structure of longitudinal cerebral fissure (body structure)"
+        ],
+        [
+          "279464001",
+          "Structure of lacuna magna (body structure)"
         ],
         [
           "263972004",
           "Structure of cerebellar subarachnoid space (body structure)"
         ],
         [
-          "48715009",
-          "Structure of cerebellar fissure (body structure)"
+          "451032004",
+          "Structure of subpial space of brain (body structure)"
         ]
       ],
       "hit1": false,
@@ -11355,16 +11356,20 @@
       "domain": null,
       "gold_fsn": "Gunshot wound (disorder)",
       "rank": null,
-      "top1": "10941451000119104",
-      "top1_fsn": "Hemorrhage of right cerebral hemisphere due to trauma (disorder)",
+      "top1": "283547002",
+      "top1_fsn": "Pellet wound of head (disorder)",
       "topk": [
+        [
+          "283547002",
+          "Pellet wound of head (disorder)"
+        ],
+        [
+          "1335891000",
+          "Blast injury to brain (disorder)"
+        ],
         [
           "10941451000119104",
           "Hemorrhage of right cerebral hemisphere due to trauma (disorder)"
-        ],
-        [
-          "1739001",
-          "Fracture of occipital bone (disorder)"
         ],
         [
           "762353009",
@@ -11373,10 +11378,6 @@
         [
           "16694261000119102",
           "Closed fracture of right half of occipital bone (disorder)"
-        ],
-        [
-          "1342330001",
-          "Edema of cerebellum due to trauma (disorder)"
         ]
       ],
       "hit1": false,
@@ -12415,8 +12416,8 @@
           "Structure of middle cervical ganglion (body structure)"
         ],
         [
-          "1286980004",
-          "Entire cervical spinal ganglion (body structure)"
+          "84959000",
+          "Structure of superior cervical ganglion (body structure)"
         ]
       ],
       "hit1": false,
@@ -12474,10 +12475,14 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Acute adrenal insufficiency (disorder)",
-      "rank": null,
-      "top1": "19995004",
-      "top1_fsn": "Spontaneous rupture of esophagus (disorder)",
+      "rank": 1,
+      "top1": "766986002",
+      "top1_fsn": "Acute adrenal insufficiency (disorder)",
       "topk": [
+        [
+          "766986002",
+          "Acute adrenal insufficiency (disorder)"
+        ],
         [
           "19995004",
           "Spontaneous rupture of esophagus (disorder)"
@@ -12493,18 +12498,14 @@
         [
           "62269008",
           "Echium lycopis (organism)"
-        ],
-        [
-          "609329007",
-          "Catastrophic antiphospholipid syndrome (disorder)"
         ]
       ],
-      "hit1": false,
-      "hit5": false,
-      "hit10": false,
-      "hier1": false,
-      "hier5": false,
-      "hier10": false
+      "hit1": true,
+      "hit5": true,
+      "hit10": true,
+      "hier1": true,
+      "hier5": true,
+      "hier10": true
     },
     {
       "file": "es-S0212-71992005000700008-1",
@@ -13515,36 +13516,36 @@
       "domain": null,
       "gold_fsn": "Disorder of testis (disorder)",
       "rank": null,
-      "top1": "15954381000119107",
-      "top1_fsn": "Lesion of right nipple (disorder)",
+      "top1": "300492006",
+      "top1_fsn": "Lesion of testis (disorder)",
       "topk": [
+        [
+          "300492006",
+          "Lesion of testis (disorder)"
+        ],
+        [
+          "1376014007",
+          "Imaging of right testis abnormal (finding)"
+        ],
+        [
+          "300577008",
+          "Finding of lesion (finding)"
+        ],
         [
           "15954381000119107",
           "Lesion of right nipple (disorder)"
         ],
         [
-          "16881941000119104",
-          "Complex sclerosing lesion of right breast (disorder)"
-        ],
-        [
-          "290073004",
-          "Lesion of breast (disorder)"
-        ],
-        [
-          "981000087103",
-          "Ultrasonography of pathological specimen of right breast (procedure)"
-        ],
-        [
-          "11801171000119107",
-          "Contusion of right kidney (disorder)"
+          "1376010003",
+          "Imaging of testis abnormal (finding)"
         ]
       ],
       "hit1": false,
       "hit5": false,
       "hit10": false,
-      "hier1": false,
-      "hier5": false,
-      "hier10": false
+      "hier1": true,
+      "hier5": true,
+      "hier10": true
     },
     {
       "file": "es-S0212-71992007000200007-1",
@@ -14251,12 +14252,12 @@
           "Rinderpest virus (organism)"
         ],
         [
-          "721788005",
-          "Encephalitis caused by Rubulavirus (disorder)"
+          "407404000",
+          "Rous sarcoma virus (organism)"
         ],
         [
-          "51490003",
-          "Disease caused by Rubivirus (disorder)"
+          "1354805003",
+          "Variegated squirrel bornavirus 1 (organism)"
         ]
       ],
       "hit1": false,
@@ -14295,8 +14296,8 @@
           "Disseminated tuberculosis (disorder)"
         ],
         [
-          "25629007",
-          "Acute tuberculosis (disorder)"
+          "700272008",
+          "Tuberculosis of respiratory system (disorder)"
         ]
       ],
       "hit1": true,
@@ -14367,16 +14368,16 @@
           "Disseminated infection caused by Borreliella (disorder)"
         ],
         [
+          "733166004",
+          "Infection of skin caused by Borreliella (disorder)"
+        ],
+        [
           "23502006",
           "Lyme disease (disorder)"
         ],
         [
           "788959004",
           "Infection of eye caused by Borreliella (disorder)"
-        ],
-        [
-          "112277009",
-          "Genus Borrelia (organism)"
         ]
       ],
       "hit1": true,
@@ -14795,9 +14796,21 @@
       "domain": null,
       "gold_fsn": "Epiretinal membrane (disorder)",
       "rank": null,
-      "top1": "363861009",
-      "top1_fsn": "Electromyogram feature (observable entity)",
+      "top1": "111332007",
+      "top1_fsn": "Male pseudohermaphroditism (disorder)",
       "topk": [
+        [
+          "111332007",
+          "Male pseudohermaphroditism (disorder)"
+        ],
+        [
+          "279251004",
+          "Structure of motor area (body structure)"
+        ],
+        [
+          "363859000",
+          "Electroencephalogram feature (observable entity)"
+        ],
         [
           "363861009",
           "Electromyogram feature (observable entity)"
@@ -14805,18 +14818,6 @@
         [
           "1389421005",
           "Genus Merdimonas (organism)"
-        ],
-        [
-          "363859000",
-          "Electroencephalogram feature (observable entity)"
-        ],
-        [
-          "279251004",
-          "Structure of motor area (body structure)"
-        ],
-        [
-          "373457005",
-          "Mercaptamine (substance)"
         ]
       ],
       "hit1": false,
@@ -14843,20 +14844,20 @@
           "Prepapillary vascular loop (disorder)"
         ],
         [
+          "110382006",
+          "Porcine circovirus (organism)"
+        ],
+        [
           "110601005",
           "Structure of retrocuspid papilla (body structure)"
         ],
         [
-          "1256119002",
-          "Structure of diploic vein (body structure)"
+          "35233000",
+          "Polyvinyl chloride (substance)"
         ],
         [
-          "44367000",
-          "Structure of posterior branch of superior right pulmonary vein (body structure)"
-        ],
-        [
-          "88033008",
-          "Structure of posterior papillary muscle of right ventricle (body structure)"
+          "71448008",
+          "Canine minute virus (organism)"
         ]
       ],
       "hit1": false,
@@ -14931,12 +14932,12 @@
           "Tropical anhidrotic asthenia (disorder)"
         ],
         [
-          "52526003",
-          "Sweating problem (finding)"
+          "735190001",
+          "Heat exhaustion co-occurrent and due to anhidrosis (disorder)"
         ],
         [
-          "724816007",
-          "Acquired anhidrosis co-occurrent and due to primary autonomic disorder (disorder)"
+          "1187178004",
+          "Isolated generalized anhidrosis with normal sweat glands (disorder)"
         ]
       ],
       "hit1": true,
@@ -15411,12 +15412,12 @@
           "Primary exotropia (disorder)"
         ],
         [
-          "313158009",
-          "Distance exotropia (disorder)"
-        ],
-        [
           "246748002",
           "Incomitant exotropia (disorder)"
+        ],
+        [
+          "313158009",
+          "Distance exotropia (disorder)"
         ]
       ],
       "hit1": false,
@@ -15447,24 +15448,24 @@
           "Deoxyguanylic acid (substance)"
         ],
         [
-          "717286002",
-          "Grayson Wilbrandt dystrophy of cornea (disorder)"
-        ],
-        [
           "39909008",
           "dGTPase (substance)"
         ],
         [
-          "397568004",
-          "Granular corneal dystrophy type II (disorder)"
+          "80562001",
+          "Deoxy guanosine triphosphate (substance)"
+        ],
+        [
+          "1779005",
+          "Mohr syndrome (disorder)"
         ]
       ],
       "hit1": false,
       "hit5": false,
       "hit10": false,
       "hier1": false,
-      "hier5": true,
-      "hier10": true
+      "hier5": false,
+      "hier10": false
     },
     {
       "file": "es-S0365-66912006000500008-1",
@@ -16135,8 +16136,8 @@
           "Retinitis of left eye (disorder)"
         ],
         [
-          "61922005",
-          "Disseminated retinitis (disorder)"
+          "359668007",
+          "Focal retinitis (disorder)"
         ]
       ],
       "hit1": true,
@@ -16315,28 +16316,28 @@
       "domain": null,
       "gold_fsn": "Lesion of eye (disorder)",
       "rank": null,
-      "top1": "95726001",
-      "top1_fsn": "Corneal scar (disorder)",
+      "top1": "35629000",
+      "top1_fsn": "Disseminated scar of retina AND choroid (disorder)",
       "topk": [
-        [
-          "95726001",
-          "Corneal scar (disorder)"
-        ],
         [
           "35629000",
           "Disseminated scar of retina AND choroid (disorder)"
         ],
         [
-          "15999311000119108",
-          "Scar of cornea of bilateral eyes (disorder)"
+          "95726001",
+          "Corneal scar (disorder)"
+        ],
+        [
+          "193459004",
+          "Disseminated chorioretinal scars (disorder)"
         ],
         [
           "53854005",
           "Chorioretinal scar (disorder)"
         ],
         [
-          "314005007",
-          "Visually significant corneal scar (disorder)"
+          "15999311000119108",
+          "Scar of cornea of bilateral eyes (disorder)"
         ]
       ],
       "hit1": false,
@@ -17087,16 +17088,16 @@
           "External cyst of meibomian gland (disorder)"
         ],
         [
+          "9555008",
+          "Incision of chalazion (procedure)"
+        ],
+        [
           "788968002",
           "Internal cyst of meibomian gland (disorder)"
         ],
         [
           "414521009",
           "Internal hordeolum (disorder)"
-        ],
-        [
-          "700266008",
-          "Cyst of meibomian gland of upper eyelid (disorder)"
         ]
       ],
       "hit1": true,
@@ -17435,28 +17436,28 @@
       "domain": null,
       "gold_fsn": "Temporal arteritis (disorder)",
       "rank": null,
-      "top1": "6832004",
-      "top1_fsn": "Atherectomy (procedure)",
+      "top1": "420246001",
+      "top1_fsn": "At - dosing instruction fragment (qualifier value)",
       "topk": [
         [
-          "6832004",
-          "Atherectomy (procedure)"
+          "420246001",
+          "At - dosing instruction fragment (qualifier value)"
         ],
         [
-          "34086003",
-          "Antithrombin III (substance)"
+          "69220007",
+          "Repair of atrium (procedure)"
         ],
         [
-          "709607003",
-          "Antithrombin antigen (substance)"
-        ],
-        [
-          "410493009",
-          "Atropine penalization therapy for amblyopia (procedure)"
+          "373444002",
+          "Atorvastatin (substance)"
         ],
         [
           "52401009",
           "Thrombin-antithrombin complex (substance)"
+        ],
+        [
+          "30326004",
+          "Atrial natriuretic factor (substance)"
         ]
       ],
       "hit1": false,
@@ -17714,37 +17715,37 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Meningocele (disorder)",
-      "rank": null,
-      "top1": "344881000119106",
-      "top1_fsn": "Ora serrata cyst of retina of bilateral eyes (disorder)",
+      "rank": 1,
+      "top1": "171131006",
+      "top1_fsn": "Meningocele (disorder)",
       "topk": [
         [
-          "344881000119106",
-          "Ora serrata cyst of retina of bilateral eyes (disorder)"
+          "171131006",
+          "Meningocele (disorder)"
         ],
         [
-          "349331000119101",
-          "Acquired coloboma of optic disc of bilateral eyes (disorder)"
+          "253166000",
+          "Lateral meningocele (disorder)"
         ],
         [
-          "890396001",
-          "Congenital pit of bilateral optic discs (disorder)"
+          "1197212001",
+          "Posterior meningocele (disorder)"
         ],
         [
-          "890412002",
-          "Congenital dacryocele of bilateral lacrimal sacs (disorder)"
+          "172069000",
+          "Congenital meningocele (disorder)"
         ],
         [
-          "15986111000119101",
-          "Congenital coloboma of bilateral optic discs (disorder)"
+          "36010004",
+          "Congenital cerebral meningocele (disorder)"
         ]
       ],
-      "hit1": false,
-      "hit5": false,
-      "hit10": false,
-      "hier1": false,
-      "hier5": false,
-      "hier10": false
+      "hit1": true,
+      "hit5": true,
+      "hit10": true,
+      "hier1": true,
+      "hier5": true,
+      "hier10": true
     },
     {
       "file": "es-S0365-66912010000600004-1",
@@ -18291,12 +18292,12 @@
           "Anterior uveitis (disorder)"
         ],
         [
-          "314429009",
-          "Intermediate uveitis (disorder)"
+          "444248002",
+          "Chronic inflammation of uveal tract (disorder)"
         ],
         [
-          "43363007",
-          "Posterior uveitis (disorder)"
+          "314429009",
+          "Intermediate uveitis (disorder)"
         ]
       ],
       "hit1": true,
@@ -18487,16 +18488,16 @@
           "Intermediate uveitis due to infectious disease (disorder)"
         ],
         [
+          "1163460006",
+          "Intermediate uveitis caused by Borreliella burgdorferi (disorder)"
+        ],
+        [
           "1177031006",
           "Intermediate uveitis caused by Mycobacterium tuberculosis complex (disorder)"
         ],
         [
-          "1177029002",
-          "Intermediate uveitis caused by Treponema pallidum (disorder)"
-        ],
-        [
-          "1163460006",
-          "Intermediate uveitis caused by Borreliella burgdorferi (disorder)"
+          "1231232007",
+          "Intermediate uveitis associated with multiple sclerosis (disorder)"
         ]
       ],
       "hit1": true,
@@ -18815,8 +18816,8 @@
           "Reconstruction of nose with microvascular transferred flap (procedure)"
         ],
         [
-          "254745007",
-          "Fibrous papule of nose (disorder)"
+          "425713005",
+          "Laser therapy of internal nose (procedure)"
         ]
       ],
       "hit1": true,
@@ -18915,12 +18916,16 @@
       "domain": null,
       "gold_fsn": "Retinal detachment (disorder)",
       "rank": null,
-      "top1": "1397246002",
-      "top1_fsn": "atrophin 1 gene (cell structure)",
+      "top1": "443118000",
+      "top1_fsn": "Genus Dromas (organism)",
       "topk": [
         [
-          "1397246002",
-          "atrophin 1 gene (cell structure)"
+          "443118000",
+          "Genus Dromas (organism)"
+        ],
+        [
+          "262380008",
+          "Drahovce (qualifier value)"
         ],
         [
           "49938009",
@@ -18931,12 +18936,8 @@
           "Drospirenone (substance)"
         ],
         [
-          "255880007",
-          "Drometrizole (substance)"
-        ],
-        [
-          "262380008",
-          "Drahovce (qualifier value)"
+          "1397246002",
+          "atrophin 1 gene (cell structure)"
         ]
       ],
       "hit1": false,
@@ -19127,16 +19128,16 @@
           "Malignant neoplasm (morphologic abnormality)"
         ],
         [
-          "1187425009",
-          "Carcinoma (morphologic abnormality)"
+          "395099008",
+          "Cancer confirmed (situation)"
         ],
         [
-          "128462008",
-          "Metastatic malignant neoplasm (disorder)"
+          "363500001",
+          "Multiple malignancy (disorder)"
         ],
         [
-          "307593001",
-          "Carcinomatosis (disorder)"
+          "266987004",
+          "History of malignant neoplasm (situation)"
         ]
       ],
       "hit1": true,
@@ -19367,16 +19368,16 @@
           "Phlyctenular (qualifier value)"
         ],
         [
+          "385117009",
+          "Poultice (basic dose form)"
+        ],
+        [
           "74447004",
           "Keratinocyte (cell)"
         ],
         [
-          "397052000",
-          "Keratocyte (cell)"
-        ],
-        [
-          "396194008",
-          "Agent Purple (substance)"
+          "263655009",
+          "Acantholytic (qualifier value)"
         ]
       ],
       "hit1": false,
@@ -19595,28 +19596,28 @@
       "domain": null,
       "gold_fsn": "Congenital anomaly of hand (disorder)",
       "rank": null,
-      "top1": "727572001",
-      "top1_fsn": "Entire digital nerve in hand to fourth web space (body structure)",
+      "top1": "205190005",
+      "top1_fsn": "Transverse arrest phalangeal level fourth ray (disorder)",
       "topk": [
         [
-          "727572001",
-          "Entire digital nerve in hand to fourth web space (body structure)"
+          "205190005",
+          "Transverse arrest phalangeal level fourth ray (disorder)"
         ],
         [
-          "729612009",
-          "Entire digital nerve (body structure)"
+          "205191009",
+          "Transverse arrest phalangeal level fifth ray (disorder)"
         ],
         [
-          "727571008",
-          "Entire digital nerve in hand to third web space (body structure)"
+          "205230001",
+          "Congenital absence of fourth and fifth toes (disorder)"
         ],
         [
-          "728007001",
-          "Entire dorsal digital nerve (body structure)"
+          "205189001",
+          "Transverse arrest phalangeal level third ray (disorder)"
         ],
         [
-          "181040004",
-          "Structure of digital nerve in hand to fourth web space (body structure)"
+          "205188009",
+          "Transverse arrest phalangeal level second ray (disorder)"
         ]
       ],
       "hit1": false,
@@ -19624,7 +19625,7 @@
       "hit10": false,
       "hier1": false,
       "hier5": false,
-      "hier10": false
+      "hier10": true
     },
     {
       "file": "es-S0376-78922012000300005-1",
@@ -20634,35 +20635,35 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Epilepsy (disorder)",
-      "rank": 1,
-      "top1": "84757009",
-      "top1_fsn": "Epilepsy (disorder)",
+      "rank": 2,
+      "top1": "241006",
+      "top1_fsn": "Epilepsia partialis continua (finding)",
       "topk": [
+        [
+          "241006",
+          "Epilepsia partialis continua (finding)"
+        ],
         [
           "84757009",
           "Epilepsy (disorder)"
-        ],
-        [
-          "313307000",
-          "Epileptic seizure (finding)"
         ],
         [
           "128613002",
           "Seizure disorder (disorder)"
         ],
         [
-          "91175000",
-          "Seizure (finding)"
+          "313307000",
+          "Epileptic seizure (finding)"
         ],
         [
-          "241006",
-          "Epilepsia partialis continua (finding)"
+          "91175000",
+          "Seizure (finding)"
         ]
       ],
-      "hit1": true,
+      "hit1": false,
       "hit5": true,
       "hit10": true,
-      "hier1": true,
+      "hier1": false,
       "hier5": true,
       "hier10": true
     },
@@ -21131,12 +21132,12 @@
           "Ozzardian filariasis (disorder)"
         ],
         [
-          "76999009",
-          "Infection caused by Brugia malayi (disorder)"
+          "243981000119109",
+          "Pulmonary filariasis (disorder)"
         ],
         [
-          "77947001",
-          "Infection caused by Wuchereria bancrofti (disorder)"
+          "76999009",
+          "Infection caused by Brugia malayi (disorder)"
         ]
       ],
       "hit1": true,
@@ -22571,12 +22572,12 @@
           "Acute type A viral hepatitis (disorder)"
         ],
         [
-          "165997004",
-          "Hepatitis A detected (finding)"
-        ],
-        [
           "278970005",
           "Hepatitis A status (observable entity)"
+        ],
+        [
+          "165997004",
+          "Hepatitis A detected (finding)"
         ]
       ],
       "hit1": false,
@@ -22887,16 +22888,16 @@
           "Chronic radiation colitis (disorder)"
         ],
         [
-          "72965009",
-          "Chemical colitis (disorder)"
+          "238528004",
+          "Actinic reaction (disorder)"
         ],
         [
           "235756006",
           "Acute radiation colitis (disorder)"
         ],
         [
-          "235708000",
-          "Chronic inflammation of intestine caused by ionizing radiation (disorder)"
+          "52636001",
+          "Actinic reticuloid (disorder)"
         ]
       ],
       "hit1": true,
@@ -23615,8 +23616,8 @@
           "Duodenitis due to celiac disease (disorder)"
         ],
         [
-          "9250002",
-          "Celiac artery compression syndrome (disorder)"
+          "443718009",
+          "Celiac disease detected by autoantibody screening (finding)"
         ]
       ],
       "hit1": true,
@@ -23851,12 +23852,12 @@
           "Operation on biliary fistula (procedure)"
         ],
         [
-          "235574004",
-          "Occlusion of biliary fistula (procedure)"
+          "818951009",
+          "Congenital respiratory biliary fistula (disorder)"
         ],
         [
-          "40053007",
-          "Closure of biliary tract fistula (procedure)"
+          "235574004",
+          "Occlusion of biliary fistula (procedure)"
         ]
       ],
       "hit1": true,
@@ -24011,12 +24012,12 @@
           "Systemic venovenous collateral vein (disorder)"
         ],
         [
-          "246330008",
-          "Vessel receiving collaterals (attribute)"
+          "870716007",
+          "Structure of periportal tract region (body structure)"
         ],
         [
-          "460913001",
-          "Systemic to coronary collateral artery (disorder)"
+          "246330008",
+          "Vessel receiving collaterals (attribute)"
         ]
       ],
       "hit1": false,
@@ -24167,16 +24168,16 @@
           "Postoperative gastric retention (disorder)"
         ],
         [
+          "281109007",
+          "Vestigial gastrointestinal remnant (disorder)"
+        ],
+        [
           "75198005",
           "Gastric diverticulum (disorder)"
         ],
         [
           "89499009",
           "Adhesion of stomach (disorder)"
-        ],
-        [
-          "414157009",
-          "Excessive fluid in stomach (finding)"
         ]
       ],
       "hit1": true,
@@ -24274,10 +24275,18 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Metastatic malignant neoplasm to biliary tract (disorder)",
-      "rank": 1,
-      "top1": "94185003",
-      "top1_fsn": "Metastatic malignant neoplasm to biliary tract (disorder)",
+      "rank": 3,
+      "top1": "65765007",
+      "top1_fsn": "Extravasation of bile (morphologic abnormality)",
       "topk": [
+        [
+          "65765007",
+          "Extravasation of bile (morphologic abnormality)"
+        ],
+        [
+          "20239009",
+          "Bile duct proliferation (disorder)"
+        ],
         [
           "94185003",
           "Metastatic malignant neoplasm to biliary tract (disorder)"
@@ -24287,22 +24296,14 @@
           "Neoplasm of biliary tract (disorder)"
         ],
         [
-          "1155861004",
-          "Anatomic location directly invaded by primary malignant neoplasm of intrahepatic bile duct (observable entity)"
-        ],
-        [
-          "1251487003",
-          "Metastatic carcinoma to biliary tract (disorder)"
-        ],
-        [
-          "1155829003",
-          "Anatomic location directly invaded by primary malignant neoplasm of extrahepatic bile duct (observable entity)"
+          "300339003",
+          "Finding of biliary tract (finding)"
         ]
       ],
-      "hit1": true,
+      "hit1": false,
       "hit5": true,
       "hit10": true,
-      "hier1": true,
+      "hier1": false,
       "hier5": true,
       "hier10": true
     },
@@ -24495,8 +24496,8 @@
           "Venous (large vessel) invasion by tumor present (finding)"
         ],
         [
-          "369734008",
-          "Venous (large vessel) extramural invasion by tumor present (finding)"
+          "127494000",
+          "No vascular invasion by tumor (finding)"
         ]
       ],
       "hit1": true,
@@ -24727,16 +24728,16 @@
           "Chocolate cyst of ovary (disorder)"
         ],
         [
+          "404252071000119106",
+          "Endometrioma of right ovary (disorder)"
+        ],
+        [
+          "695449561000119100",
+          "Endometrioma of left ovary (disorder)"
+        ],
+        [
           "253013001",
           "Endometrioid tumor (morphologic abnormality)"
-        ],
-        [
-          "121098031000119106",
-          "Endometrioma of bilateral ovaries (disorder)"
-        ],
-        [
-          "123844007",
-          "Neoplasm of endometrium (disorder)"
         ]
       ],
       "hit1": false,
@@ -24963,20 +24964,20 @@
           "Biopsy of lesion of mandible (procedure)"
         ],
         [
+          "5316002",
+          "Closed osteotomy of mandibular ramus (procedure)"
+        ],
+        [
+          "234944005",
+          "Destruction of lesion of minor salivary gland (procedure)"
+        ],
+        [
           "187431000119104",
           "Avascular necrosis of mandible (disorder)"
         ],
         [
           "109699004",
           "Sequestrum of the mandible (disorder)"
-        ],
-        [
-          "1145063009",
-          "Cyst of mandible (disorder)"
-        ],
-        [
-          "897496003",
-          "Abnormally short condyloid process of mandible (disorder)"
         ]
       ],
       "hit1": false,
@@ -25394,17 +25395,17 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Injury of face (disorder)",
-      "rank": 1,
-      "top1": "125593007",
-      "top1_fsn": "Injury of face (disorder)",
+      "rank": 2,
+      "top1": "722572006",
+      "top1_fsn": "Injury of facial bone due to birth trauma (disorder)",
       "topk": [
+        [
+          "722572006",
+          "Injury of facial bone due to birth trauma (disorder)"
+        ],
         [
           "125593007",
           "Injury of face (disorder)"
-        ],
-        [
-          "84947004",
-          "Facial palsy as birth trauma (disorder)"
         ],
         [
           "390839009",
@@ -25415,11 +25416,11 @@
           "Facial laceration (disorder)"
         ],
         [
-          "55712002",
-          "Facial nerve injury as birth trauma (disorder)"
+          "210339009",
+          "Open wound of face (disorder)"
         ]
       ],
-      "hit1": true,
+      "hit1": false,
       "hit5": true,
       "hit10": true,
       "hier1": true,
@@ -25491,12 +25492,12 @@
           "Rotated fracture (morphologic abnormality)"
         ],
         [
-          "426718009",
-          "Fracture, open, displaced (morphologic abnormality)"
-        ],
-        [
           "269072006",
           "Open fracture axis (disorder)"
+        ],
+        [
+          "426718009",
+          "Fracture, open, displaced (morphologic abnormality)"
         ]
       ],
       "hit1": false,
@@ -25935,8 +25936,8 @@
           "Perichondritis (disorder)"
         ],
         [
-          "111373008",
-          "Pericholangitis (disorder)"
+          "109631003",
+          "Pericoronal abscess (disorder)"
         ]
       ],
       "hit1": true,
@@ -27131,8 +27132,8 @@
           "Diabetes mellitus type 1 (disorder)"
         ],
         [
-          "74627003",
-          "Complication due to diabetes mellitus (disorder)"
+          "8801005",
+          "Secondary diabetes mellitus (disorder)"
         ],
         [
           "530558861000132104",
@@ -27243,20 +27244,20 @@
           "Healthcare assistant (occupation)"
         ],
         [
-          "1396516008",
-          "adenosylhomocysteinase gene (cell structure)"
-        ],
-        [
           "1197761000",
           "Hypothermic circulatory arrest (procedure)"
         ],
         [
-          "1396926005",
-          "fibroblast growth factor receptor 3 gene (cell structure)"
+          "1231149005",
+          "AH amyloidosis (disorder)"
         ],
         [
-          "78058005",
-          "Liver cell adenoma (morphologic abnormality)"
+          "1396516008",
+          "adenosylhomocysteinase gene (cell structure)"
+        ],
+        [
+          "58756001",
+          "Huntington's chorea (disorder)"
         ]
       ],
       "hit1": false,
@@ -28114,7 +28115,7 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Ulcer (disorder)",
-      "rank": 6,
+      "rank": null,
       "top1": "56208002",
       "top1_fsn": "Ulcer (morphologic abnormality)",
       "topk": [
@@ -28141,7 +28142,7 @@
       ],
       "hit1": false,
       "hit5": false,
-      "hit10": true,
+      "hit10": false,
       "hier1": false,
       "hier5": false,
       "hier10": true
@@ -28607,12 +28608,12 @@
           "Adult hepatocellular carcinoma (disorder)"
         ],
         [
-          "25370001",
-          "Hepatocellular carcinoma (morphologic abnormality)"
-        ],
-        [
           "1208349005",
           "Pediatric hepatocellular carcinoma (disorder)"
+        ],
+        [
+          "25370001",
+          "Hepatocellular carcinoma (morphologic abnormality)"
         ],
         [
           "702379005",
@@ -28775,8 +28776,8 @@
           "Pruritus and inflammation of skin (disorder)"
         ],
         [
-          "367466007",
-          "Skin irritation (finding)"
+          "817956002",
+          "Exogenous dermatitis (disorder)"
         ]
       ],
       "hit1": true,
@@ -28883,6 +28884,10 @@
           "Neoplastic disease (disorder)"
         ],
         [
+          "406102004",
+          "Dysplasia with neoplasia (morphologic abnormality)"
+        ],
+        [
           "108369006",
           "Neoplasm (morphologic abnormality)"
         ],
@@ -28893,10 +28898,6 @@
         [
           "419327006",
           "Endometrial intraepithelial neoplasia (disorder)"
-        ],
-        [
-          "254901000",
-          "Prostatic intraepithelial neoplasia (disorder)"
         ]
       ],
       "hit1": true,
@@ -30664,7 +30665,7 @@
       "hit10": false,
       "hier1": false,
       "hier5": false,
-      "hier10": false
+      "hier10": true
     },
     {
       "file": "es-S1134-80462008000500004-2",
@@ -30927,16 +30928,16 @@
           "Diabetes type (observable entity)"
         ],
         [
-          "46635009",
-          "Diabetes mellitus type 1 (disorder)"
-        ],
-        [
           "11530004",
           "Brittle diabetes mellitus (disorder)"
         ],
         [
           "127012008",
           "Lipoatrophic diabetes (disorder)"
+        ],
+        [
+          "8801005",
+          "Secondary diabetes mellitus (disorder)"
         ]
       ],
       "hit1": true,
@@ -31594,17 +31595,13 @@
       "tag": "finding",
       "domain": null,
       "gold_fsn": "Finding of vomiting (finding)",
-      "rank": 8,
+      "rank": null,
       "top1": "422400008",
       "top1_fsn": "Vomiting (disorder)",
       "topk": [
         [
           "422400008",
           "Vomiting (disorder)"
-        ],
-        [
-          "1333003",
-          "Emesis basin, device (physical object)"
         ],
         [
           "133880003",
@@ -31615,13 +31612,17 @@
           "Bilious vomiting (disorder)"
         ],
         [
+          "1333003",
+          "Emesis basin, device (physical object)"
+        ],
+        [
           "469055002",
           "Emesis bag (physical object)"
         ]
       ],
       "hit1": false,
       "hit5": false,
-      "hit10": true,
+      "hit10": false,
       "hier1": true,
       "hier5": true,
       "hier10": true
@@ -32451,12 +32452,12 @@
           "Dengue hemorrhagic fever (disorder)"
         ],
         [
-          "60588009",
-          "Dengue virus, type 1 (organism)"
-        ],
-        [
           "243604005",
           "Dengue virus subgroup (organism)"
+        ],
+        [
+          "41328007",
+          "Dengue virus, type 2 (organism)"
         ]
       ],
       "hit1": true,
@@ -32615,8 +32616,8 @@
           "Primary focal hyperhidrosis of axilla (disorder)"
         ],
         [
-          "56601000087100",
-          "Hematoma of right upper arm (disorder)"
+          "10684191000119107",
+          "Nodule of skin of right upper limb (disorder)"
         ]
       ],
       "hit1": false,
@@ -34154,7 +34155,7 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Metastatic malignant neoplasm to lymph node (disorder)",
-      "rank": 10,
+      "rank": null,
       "top1": "399656008",
       "top1_fsn": "Presence of metastatic neoplasm in regional lymph node (observable entity)",
       "topk": [
@@ -34181,10 +34182,10 @@
       ],
       "hit1": false,
       "hit5": false,
-      "hit10": true,
+      "hit10": false,
       "hier1": false,
       "hier5": false,
-      "hier10": true
+      "hier10": false
     },
     {
       "file": "es-S1139-13752006000200009-1",
@@ -35915,34 +35916,34 @@
       "domain": null,
       "gold_fsn": "Eruption of skin (disorder)",
       "rank": null,
-      "top1": "111188005",
-      "top1_fsn": "Psoriasiform napkin eruption (disorder)",
+      "top1": "683891000119105",
+      "top1_fsn": "Epidermal nevus of trunk (disorder)",
       "topk": [
+        [
+          "683891000119105",
+          "Epidermal nevus of trunk (disorder)"
+        ],
         [
           "111188005",
           "Psoriasiform napkin eruption (disorder)"
-        ],
-        [
-          "254669003",
-          "Dermatosis papulosa nigra (disorder)"
         ],
         [
           "103672009",
           "Dermatosis papulosa nigra (morphologic abnormality)"
         ],
         [
-          "445328000",
-          "Papule of skin (disorder)"
+          "254669003",
+          "Dermatosis papulosa nigra (disorder)"
         ],
         [
-          "200984007",
-          "Parapsoriasis papulata (disorder)"
+          "687571000119101",
+          "Pigmented hairy epidermal nevus of trunk (disorder)"
         ]
       ],
       "hit1": false,
       "hit5": false,
       "hit10": false,
-      "hier1": true,
+      "hier1": false,
       "hier5": true,
       "hier10": true
     },
@@ -35954,7 +35955,7 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Scarlet fever (disorder)",
-      "rank": 4,
+      "rank": 2,
       "top1": "263867009",
       "top1_fsn": "Scarletiniform (qualifier value)",
       "topk": [
@@ -35963,20 +35964,20 @@
           "Scarletiniform (qualifier value)"
         ],
         [
-          "12037007",
-          "Scartella cristata (organism)"
+          "30242009",
+          "Scarlet fever (disorder)"
+        ],
+        [
+          "238427006",
+          "Staphylococcal scarlatina (disorder)"
         ],
         [
           "1296519000",
           "Genus Ruoffia (organism)"
         ],
         [
-          "30242009",
-          "Scarlet fever (disorder)"
-        ],
-        [
-          "1231548009",
-          "Genus Savagea (organism)"
+          "238418005",
+          "Erythrasma (disorder)"
         ]
       ],
       "hit1": false,
@@ -37114,35 +37115,35 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Scar (disorder)",
-      "rank": 2,
-      "top1": "403436006",
-      "top1_fsn": "Cicatrizing conjunctivitis (disorder)",
+      "rank": 7,
+      "top1": "48677004",
+      "top1_fsn": "Healing scar (morphologic abnormality)",
       "topk": [
+        [
+          "48677004",
+          "Healing scar (morphologic abnormality)"
+        ],
         [
           "403436006",
           "Cicatrizing conjunctivitis (disorder)"
         ],
         [
-          "275322007",
-          "Scar (disorder)"
+          "70582006",
+          "Scar of skin (disorder)"
         ],
         [
-          "12402003",
-          "Scar (morphologic abnormality)"
+          "416054002",
+          "Cicatrizing conjunctivitis following infectious disease (disorder)"
         ],
         [
           "1217673001",
           "Chronic toxic cicatrizing conjunctivitis (disorder)"
-        ],
-        [
-          "1208906004",
-          "Acute toxic cicatrizing conjunctivitis (disorder)"
         ]
       ],
       "hit1": false,
-      "hit5": true,
+      "hit5": false,
       "hit10": true,
-      "hier1": true,
+      "hier1": false,
       "hier5": true,
       "hier10": true
     },
@@ -37754,37 +37755,37 @@
       "tag": "disorder",
       "domain": null,
       "gold_fsn": "Bifid mandibular condyle (disorder)",
-      "rank": null,
-      "top1": "74063004",
-      "top1_fsn": "Structure of superior articular process of second lumbar vertebra (body structure)",
+      "rank": 1,
+      "top1": "708669006",
+      "top1_fsn": "Bifid mandibular condyle (disorder)",
       "topk": [
         [
-          "74063004",
-          "Structure of superior articular process of second lumbar vertebra (body structure)"
+          "708669006",
+          "Bifid mandibular condyle (disorder)"
         ],
         [
-          "33917005",
-          "Structure of articular process of second lumbar vertebra (body structure)"
+          "736782000",
+          "Congenital absence of left mandibular condyle (disorder)"
         ],
         [
-          "47576001",
-          "Structure of inferior articular process of second lumbar vertebra (body structure)"
+          "1010427008",
+          "Hypoplasia of left condyloid process of mandible (disorder)"
         ],
         [
-          "79390004",
-          "Structure of superior articular process of first lumbar vertebra (body structure)"
+          "1297355001",
+          "Congenital dysplasia of joint of left knee (disorder)"
         ],
         [
-          "305880004",
-          "Entire inferior articular process of second lumbar vertebra (body structure)"
+          "763498007",
+          "Incomplete left cleft lip and incomplete cleft of left alveolar process of maxilla (disorder)"
         ]
       ],
-      "hit1": false,
-      "hit5": false,
-      "hit10": false,
-      "hier1": false,
-      "hier5": false,
-      "hier10": false
+      "hit1": true,
+      "hit5": true,
+      "hit10": true,
+      "hier1": true,
+      "hier5": true,
+      "hier10": true
     },
     {
       "file": "es-S1698-44472005000300015-1",
@@ -37935,8 +37936,8 @@
           "Congenital anomaly of face (disorder)"
         ],
         [
-          "15253005",
-          "Facial asymmetry (disorder)"
+          "32003007",
+          "Congenital anomaly of face bones (disorder)"
         ]
       ],
       "hit1": false,
@@ -38243,6 +38244,10 @@
           "Duodenal stent (physical object)"
         ],
         [
+          "737191003",
+          "Disorder of vascular structure of duodenum (disorder)"
+        ],
+        [
           "784258009",
           "Implantable gastric clamp (physical object)"
         ],
@@ -38253,10 +38258,6 @@
         [
           "235264001",
           "Balloon dilation of duodenal stricture (procedure)"
-        ],
-        [
-          "698494001",
-          "Transcatheter embolization for duodenal bleeding (procedure)"
         ]
       ],
       "hit1": false,
@@ -39007,16 +39008,16 @@
           "Open fracture of shaft of femur (disorder)"
         ],
         [
+          "70682000",
+          "Fracture, transverse (morphologic abnormality)"
+        ],
+        [
           "67394003",
           "Fracture of shaft of fibula (disorder)"
         ],
         [
           "271577005",
           "Fracture of shaft of tibia and fibula (disorder)"
-        ],
-        [
-          "6990005",
-          "Fracture of shaft of tibia (disorder)"
         ]
       ],
       "hit1": true,
@@ -39091,12 +39092,12 @@
           "Hydroxyapatite deposition disease of wrist joint (disorder)"
         ],
         [
-          "37895003",
-          "Osteoarthrosis of the carpometacarpal joint of the thumb (disorder)"
+          "85251000119108",
+          "Derangement of radiocarpal joint (disorder)"
         ],
         [
-          "1344682008",
-          "Kashin-Beck disease of joint of wrist region (disorder)"
+          "37895003",
+          "Osteoarthrosis of the carpometacarpal joint of the thumb (disorder)"
         ]
       ],
       "hit1": false,
@@ -39104,7 +39105,7 @@
       "hit10": false,
       "hier1": false,
       "hier5": false,
-      "hier10": false
+      "hier10": true
     },
     {
       "file": "es-S1888-75462017000100042-1",

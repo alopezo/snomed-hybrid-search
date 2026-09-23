@@ -10,13 +10,14 @@
       "scope": "disorder,finding",
       "llm_select": false,
       "context_mode": null,
-      "exclude_module": 11010000107
+      "exclude_module": 11010000107,
+      "desc_scope": "all"
     },
     "mentions": 985,
     "scoped_out": 66,
     "unresolved": 6,
     "resolved_via_history": 37,
-    "elapsed_s": 1241.3,
+    "elapsed_s": 1340.9,
     "acc@1": 0.396,
     "recall@5": 0.422,
     "recall@10": 0.43,
