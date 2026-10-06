@@ -12,7 +12,9 @@ from psycopg.types.json import Jsonb
 
 from api.search import PG_DSN
 
-MAPPING_VERSION = "2.0.1"
+MAPPING_VERSION = "2.0.2"
+OCL_PAGE_SIZE = 100
+OCL_MAX_RESULTS = 200
 OCL_API_URL = os.environ.get("OCL_API_URL", "https://api.openconceptlab.org").rstrip("/")
 OCL_ORG = os.environ.get("OCL_ORG", "MINSALQA")
 OCL_SOURCE = os.environ.get("OCL_SOURCE", "manualimagenes")
@@ -41,7 +43,7 @@ def _schema(cur) -> None:
         );
         CREATE TABLE IF NOT EXISTS mai_decomposition_v2 (
             workspace_key text NOT NULL,
-            mapping_version text NOT NULL DEFAULT '2.0.1',
+            mapping_version text NOT NULL DEFAULT '2.0.2',
             mai_code text NOT NULL,
             mai_display text NOT NULL,
             ocl_concept_id text NOT NULL,
@@ -61,6 +63,8 @@ def _schema(cur) -> None:
             ADD COLUMN IF NOT EXISTS mapping_confirmed boolean NOT NULL DEFAULT false;
         ALTER TABLE mai_decomposition_v2
             ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;
+        ALTER TABLE mai_decomposition_v2
+            ALTER COLUMN mapping_version SET DEFAULT '2.0.2';
         """
     )
 
@@ -105,25 +109,50 @@ def search_components(query: str, limit: int = 20) -> dict:
     if not OCL_TOKEN:
         raise RuntimeError("OCL token is not configured")
     query = query.strip()
-    query_norm = _normalized_query(query)
-    if not query_norm:
-        return {"query": query, "components": [], "source": "empty"}
+    limit = max(1, min(int(limit), OCL_MAX_RESULTS))
+    base_query_norm = _normalized_query(query)
+    if not base_query_norm:
+        return {"query": query, "components": [], "source": "empty", "total_found": 0}
+    query_norm = f"{base_query_norm}|limit:{limit}"
 
     url = f"{OCL_API_URL}/orgs/{OCL_ORG}/sources/{OCL_SOURCE}/concepts/"
     try:
-        response = httpx.get(
-            url,
-            params={"q": query, "limit": limit, "verbose": "true"},
-            headers={"Authorization": f"Token {OCL_TOKEN}"},
-            timeout=20,
-        )
-        response.raise_for_status()
-        raw = response.json()
-        if not isinstance(raw, list):
-            raw = raw.get("results", [])
-        components = [_component(item) for item in raw if not item.get("retired")]
-        components = [item for item in components if item["id"] and item["display"]]
-        payload = {"query": query, "components": components, "source": "live"}
+        raw_items: list[dict] = []
+        total_found = 0
+        page = 1
+        while len(raw_items) < limit:
+            page_limit = min(OCL_PAGE_SIZE, limit - len(raw_items))
+            response = httpx.get(
+                url,
+                params={"q": query, "limit": page_limit, "page": page, "verbose": "true"},
+                headers={"Authorization": f"Token {OCL_TOKEN}"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            raw = response.json()
+            if not isinstance(raw, list):
+                raw = raw.get("results", [])
+            total_found = max(total_found, int(response.headers.get("num_found") or 0))
+            if not raw:
+                break
+            raw_items.extend(raw)
+            if len(raw) < page_limit or (total_found and len(raw_items) >= total_found):
+                break
+            page += 1
+
+        deduplicated: dict[str, dict] = {}
+        for item in raw_items:
+            component = _component(item)
+            if not item.get("retired") and component["id"] and component["display"]:
+                deduplicated.setdefault(component["id"], component)
+        components = list(deduplicated.values())[:limit]
+        payload = {
+            "query": query,
+            "components": components,
+            "source": "live",
+            "total_found": max(total_found, len(components)),
+            "requested_limit": limit,
+        }
         with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
             _schema(cur)
             cur.execute(

@@ -70,7 +70,7 @@ class ValidatedExportRequest(BaseModel):
 
 
 class ValidatedMappingV2(ValidatedMapping):
-    mapping_version: str = "2.0.1"
+    mapping_version: str = "2.0.2"
     mai_code: str = ""
     mai_display: str = ""
     component_group: str = ""
@@ -90,7 +90,7 @@ class OclDecompositionRequest(BaseModel):
     mai_code: str = Field(min_length=1, max_length=100)
     mai_display: str = Field(min_length=1, max_length=2000)
     query: str = Field(default="", max_length=2000)
-    limit: int = Field(default=20, ge=1, le=50)
+    limit: int = Field(default=200, ge=1, le=200)
 
 
 class OclComponentInput(BaseModel):

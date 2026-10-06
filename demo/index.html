@@ -181,7 +181,7 @@
 <header>
   <div class="titlerow">
     <h1>SNOMED CT hybrid search</h1>
-    <span class="version-badge">V2.0.1 OCL</span>
+    <span class="version-badge">V2.0.2 OCL</span>
     <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
     <a class="arch-link" href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a>
     <a class="arch-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
@@ -227,7 +227,7 @@
   <section class="ocl-panel" id="oclPanel" hidden aria-label="Desagregación MAI con Open Concept Lab">
     <div class="ocl-head">
       <strong>Desagregación MAI · OCL manualimagenes</strong>
-      <span class="version-badge" id="oclVersion">2.0.1</span>
+      <span class="version-badge" id="oclVersion">2.0.2</span>
       <button id="oclDecompose" type="button">Buscar exámenes en OCL</button>
     </div>
     <div class="ocl-body">
@@ -375,7 +375,7 @@ function sourceKey(code=sourceCodeEl.value, term=q.value){
 function oclRecordFields(){
   if(!activeOclContext) return {};
   return {
-    mapping_version:oclConfig && oclConfig.version || '2.0.1', mai_code:activeOclContext.mai_code,
+    mapping_version:oclConfig && oclConfig.version || '2.0.2', mai_code:activeOclContext.mai_code,
     mai_display:activeOclContext.mai_display, component_group:activeOclContext.mai_code,
     ocl_source:`${oclConfig && oclConfig.org || 'MINSALQA'}/${oclConfig && oclConfig.source || 'manualimagenes'}`,
     ocl_concept_id:String(activeOclContext.id), ocl_display:activeOclContext.display,
@@ -695,7 +695,7 @@ async function initOclV2(){
     oclConfig=await response.json();
     if(!oclConfig.enabled) return;
     oclPanel.hidden=false;
-    document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.1';
+    document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.2';
     try{
       const saved=JSON.parse(localStorage.getItem(OCL_WORKSPACE_KEY) || 'null');
       if(saved && Array.isArray(saved.components)){
@@ -722,7 +722,7 @@ async function searchOclComponents(){
   try{
     const response=await fetch('/api/v2/ocl/decompose',{
       method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({mai_code:maiCode,mai_display:maiDisplay,query:oclQuery.value.trim(),limit:25}),
+      body:JSON.stringify({mai_code:maiCode,mai_display:maiDisplay,query:oclQuery.value.trim(),limit:200}),
     });
     const data=await response.json();
     if(!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
@@ -732,7 +732,8 @@ async function searchOclComponents(){
     const preserved=[...previous.values()].filter(item=>item.selected && !incomingIds.has(String(item.id)));
     oclWorkspace={mai_code:maiCode,mai_display:maiDisplay,components:[...preserved,...incoming],source:data.source||''};
     persistOclWorkspace(); renderOclWorkspace();
-    oclStatus.textContent=`${data.components.length} exámenes encontrados · ${data.source==='cache'?'caché local':'OCL en línea'}. Selecciona los componentes incluidos en la prestación MAI.`;
+    const total=data.total_found || data.components.length;
+    oclStatus.textContent=`${data.components.length} de ${total} exámenes encontrados · ${data.source==='cache'?'caché local':'OCL en línea'}. Selecciona los componentes incluidos en la prestación MAI.`;
   }catch(e){
     oclStatus.textContent=`No se pudo consultar OCL: ${e.message}`;
   }finally{ oclDecompose.disabled=false; }
@@ -783,7 +784,7 @@ async function startOclMapping(){
 function updateOclRecordConfirmation(id, confirmed){
   [validatedRecords,rejectedRecords,observationRecords].forEach(records=>records.forEach(rec=>{
     if(rec.mai_code===oclWorkspace.mai_code && String(rec.ocl_concept_id)===String(id)){
-      rec.mapping_version=oclConfig && oclConfig.version || '2.0.1';
+      rec.mapping_version=oclConfig && oclConfig.version || '2.0.2';
       rec.mapping_confirmed=confirmed;
     }
   }));

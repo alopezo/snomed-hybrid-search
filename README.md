@@ -1,8 +1,9 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.0.1-ocl-guided**. The previous OCL preview
-> is preserved by `v2.0.0-ocl-preview`, and the stable pre-OCL implementation
-> by `v1.0.0-local-mapping`.
+> Current development version: **2.0.2-ocl-200-results**. The guided workflow
+> is preserved by `v2.0.1-ocl-guided`, the previous OCL preview by
+> `v2.0.0-ocl-preview`, and the stable pre-OCL implementation by
+> `v1.0.0-local-mapping`.
 
 ## Mapping workflow v2: MAI decomposition with OCL
 
@@ -12,6 +13,8 @@ in a composite MAI benefit, and then guide their BioLORD-assisted SNOMED CT
 mapping one by one. Each examination must have at least one SNOMED CT concept
 selected and be explicitly confirmed before the workflow advances to the next.
 OCL responses, decomposition, and confirmation state are persisted locally.
+Each OCL search retrieves up to 200 concepts in pages of 100 and reports the
+total number of matches returned by OCL.
 
 Configuration is opt-in and server-side only:
 

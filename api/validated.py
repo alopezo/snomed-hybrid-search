@@ -126,7 +126,7 @@ def create_mapping_v2_xlsx(mappings: list[dict]) -> bytes:
     ws.append(V2_HEADERS)
     for item in mappings:
         ws.append([
-            _excel_text(item.get("mapping_version") or "2.0.1"),
+            _excel_text(item.get("mapping_version") or "2.0.2"),
             _excel_text(item.get("mai_code") or item.get("source_code")),
             _excel_text(item.get("mai_display")),
             _excel_text(item.get("component_group") or item.get("mai_code")),
