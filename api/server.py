@@ -27,7 +27,8 @@ from starlette.background import BackgroundTask
 
 from api.mapper import best_match, read_table, resolve_columns, write_table
 from api.hierarchy import hierarchy_for_results
-from api.validated import create_validated_mappings_xlsx
+from api.ocl import config as ocl_config, get_decomposition, save_decomposition, search_components
+from api.validated import create_mapping_v2_xlsx, create_validated_mappings_xlsx
 from api.search import (
     TYPE_TO_HIERARCHY,
     extract_entities,
@@ -68,6 +69,43 @@ class ValidatedExportRequest(BaseModel):
     mappings: list[ValidatedMapping] = Field(min_length=1, max_length=5000)
 
 
+class ValidatedMappingV2(ValidatedMapping):
+    mapping_version: str = "2.0.0"
+    mai_code: str = ""
+    mai_display: str = ""
+    component_group: str = ""
+    ocl_source: str = "MINSALQA/manualimagenes"
+    ocl_concept_id: str = ""
+    ocl_display: str = ""
+    ocl_display_en: str = ""
+    required_component: bool = True
+
+
+class ValidatedExportRequestV2(BaseModel):
+    mappings: list[ValidatedMappingV2] = Field(min_length=1, max_length=10000)
+
+
+class OclDecompositionRequest(BaseModel):
+    mai_code: str = Field(min_length=1, max_length=100)
+    mai_display: str = Field(min_length=1, max_length=2000)
+    query: str = Field(default="", max_length=2000)
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+class OclComponentInput(BaseModel):
+    id: str = Field(min_length=1, max_length=200)
+    display: str = Field(min_length=1, max_length=2000)
+    display_en: str = Field(default="", max_length=2000)
+    selected: bool = False
+    required: bool = True
+
+
+class OclSelectionRequest(BaseModel):
+    mai_code: str = Field(min_length=1, max_length=100)
+    mai_display: str = Field(min_length=1, max_length=2000)
+    components: list[OclComponentInput] = Field(min_length=1, max_length=100)
+
+
 class HierarchyRequest(BaseModel):
     concept_ids: list[str] = Field(min_length=1, max_length=50)
     max_depth: int = Field(default=8, ge=1, le=12)
@@ -101,6 +139,43 @@ def api_warmup():
     return warmup()
 
 
+@app.get("/api/v2/config")
+def api_v2_config():
+    return ocl_config()
+
+
+@app.post("/api/v2/ocl/decompose")
+def api_v2_ocl_decompose(payload: OclDecompositionRequest):
+    try:
+        result = search_components(payload.query or payload.mai_display, payload.limit)
+        saved = get_decomposition(payload.mai_code, payload.mai_display)
+        selected = {item["id"]: item for item in saved["components"]}
+        for item in result["components"]:
+            if item["id"] in selected:
+                item["selected"] = selected[item["id"]]["selected"]
+                item["required"] = selected[item["id"]]["required"]
+            else:
+                item["selected"] = False
+                item["required"] = True
+        return {**result, "config": ocl_config(), "workspace_key": saved["workspace_key"]}
+    except RuntimeError as exc:
+        return JSONResponse({"error": str(exc)}, status_code=503)
+
+
+@app.post("/api/v2/ocl/selection")
+def api_v2_ocl_selection(payload: OclSelectionRequest):
+    return save_decomposition(
+        payload.mai_code,
+        payload.mai_display,
+        [item.model_dump() for item in payload.components],
+    )
+
+
+@app.get("/api/v2/ocl/workspace")
+def api_v2_ocl_workspace(mai_code: str = Query(...), mai_display: str = Query(...)):
+    return get_decomposition(mai_code, mai_display)
+
+
 @app.post("/api/hierarchy")
 def api_hierarchy(payload: HierarchyRequest):
     ids = []
@@ -124,6 +199,19 @@ def api_validated_export(payload: ValidatedExportRequest):
     content = create_validated_mappings_xlsx(rows)
     stamp = datetime.now().strftime("%Y%m%d_%H%M")
     filename = f"revision_mapeos_mai_snomed_{stamp}.xlsx"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/api/v2/validated/export")
+def api_v2_validated_export(payload: ValidatedExportRequestV2):
+    rows = [m.model_dump() for m in payload.mappings]
+    content = create_mapping_v2_xlsx(rows)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    filename = f"mapeo_mai_snomed_v2_{stamp}.xlsx"
     return StreamingResponse(
         io.BytesIO(content),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
