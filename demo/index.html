@@ -685,7 +685,11 @@ async function initOclV2(){
     document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.0';
     try{
       const saved=JSON.parse(localStorage.getItem(OCL_WORKSPACE_KEY) || 'null');
-      if(saved && Array.isArray(saved.components)) oclWorkspace=saved;
+      if(saved && Array.isArray(saved.components)){
+        oclWorkspace=saved;
+        if(!sourceCodeEl.value) sourceCodeEl.value=saved.mai_code || '';
+        if(!q.value) q.value=saved.mai_display || '';
+      }
     }catch(e){}
     renderOclWorkspace();
   }catch(e){
