@@ -31,7 +31,7 @@ def test_workspace_key_normalizes_case_and_spaces():
 def test_v2_export_contains_grouping_and_component_columns():
     content = create_mapping_v2_xlsx([
         {
-            "mapping_version": "2.0.3",
+            "mapping_version": "2.1.0",
             "mai_code": "0401010",
             "mai_display": "Mamografía bilateral",
             "component_group": "0401010",
@@ -49,10 +49,35 @@ def test_v2_export_contains_grouping_and_component_columns():
     ])
     ws = load_workbook(BytesIO(content), data_only=False).active
     assert tuple(cell.value for cell in ws[1]) == V2_HEADERS
-    assert ws["A2"].value == "2.0.3"
+    assert ws["A2"].value == "2.1.0"
     assert ws["B2"].value == "0401010"
     assert ws["F2"].value == "3898"
     assert ws["J2"].value == "Sí"
-    assert ws["K2"].value == "43204002"
-    assert ws["Q2"].value == "Coincide con el examen único"
+    assert ws["K2"].value == "No"
+    assert ws["L2"].value == "43204002"
+    assert ws["R2"].value == "Coincide con el examen único"
     assert "MapeoMAISNOMEDV2" in ws.tables
+
+
+def test_v2_export_keeps_component_without_current_snomed_mapping():
+    content = create_mapping_v2_xlsx([
+        {
+            "mapping_version": "2.1.0",
+            "mai_code": "0401010",
+            "mai_display": "Mamografía bilateral",
+            "ocl_concept_id": "3898",
+            "ocl_display": "Examen OCL pendiente",
+            "required_component": True,
+            "mapping_confirmed": True,
+            "no_current_snomed_mapping": True,
+            "concept_id": "",
+            "fsn": "",
+            "status": "Sin mapeo SNOMED actual",
+        }
+    ])
+    ws = load_workbook(BytesIO(content), data_only=False).active
+    assert ws["J2"].value == "Sí"
+    assert ws["K2"].value == "Sí"
+    assert ws["L2"].value is None
+    assert ws["M2"].value is None
+    assert ws["N2"].value == "Sin mapeo SNOMED actual"

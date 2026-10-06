@@ -38,6 +38,7 @@ V2_HEADERS = (
     "Desambiguación OCL (en)",
     "Componente obligatorio",
     "Mapeo del componente confirmado",
+    "Sin mapeo SNOMED CT actual",
     "ConceptID SNOMED CT",
     "Término preferido SNOMED CT (es)",
     "Estado de revisión",
@@ -130,7 +131,7 @@ def create_mapping_v2_xlsx(mappings: list[dict]) -> bytes:
     ws.append(V2_HEADERS)
     for item in mappings:
         ws.append([
-            _excel_text(item.get("mapping_version") or "2.0.3"),
+            _excel_text(item.get("mapping_version") or "2.1.0"),
             _excel_text(item.get("mai_code") or item.get("source_code")),
             _excel_text(item.get("mai_display")),
             _excel_text(item.get("component_group") or item.get("mai_code")),
@@ -140,6 +141,7 @@ def create_mapping_v2_xlsx(mappings: list[dict]) -> bytes:
             _excel_text(item.get("ocl_display_en")),
             "Sí" if item.get("required_component", True) else "No",
             "Sí" if item.get("mapping_confirmed", False) else "No",
+            "Sí" if item.get("no_current_snomed_mapping", False) else "No",
             _excel_text(item.get("concept_id")),
             _excel_text(item.get("fsn")),
             _excel_text(item.get("status")),
@@ -161,13 +163,13 @@ def create_mapping_v2_xlsx(mappings: list[dict]) -> bytes:
             cell.font = Font(name="Arial", size=10)
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.number_format = "@"
-    widths = (16, 16, 42, 20, 26, 22, 48, 46, 20, 24, 24, 48, 20, 34, 38, 44, 44, 44, 24)
+    widths = (16, 16, 42, 20, 26, 22, 48, 46, 20, 24, 24, 24, 48, 20, 34, 38, 44, 44, 44, 24)
     for column, width in zip(ws.columns, widths):
         ws.column_dimensions[column[0].column_letter].width = width
     ws.row_dimensions[1].height = 42
     if ws.max_row == 1:
         ws.append([""] * len(V2_HEADERS))
-    table = Table(displayName="MapeoMAISNOMEDV2", ref=f"A1:S{max(ws.max_row, 2)}")
+    table = Table(displayName="MapeoMAISNOMEDV2", ref=f"A1:T{max(ws.max_row, 2)}")
     table.tableStyleInfo = TableStyleInfo(
         name="TableStyleMedium4", showFirstColumn=False, showLastColumn=False,
         showRowStripes=True, showColumnStripes=False,

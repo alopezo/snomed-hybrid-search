@@ -54,8 +54,8 @@ class ValidatedMapping(BaseModel):
     mai_display: str = ""
     ocl_concept_id: str = ""
     ocl_display: str = ""
-    concept_id: str = Field(pattern=r"^\d+$")
-    fsn: str = Field(min_length=1, max_length=2000)
+    concept_id: str = Field(default="", pattern=r"^(?:\d+)?$")
+    fsn: str = Field(default="", max_length=2000)
     matched_term: str = ""
     semantic_tag: str = ""
     status: str = "Seleccionado"
@@ -74,12 +74,15 @@ class ValidatedExportRequest(BaseModel):
 
 
 class ValidatedMappingV2(ValidatedMapping):
-    mapping_version: str = "2.0.3"
+    concept_id: str = Field(default="", pattern=r"^(?:\d+)?$")
+    fsn: str = Field(default="", max_length=2000)
+    mapping_version: str = "2.1.0"
     component_group: str = ""
     ocl_source: str = "MINSALQA/manualimagenes"
     ocl_display_en: str = ""
     required_component: bool = True
     mapping_confirmed: bool = False
+    no_current_snomed_mapping: bool = False
 
 
 class ValidatedExportRequestV2(BaseModel):
@@ -100,6 +103,7 @@ class OclComponentInput(BaseModel):
     selected: bool = False
     required: bool = True
     confirmed: bool = False
+    no_mapping: bool = False
 
 
 class OclSelectionRequest(BaseModel):
@@ -157,10 +161,12 @@ def api_v2_ocl_decompose(payload: OclDecompositionRequest):
                 item["selected"] = selected[item["id"]]["selected"]
                 item["required"] = selected[item["id"]]["required"]
                 item["confirmed"] = selected[item["id"]].get("confirmed", False)
+                item["no_mapping"] = selected[item["id"]].get("no_mapping", False)
             else:
                 item["selected"] = False
                 item["required"] = True
                 item["confirmed"] = False
+                item["no_mapping"] = False
         return {**result, "config": ocl_config(), "workspace_key": saved["workspace_key"]}
     except RuntimeError as exc:
         return JSONResponse({"error": str(exc)}, status_code=503)

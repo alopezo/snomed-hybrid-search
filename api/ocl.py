@@ -12,7 +12,7 @@ from psycopg.types.json import Jsonb
 
 from api.search import PG_DSN
 
-MAPPING_VERSION = "2.0.3"
+MAPPING_VERSION = "2.1.0"
 OCL_PAGE_SIZE = 100
 OCL_MAX_RESULTS = 200
 OCL_API_URL = os.environ.get("OCL_API_URL", "https://api.openconceptlab.org").rstrip("/")
@@ -43,7 +43,7 @@ def _schema(cur) -> None:
         );
         CREATE TABLE IF NOT EXISTS mai_decomposition_v2 (
             workspace_key text NOT NULL,
-            mapping_version text NOT NULL DEFAULT '2.0.3',
+            mapping_version text NOT NULL DEFAULT '2.1.0',
             mai_code text NOT NULL,
             mai_display text NOT NULL,
             ocl_concept_id text NOT NULL,
@@ -52,6 +52,7 @@ def _schema(cur) -> None:
             selected boolean NOT NULL DEFAULT false,
             required_component boolean NOT NULL DEFAULT true,
             mapping_confirmed boolean NOT NULL DEFAULT false,
+            no_current_snomed_mapping boolean NOT NULL DEFAULT false,
             confirmed_at timestamptz,
             sort_order integer NOT NULL DEFAULT 0,
             updated_at timestamptz NOT NULL DEFAULT now(),
@@ -64,7 +65,9 @@ def _schema(cur) -> None:
         ALTER TABLE mai_decomposition_v2
             ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;
         ALTER TABLE mai_decomposition_v2
-            ALTER COLUMN mapping_version SET DEFAULT '2.0.3';
+            ADD COLUMN IF NOT EXISTS no_current_snomed_mapping boolean NOT NULL DEFAULT false;
+        ALTER TABLE mai_decomposition_v2
+            ALTER COLUMN mapping_version SET DEFAULT '2.1.0';
         """
     )
 
@@ -195,17 +198,24 @@ def save_decomposition(mai_code: str, mai_display: str, components: list[dict]) 
                 INSERT INTO mai_decomposition_v2
                     (workspace_key, mapping_version, mai_code, mai_display,
                      ocl_concept_id, ocl_display, ocl_display_en,
-                     selected, required_component, mapping_confirmed, confirmed_at,
+                     selected, required_component, mapping_confirmed,
+                     no_current_snomed_mapping, confirmed_at,
                      sort_order, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         CASE WHEN %s THEN now() ELSE NULL END, %s, now())
                 ON CONFLICT (workspace_key, ocl_concept_id) DO UPDATE SET
+                    mapping_version = excluded.mapping_version,
                     ocl_display = excluded.ocl_display,
                     ocl_display_en = excluded.ocl_display_en,
                     selected = excluded.selected,
                     required_component = excluded.required_component,
                     mapping_confirmed = excluded.mapping_confirmed,
+                    no_current_snomed_mapping = excluded.no_current_snomed_mapping,
                     confirmed_at = CASE
+                        WHEN excluded.mapping_confirmed
+                             AND mai_decomposition_v2.no_current_snomed_mapping
+                                 IS DISTINCT FROM excluded.no_current_snomed_mapping
+                            THEN excluded.confirmed_at
                         WHEN excluded.mapping_confirmed THEN
                             COALESCE(mai_decomposition_v2.confirmed_at, excluded.confirmed_at)
                         ELSE NULL
@@ -217,7 +227,8 @@ def save_decomposition(mai_code: str, mai_display: str, components: list[dict]) 
                     key, MAPPING_VERSION, mai_code.strip(), mai_display.strip(), str(item["id"]),
                     str(item.get("display") or ""), str(item.get("display_en") or ""),
                     bool(item.get("selected")), bool(item.get("required", True)),
-                    bool(item.get("confirmed")), bool(item.get("confirmed")), order,
+                    bool(item.get("confirmed")), bool(item.get("no_mapping")),
+                    bool(item.get("confirmed")), order,
                 ),
             )
     return {"workspace_key": key, "selected": len(selected_ids), "saved_at": datetime.now(timezone.utc).isoformat()}
@@ -230,7 +241,8 @@ def get_decomposition(mai_code: str, mai_display: str) -> dict:
         cur.execute(
             """
             SELECT ocl_concept_id, ocl_display, ocl_display_en, selected,
-                   required_component, mapping_confirmed, confirmed_at, sort_order, updated_at
+                   required_component, mapping_confirmed, no_current_snomed_mapping,
+                   confirmed_at, sort_order, updated_at
             FROM mai_decomposition_v2
             WHERE workspace_key = %s ORDER BY sort_order, ocl_concept_id
             """,
@@ -246,8 +258,9 @@ def get_decomposition(mai_code: str, mai_display: str) -> dict:
             {
                 "id": row[0], "display": row[1], "display_en": row[2],
                 "selected": row[3], "required": row[4], "confirmed": row[5],
-                "confirmed_at": row[6].isoformat() if row[6] else "",
-                "sort_order": row[7], "updated_at": row[8].isoformat(),
+                "no_mapping": row[6],
+                "confirmed_at": row[7].isoformat() if row[7] else "",
+                "sort_order": row[8], "updated_at": row[9].isoformat(),
             }
             for row in rows
         ],

@@ -183,7 +183,7 @@
 <header>
   <div class="titlerow">
     <h1>SNOMED CT hybrid search</h1>
-    <span class="version-badge">V2.0.3 OCL</span>
+    <span class="version-badge">V2.1.0 OCL</span>
     <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
     <a class="arch-link" href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a>
     <a class="arch-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
@@ -229,7 +229,7 @@
   <section class="ocl-panel" id="oclPanel" hidden aria-label="Desagregación MAI con Open Concept Lab">
     <div class="ocl-head">
       <strong>Desagregación MAI · OCL manualimagenes</strong>
-      <span class="version-badge" id="oclVersion">2.0.3</span>
+      <span class="version-badge" id="oclVersion">2.1.0</span>
       <button id="oclDecompose" type="button">Buscar exámenes en OCL</button>
     </div>
     <div class="ocl-body">
@@ -379,7 +379,7 @@ function sourceKey(code=sourceCodeEl.value, term=q.value){
 function oclRecordFields(){
   if(!activeOclContext) return {};
   return {
-    mapping_version:oclConfig && oclConfig.version || '2.0.3', mai_code:activeOclContext.mai_code,
+    mapping_version:oclConfig && oclConfig.version || '2.1.0', mai_code:activeOclContext.mai_code,
     mai_display:activeOclContext.mai_display, component_group:activeOclContext.mai_code,
     ocl_source:`${oclConfig && oclConfig.org || 'MINSALQA'}/${oclConfig && oclConfig.source || 'manualimagenes'}`,
     ocl_concept_id:String(activeOclContext.id), ocl_display:activeOclContext.display,
@@ -547,24 +547,38 @@ function flattenedReview(){
   }));
   return [...rows.values()];
 }
+function oclNoMappingRows(){
+  return oclWorkspace.components.filter(item=>item.selected && item.confirmed && item.no_mapping).map(item=>({
+    source_code:oclWorkspace.mai_code,source_term:item.display,
+    mapping_version:oclConfig && oclConfig.version || '2.1.0',
+    mai_code:oclWorkspace.mai_code,mai_display:oclWorkspace.mai_display,
+    component_group:oclWorkspace.mai_code,
+    ocl_source:`${oclConfig && oclConfig.org || 'MINSALQA'}/${oclConfig && oclConfig.source || 'manualimagenes'}`,
+    ocl_concept_id:String(item.id),ocl_display:item.display,ocl_display_en:item.display_en||'',
+    required_component:item.required!==false,mapping_confirmed:true,no_current_snomed_mapping:true,
+    concept_id:'',fsn:'',status:'Sin mapeo SNOMED actual',reviewed_at:item.confirmed_at||'',
+  }));
+}
 function renderValidatedPanel(){
   const nMaps = validatedRecords.reduce((n,r)=>n+r.mappings.length,0);
   const nRejected = rejectedRecords.reduce((n,r)=>n+r.rejections.length,0);
   const nObserved = observationRecords.reduce((n,r)=>n+r.observations.length,0);
-  const reviewRecords=[...validatedRecords, ...rejectedRecords, ...observationRecords];
+  const noMappingRows = oclNoMappingRows();
+  const nNoMapping = noMappingRows.length;
+  const reviewRecords=[...validatedRecords, ...rejectedRecords, ...observationRecords, ...noMappingRows];
   const nMai = new Set(reviewRecords.map(r=>r.mai_code ? `${r.mai_code}|${r.mai_display}` : r.key)).size;
   const nOcl = new Set(reviewRecords.filter(r=>r.ocl_concept_id).map(r=>`${r.mai_code}|${r.ocl_concept_id}`)).size;
-  validationCount.textContent = `${nMai} prestaciones MAI · ${nOcl} desambiguaciones OCL · ${nMaps} seleccionados · ${nRejected} descartados · ${nObserved} observados`;
-  exportValidated.disabled = nMaps + nRejected + nObserved === 0;
+  validationCount.textContent = `${nMai} prestaciones MAI · ${nOcl} desambiguaciones OCL · ${nMaps} seleccionados · ${nNoMapping} sin mapeo actual · ${nRejected} descartados · ${nObserved} observados`;
+  exportValidated.disabled = nMaps + nRejected + nObserved + nNoMapping === 0;
   const selectedOcl = oclWorkspace.components.filter(item=>item.selected);
   const allOclConfirmed = selectedOcl.length > 0 && selectedOcl.every(item=>item.confirmed);
-  exportV2.disabled = !allOclConfirmed || !flattenedReview().some(row => row.ocl_concept_id && row.mapping_confirmed);
+  exportV2.disabled = !allOclConfirmed;
   clearValidated.disabled = nMaps + nRejected + nObserved === 0;
-  if(!nMaps){
+  if(!nMaps && !nNoMapping){
     validationList.innerHTML = '<p class="hint">Aún no hay mapeos seleccionados.</p>';
     return;
   }
-  validationList.innerHTML = validatedRecords.map((rec,ri) => `
+  const mappedHtml = validatedRecords.map((rec,ri) => `
     <div class="v-group">
       <div class="v-source">
         <strong>${rec.ocl_concept_id
@@ -580,6 +594,16 @@ function renderValidatedPanel(){
           <button class="remove" type="button" data-remove-map="${ri}:${mi}">Quitar</button>
         </div>`).join('')}
     </div>`).join('');
+  const noMappingHtml = noMappingRows.map(row=>`
+    <div class="v-group">
+      <div class="v-source">
+        <strong><span class="field-label">Prestación MAI</span><br><span class="v-code">${esc(row.mai_code)}</span> · ${esc(row.mai_display)}<br>
+          <span class="field-label">Desambiguación OCL</span><br>${esc(row.ocl_display)} · <span class="v-code">ID de desambiguación OCL ${esc(row.ocl_concept_id)}</span></strong>
+        <button type="button" data-review-no-map="${esc(row.ocl_concept_id)}">Revisar posteriormente</button>
+      </div>
+      <div class="v-map"><span><b>Sin mapeo SNOMED CT actual</b><br>ConceptID y término preferido quedan en blanco en el Excel.</span></div>
+    </div>`).join('');
+  validationList.innerHTML = mappedHtml + noMappingHtml;
 }
 function syncCardValidation(){
   const currentIsFresh = norm(q.value) === norm(latestQuery);
@@ -644,7 +668,7 @@ function setReference(cid, reference){
   saveValidated(); renderValidatedPanel();
 }
 async function downloadValidatedExcel(){
-  const mappings = flattenedReview();
+  const mappings = [...flattenedReview(), ...oclNoMappingRows()];
   if(!mappings.length) return;
   exportValidated.disabled = true;
   validationMsg.textContent = 'Generando Excel…';
@@ -680,8 +704,9 @@ function componentReviewCount(component){
 function renderOclWorkspace(){
   const selected = oclWorkspace.components.filter(item=>item.selected);
   const confirmed = selected.filter(item=>item.confirmed).length;
+  const withoutMapping = selected.filter(item=>item.confirmed && item.no_mapping).length;
   const pending = selected.length - confirmed;
-  oclSelectionCount.textContent = `${selected.length} seleccionado${selected.length===1?'':'s'} · ${confirmed} confirmado${confirmed===1?'':'s'} · ${pending} pendiente${pending===1?'':'s'}`;
+  oclSelectionCount.textContent = `${selected.length} seleccionado${selected.length===1?'':'s'} · ${confirmed} confirmado${confirmed===1?'':'s'} · ${withoutMapping} sin mapeo actual · ${pending} pendiente${pending===1?'':'s'}`;
   oclSave.disabled = !oclWorkspace.components.length || !oclWorkspace.mai_code || !oclWorkspace.mai_display;
   oclStart.disabled = !selected.length || !pending;
   oclStart.textContent = pending ? `${confirmed ? 'Continuar' : 'Iniciar'} mapeo (${pending} pendiente${pending===1?'':'s'})` : (selected.length ? 'Mapeo completo' : 'Iniciar mapeo');
@@ -693,9 +718,9 @@ function renderOclWorkspace(){
       <div><div><span class="field-label">Desambiguación OCL</span><br><span class="ocl-name">${esc(item.display)}</span> · <span class="ocl-code">ID de desambiguación OCL ${esc(item.id)}</span></div>
         ${item.display_en?`<div class="ocl-en">${esc(item.display_en)}</div>`:''}
         ${reviewed?`<div class="ocl-en">${reviewed} candidato${reviewed===1?'':'s'} SNOMED revisado${reviewed===1?'':'s'}</div>`:''}
-        ${item.selected?`<div class="ocl-en"><strong>${item.confirmed?'Confirmado':'Pendiente de confirmación'}</strong></div>`:''}</div>
+        ${item.selected?`<div class="ocl-en"><strong>${item.no_mapping?'Sin mapeo SNOMED actual · revisar posteriormente':item.confirmed?'Confirmado':'Pendiente de confirmación'}</strong></div>`:''}</div>
       <label class="ocl-required"><input type="checkbox" data-ocl-required="${esc(item.id)}" ${item.selected && item.required!==false?'checked':''} ${item.selected?'':'disabled'}> obligatorio</label>
-      ${item.selected?`<button class="ocl-map-btn" type="button" data-ocl-map="${esc(item.id)}">${item.confirmed?'Revisar mapeo':'Mapear en SNOMED'}</button>`:''}
+      ${item.selected?`<button class="ocl-map-btn" type="button" data-ocl-map="${esc(item.id)}">${item.no_mapping?'Intentar mapear':item.confirmed?'Revisar mapeo':'Mapear en SNOMED'}</button>`:''}
     </div>`;
   }).join('');
 }
@@ -705,12 +730,13 @@ async function initOclV2(){
     oclConfig=await response.json();
     if(!oclConfig.enabled) return;
     oclPanel.hidden=false;
-    document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.3';
+    document.getElementById('oclVersion').textContent=oclConfig.version || '2.1.0';
     try{
       const saved=JSON.parse(localStorage.getItem(OCL_WORKSPACE_KEY) || 'null');
       if(saved && Array.isArray(saved.components)){
         oclWorkspace=saved;
-        oclWorkspace.components=oclWorkspace.components.map(item=>({...item,confirmed:!!item.confirmed}));
+        oclWorkspace.components=oclWorkspace.components.map(item=>({...item,confirmed:!!item.confirmed,
+          no_mapping:!!item.no_mapping}));
         if(!sourceCodeEl.value) sourceCodeEl.value=saved.mai_code || '';
         if(!q.value) q.value=saved.mai_display || '';
       }
@@ -759,7 +785,7 @@ async function saveOclWorkspace(quiet=false){
       body:JSON.stringify({mai_code:oclWorkspace.mai_code,mai_display:oclWorkspace.mai_display,
         components:oclWorkspace.components.map(item=>({id:String(item.id),display:item.display,
           display_en:item.display_en||'',selected:!!item.selected,required:item.required!==false,
-          confirmed:!!item.confirmed}))}),
+          confirmed:!!item.confirmed,no_mapping:!!item.no_mapping}))}),
     });
     if(!response.ok) throw new Error(await response.text());
     const data=await response.json(); persistOclWorkspace();
@@ -786,6 +812,7 @@ function renderActiveOclBanner(){
     <span><span class="field-label">Prestación MAI</span><br><strong>${esc(oclWorkspace.mai_display)}</strong> · <span class="ocl-code">Código MAI ${esc(oclWorkspace.mai_code)}</span></span>
     <span><span class="field-label">Desambiguación OCL</span><br><strong>${esc(activeOclContext.display)}</strong> · <span class="ocl-code">ID de desambiguación OCL ${esc(activeOclContext.id)}</span></span>
     <button type="button" class="ocl-map-btn" id="confirmOclComponent">Confirmar mapeo y cerrar</button>
+    <button type="button" class="ocl-map-btn" id="noMapOclComponent">Sin mapeo SNOMED actual</button>
     <button type="button" class="ocl-map-btn" id="closeOclComponent">Volver sin confirmar</button>`;
 }
 async function startOclMapping(){
@@ -795,7 +822,7 @@ async function startOclMapping(){
 function updateOclRecordConfirmation(id, confirmed){
   [validatedRecords,rejectedRecords,observationRecords].forEach(records=>records.forEach(rec=>{
     if(rec.mai_code===oclWorkspace.mai_code && String(rec.ocl_concept_id)===String(id)){
-      rec.mapping_version=oclConfig && oclConfig.version || '2.0.3';
+      rec.mapping_version=oclConfig && oclConfig.version || '2.1.0';
       rec.mapping_confirmed=confirmed;
     }
   }));
@@ -805,7 +832,8 @@ function markActiveOclDirty(){
   if(!activeOclContext) return;
   const component=oclWorkspace.components.find(item=>String(item.id)===String(activeOclContext.id));
   if(!component || !component.confirmed) return;
-  component.confirmed=false; component.confirmed_at=''; activeOclContext.confirmed=false;
+  component.confirmed=false; component.no_mapping=false; component.confirmed_at='';
+  activeOclContext.confirmed=false; activeOclContext.no_mapping=false;
   updateOclRecordConfirmation(component.id,false);
   persistOclWorkspace(); renderOclWorkspace(); renderActiveOclBanner();
   saveOclWorkspace(true);
@@ -820,8 +848,8 @@ async function confirmOclComponent(){
   const currentId=activeOclContext.id;
   const component=oclWorkspace.components.find(item=>String(item.id)===String(currentId));
   if(!component) return;
-  component.confirmed=true; component.confirmed_at=new Date().toISOString();
-  activeOclContext.confirmed=true;
+  component.confirmed=true; component.no_mapping=false; component.confirmed_at=new Date().toISOString();
+  activeOclContext.confirmed=true; activeOclContext.no_mapping=false;
   updateOclRecordConfirmation(currentId,true);
   persistOclWorkspace(); renderOclWorkspace(); renderValidatedPanel();
   await saveOclWorkspace(true);
@@ -834,6 +862,27 @@ async function confirmOclComponent(){
     oclStatus.textContent='Todos los exámenes OCL seleccionados fueron mapeados y confirmados.';
     validationMsg.textContent='Mapeo OCL → SNOMED completo. Ya puedes descargar el Excel V2.';
   }
+}
+async function markOclWithoutCurrentMapping(){
+  if(!activeOclContext) return;
+  const component=oclWorkspace.components.find(item=>String(item.id)===String(activeOclContext.id));
+  if(!component) return;
+  const key=sourceKey();
+  validatedRecords=validatedRecords.filter(rec=>rec.key!==key);
+  component.confirmed=true;
+  component.no_mapping=true;
+  component.confirmed_at=new Date().toISOString();
+  activeOclContext.confirmed=true;
+  activeOclContext.no_mapping=true;
+  updateOclRecordConfirmation(component.id,true);
+  saveValidated(); persistOclWorkspace(); renderOclWorkspace(); renderValidatedPanel();
+  await saveOclWorkspace(true);
+  const hasPending=oclWorkspace.components.some(item=>item.selected && !item.confirmed);
+  closeOclComponent();
+  oclStatus.textContent=hasPending
+    ? `Examen ${component.display} guardado sin mapeo SNOMED actual. Selecciona otro examen OCL para continuar.`
+    : 'Todos los exámenes OCL seleccionados fueron revisados; algunos quedaron sin mapeo SNOMED actual.';
+  validationMsg.textContent='El examen quedó sin ConceptID SNOMED y podrá revisarse posteriormente.';
 }
 function resetSnomedResults(message='Selecciona un examen OCL y presiona “Mapear en SNOMED” para ver opciones de mapeo.'){
   ++seq;
@@ -851,21 +900,26 @@ function closeOclComponent(){
   renderValidatedPanel();
 }
 async function downloadV2Excel(){
-  const selectedIds=new Set(oclWorkspace.components.filter(item=>item.selected).map(item=>String(item.id)));
+  const selectedComponents=oclWorkspace.components.filter(item=>item.selected);
+  const selectedIds=new Set(selectedComponents.map(item=>String(item.id)));
+  const noMappingIds=new Set(selectedComponents.filter(item=>item.no_mapping).map(item=>String(item.id)));
   const mappings=flattenedReview().filter(row=>row.ocl_concept_id && row.mai_code===oclWorkspace.mai_code
-    && selectedIds.has(String(row.ocl_concept_id)) && row.mapping_confirmed);
-  if(!mappings.length) return;
+    && selectedIds.has(String(row.ocl_concept_id)) && !noMappingIds.has(String(row.ocl_concept_id))
+    && row.mapping_confirmed);
+  const blankMappings=oclNoMappingRows();
+  const exportRows=[...mappings,...blankMappings];
+  if(!exportRows.length) return;
   exportV2.disabled=true; oclStatus.textContent='Generando mapeo V2…';
   try{
     const response=await fetch('/api/v2/validated/export',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mappings}),
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mappings:exportRows}),
     });
     if(!response.ok) throw new Error(await response.text());
     const blob=await response.blob(),cd=response.headers.get('content-disposition')||'';
     const match=cd.match(/filename="?([^";]+)"?/i),name=match?match[1]:'mapeo_mai_snomed_v2.xlsx';
     const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;
     document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
-    oclStatus.textContent=`Mapeo V2 exportado con ${mappings.length} filas auditables.`;
+    oclStatus.textContent=`Mapeo V2 exportado con ${exportRows.length} filas auditables.`;
   }catch(e){ oclStatus.textContent=`No se pudo generar el mapeo V2: ${e.message}`; }
   finally{ exportV2.disabled=false; }
 }
@@ -1304,7 +1358,7 @@ oclCandidates.addEventListener('change', e=>{
   if(!component) return;
   if(selected){
     component.selected=selected.checked;
-    component.confirmed=false; component.confirmed_at='';
+    component.confirmed=false; component.no_mapping=false; component.confirmed_at='';
     updateOclRecordConfirmation(component.id,false);
     if(!component.selected){
       component.required=true;
@@ -1313,7 +1367,7 @@ oclCandidates.addEventListener('change', e=>{
   }
   if(required){
     component.required=required.checked;
-    component.confirmed=false; component.confirmed_at='';
+    component.confirmed=false; component.no_mapping=false; component.confirmed_at='';
     updateOclRecordConfirmation(component.id,false);
   }
   persistOclWorkspace(); renderOclWorkspace(); renderValidatedPanel();
@@ -1324,6 +1378,7 @@ oclCandidates.addEventListener('click', e=>{
 });
 activeComponent.addEventListener('click',e=>{
   if(e.target.closest('#confirmOclComponent')) confirmOclComponent();
+  if(e.target.closest('#noMapOclComponent')) markOclWithoutCurrentMapping();
   if(e.target.closest('#closeOclComponent')) closeOclComponent();
 });
 
@@ -1479,9 +1534,15 @@ clearCache.addEventListener('click', ()=>{
   validationMsg.textContent = 'Se borró el caché de esta herramienta en el navegador.';
 });
 validationList.addEventListener('click', e => {
+  const reviewNoMapButton = e.target.closest('[data-review-no-map]');
   const recordButton = e.target.closest('[data-remove-record]');
   const mapButton = e.target.closest('[data-remove-map]');
-  if(recordButton){
+  if(reviewNoMapButton){
+    openOclComponent(reviewNoMapButton.dataset.reviewNoMap);
+    validationList.hidden=true;
+    toggleValidated.textContent='Ver selección';
+    return;
+  }else if(recordButton){
     validatedRecords.splice(Number(recordButton.dataset.removeRecord),1);
   }else if(mapButton){
     const [ri,mi] = mapButton.dataset.removeMap.split(':').map(Number);

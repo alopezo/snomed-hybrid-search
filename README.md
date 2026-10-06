@@ -1,6 +1,6 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.0.5-ocl-gated-snomed-results**. Browser cache
+> Current development version: **2.1.0-no-current-snomed-map**. Browser cache
 > controls were introduced in `2.0.4-browser-cache-control`; the 200-result
 > OCL version is preserved by `v2.0.2-ocl-200-results`, the guided workflow by
 > `v2.0.1-ocl-guided`, the previous OCL preview by
@@ -16,6 +16,10 @@ mapping one by one. BioLORD/SNOMED candidates are only shown after an OCL exam
 is explicitly opened for mapping. Each examination must have at least one
 SNOMED CT concept selected and be confirmed before its results close; the
 reviewer then chooses which OCL examination to map next.
+
+An OCL examination may also be marked as having no current SNOMED CT mapping.
+It remains confirmed as reviewed, is persisted locally and in PostgreSQL, and
+is exported as an auditable blank-target row so it can be revisited later.
 OCL responses, decomposition, and confirmation state are persisted locally.
 Each OCL search retrieves up to 200 concepts in pages of 100 and reports the
 total number of matches returned by OCL.
