@@ -70,7 +70,7 @@ class ValidatedExportRequest(BaseModel):
 
 
 class ValidatedMappingV2(ValidatedMapping):
-    mapping_version: str = "2.0.0"
+    mapping_version: str = "2.0.1"
     mai_code: str = ""
     mai_display: str = ""
     component_group: str = ""
@@ -79,6 +79,7 @@ class ValidatedMappingV2(ValidatedMapping):
     ocl_display: str = ""
     ocl_display_en: str = ""
     required_component: bool = True
+    mapping_confirmed: bool = False
 
 
 class ValidatedExportRequestV2(BaseModel):
@@ -98,6 +99,7 @@ class OclComponentInput(BaseModel):
     display_en: str = Field(default="", max_length=2000)
     selected: bool = False
     required: bool = True
+    confirmed: bool = False
 
 
 class OclSelectionRequest(BaseModel):
@@ -154,9 +156,11 @@ def api_v2_ocl_decompose(payload: OclDecompositionRequest):
             if item["id"] in selected:
                 item["selected"] = selected[item["id"]]["selected"]
                 item["required"] = selected[item["id"]]["required"]
+                item["confirmed"] = selected[item["id"]].get("confirmed", False)
             else:
                 item["selected"] = False
                 item["required"] = True
+                item["confirmed"] = False
         return {**result, "config": ocl_config(), "workspace_key": saved["workspace_key"]}
     except RuntimeError as exc:
         return JSONResponse({"error": str(exc)}, status_code=503)

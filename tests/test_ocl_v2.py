@@ -31,7 +31,7 @@ def test_workspace_key_normalizes_case_and_spaces():
 def test_v2_export_contains_grouping_and_component_columns():
     content = create_mapping_v2_xlsx([
         {
-            "mapping_version": "2.0.0",
+            "mapping_version": "2.0.1",
             "mai_code": "0401010",
             "mai_display": "Mamografía bilateral",
             "component_group": "0401010",
@@ -40,6 +40,7 @@ def test_v2_export_contains_grouping_and_component_columns():
             "ocl_display": "Mamografía digital bilateral diagnóstica",
             "ocl_display_en": "Bilateral diagnostic digital mammography",
             "required_component": True,
+            "mapping_confirmed": True,
             "concept_id": "43204002",
             "fsn": "mamografía de mamas bilateral",
             "status": "Seleccionado",
@@ -48,9 +49,10 @@ def test_v2_export_contains_grouping_and_component_columns():
     ])
     ws = load_workbook(BytesIO(content), data_only=False).active
     assert tuple(cell.value for cell in ws[1]) == V2_HEADERS
-    assert ws["A2"].value == "2.0.0"
+    assert ws["A2"].value == "2.0.1"
     assert ws["B2"].value == "0401010"
     assert ws["F2"].value == "3898"
-    assert ws["J2"].value == "43204002"
-    assert ws["P2"].value == "Coincide con el examen único"
+    assert ws["J2"].value == "Sí"
+    assert ws["K2"].value == "43204002"
+    assert ws["Q2"].value == "Coincide con el examen único"
     assert "MapeoMAISNOMEDV2" in ws.tables

@@ -1,15 +1,17 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.0.0-ocl-preview**. The stable pre-OCL
-> implementation is preserved by the Git tag `v1.0.0-local-mapping`.
+> Current development version: **2.0.1-ocl-guided**. The previous OCL preview
+> is preserved by `v2.0.0-ocl-preview`, and the stable pre-OCL implementation
+> by `v1.0.0-local-mapping`.
 
 ## Mapping workflow v2: MAI decomposition with OCL
 
 Version 2 can query `MINSALQA/manualimagenes` in Open Concept Lab from the local
-backend, let a reviewer select the unique imaging examinations contained in a
-composite MAI benefit, and then open each selected component independently in
-the existing BioLORD-assisted SNOMED CT mapping workflow. OCL responses and the
-selected decomposition are cached in local PostgreSQL.
+backend, let a reviewer first select the unique imaging examinations contained
+in a composite MAI benefit, and then guide their BioLORD-assisted SNOMED CT
+mapping one by one. Each examination must have at least one SNOMED CT concept
+selected and be explicitly confirmed before the workflow advances to the next.
+OCL responses, decomposition, and confirmation state are persisted locally.
 
 Configuration is opt-in and server-side only:
 
