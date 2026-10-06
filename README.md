@@ -1,6 +1,7 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.0.3-ocl-column-semantics**. The 200-result
+> Current development version: **2.0.5-ocl-gated-snomed-results**. Browser cache
+> controls were introduced in `2.0.4-browser-cache-control`; the 200-result
 > OCL version is preserved by `v2.0.2-ocl-200-results`, the guided workflow by
 > `v2.0.1-ocl-guided`, the previous OCL preview by
 > `v2.0.0-ocl-preview`, and the stable pre-OCL implementation by
@@ -11,8 +12,10 @@
 Version 2 can query `MINSALQA/manualimagenes` in Open Concept Lab from the local
 backend, let a reviewer first select the unique imaging examinations contained
 in a composite MAI benefit, and then guide their BioLORD-assisted SNOMED CT
-mapping one by one. Each examination must have at least one SNOMED CT concept
-selected and be explicitly confirmed before the workflow advances to the next.
+mapping one by one. BioLORD/SNOMED candidates are only shown after an OCL exam
+is explicitly opened for mapping. Each examination must have at least one
+SNOMED CT concept selected and be confirmed before its results close; the
+reviewer then chooses which OCL examination to map next.
 OCL responses, decomposition, and confirmation state are persisted locally.
 Each OCL search retrieves up to 200 concepts in pages of 100 and reports the
 total number of matches returned by OCL.

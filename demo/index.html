@@ -695,7 +695,7 @@ function renderOclWorkspace(){
         ${reviewed?`<div class="ocl-en">${reviewed} candidato${reviewed===1?'':'s'} SNOMED revisado${reviewed===1?'':'s'}</div>`:''}
         ${item.selected?`<div class="ocl-en"><strong>${item.confirmed?'Confirmado':'Pendiente de confirmación'}</strong></div>`:''}</div>
       <label class="ocl-required"><input type="checkbox" data-ocl-required="${esc(item.id)}" ${item.selected && item.required!==false?'checked':''} ${item.selected?'':'disabled'}> obligatorio</label>
-      ${item.selected && item.confirmed?`<button class="ocl-map-btn" type="button" data-ocl-map="${esc(item.id)}">Revisar mapeo</button>`:''}
+      ${item.selected?`<button class="ocl-map-btn" type="button" data-ocl-map="${esc(item.id)}">${item.confirmed?'Revisar mapeo':'Mapear en SNOMED'}</button>`:''}
     </div>`;
   }).join('');
 }
@@ -716,6 +716,7 @@ async function initOclV2(){
       }
     }catch(e){}
     renderOclWorkspace();
+    if(!activeOclContext) resetSnomedResults();
   }catch(e){
     oclPanel.hidden=true;
   }
@@ -780,12 +781,11 @@ function renderActiveOclBanner(){
   if(!activeOclContext){ activeComponent.hidden=true; activeComponent.innerHTML=''; return; }
   const selected=oclWorkspace.components.filter(item=>item.selected);
   const index=selected.findIndex(item=>String(item.id)===String(activeOclContext.id));
-  const isLast=index===selected.length-1;
   activeComponent.hidden=false;
   activeComponent.innerHTML=`<strong>Examen ${index+1} de ${selected.length}</strong> ·
     <span><span class="field-label">Prestación MAI</span><br><strong>${esc(oclWorkspace.mai_display)}</strong> · <span class="ocl-code">Código MAI ${esc(oclWorkspace.mai_code)}</span></span>
     <span><span class="field-label">Desambiguación OCL</span><br><strong>${esc(activeOclContext.display)}</strong> · <span class="ocl-code">ID de desambiguación OCL ${esc(activeOclContext.id)}</span></span>
-    <button type="button" class="ocl-map-btn" id="confirmOclComponent">${isLast?'Confirmar examen y finalizar':'Confirmar examen y continuar'}</button>
+    <button type="button" class="ocl-map-btn" id="confirmOclComponent">Confirmar mapeo y cerrar</button>
     <button type="button" class="ocl-map-btn" id="closeOclComponent">Volver sin confirmar</button>`;
 }
 async function startOclMapping(){
@@ -825,22 +825,29 @@ async function confirmOclComponent(){
   updateOclRecordConfirmation(currentId,true);
   persistOclWorkspace(); renderOclWorkspace(); renderValidatedPanel();
   await saveOclWorkspace(true);
-  const next=oclWorkspace.components.find(item=>item.selected && !item.confirmed);
-  if(next){
-    oclStatus.textContent=`Examen ${component.display} confirmado. Continuando con el siguiente…`;
-    openOclComponent(next.id);
+  const hasPending=oclWorkspace.components.some(item=>item.selected && !item.confirmed);
+  closeOclComponent();
+  if(hasPending){
+    oclStatus.textContent=`Examen ${component.display} confirmado. Selecciona otro examen OCL y presiona “Mapear en SNOMED”.`;
+    validationMsg.textContent='Mapeo confirmado. Los resultados SNOMED se cerraron.';
   }else{
-    closeOclComponent();
     oclStatus.textContent='Todos los exámenes OCL seleccionados fueron mapeados y confirmados.';
     validationMsg.textContent='Mapeo OCL → SNOMED completo. Ya puedes descargar el Excel V2.';
   }
+}
+function resetSnomedResults(message='Selecciona un examen OCL y presiona “Mapear en SNOMED” para ver opciones de mapeo.'){
+  ++seq;
+  if(inflight){ inflight.abort(); inflight=null; }
+  latestResults=[]; latestQuery=''; hierarchyData=null; hierarchyResultKey='';
+  results.innerHTML=`<p class="hint">${esc(message)}</p>`;
+  meta.textContent=''; showHierarchy.disabled=true;
+  gemma.disabled=rerank.disabled=filterEl.disabled=llmsel.disabled=contextEl.disabled=false;
 }
 function closeOclComponent(){
   activeOclContext=null; activeComponent.hidden=true; activeComponent.innerHTML='';
   sourceCodeEl.value=oclWorkspace.mai_code || sourceCodeEl.value;
   q.value=oclWorkspace.mai_display || q.value;
-  results.innerHTML='<p class="hint">Usa “Continuar mapeo” para seguir con el próximo examen OCL pendiente.</p>';
-  meta.textContent=''; latestResults=[]; latestQuery=''; hierarchyData=null; showHierarchy.disabled=true;
+  resetSnomedResults();
   renderValidatedPanel();
 }
 async function downloadV2Excel(){
@@ -1133,6 +1140,10 @@ function animateReorder(data){
 async function run(){
   const query = q.value.trim();
   if(!query){ latestQuery=''; latestResults=[]; hierarchyData=null; results.innerHTML=''; meta.textContent=''; showHierarchy.disabled=true; return; }
+  if(oclConfig && oclConfig.enabled && !activeOclContext){
+    resetSnomedResults();
+    return;
+  }
   const mySeq = ++seq;
   hierarchyData=null; hierarchyResultKey='';
   showHierarchy.disabled=true; showHierarchy.textContent='Ver jerarquía de resultados';
