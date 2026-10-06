@@ -43,6 +43,8 @@
   .card.rejected { border-color:#7f4545; box-shadow:inset 3px 0 0 #9f4f4f; }
   .rank { color:var(--muted); font-variant-numeric:tabular-nums; min-width:22px; }
   .term { font-weight:600; }
+  .field-label { color:var(--muted); font-size:10px; font-weight:500; text-transform:uppercase;
+          letter-spacing:.03em; }
   .tag { color:var(--muted); font-weight:400; }
   .cid { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
   .hier-relations { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
@@ -181,7 +183,7 @@
 <header>
   <div class="titlerow">
     <h1>SNOMED CT hybrid search</h1>
-    <span class="version-badge">V2.0.2 OCL</span>
+    <span class="version-badge">V2.0.3 OCL</span>
     <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
     <a class="arch-link" href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a>
     <a class="arch-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
@@ -200,7 +202,7 @@
   <div class="searchbar">
     <input id="sourceCode" class="source-code" type="text" placeholder="Código MAI"
            title="Código de la prestación de origen; se incluirá en el Excel">
-    <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
+    <input id="q" type="text" aria-label="Prestación MAI" placeholder="Prestación MAI" autofocus>
     <label class="toggle"><input id="gemma" type="checkbox"> pre-process</label>
     <label class="toggle"><input id="rerank" type="checkbox"> rerank</label>
     <label class="toggle" title="Third layer: a local LLM picks the best candidate using the context below">
@@ -227,7 +229,7 @@
   <section class="ocl-panel" id="oclPanel" hidden aria-label="Desagregación MAI con Open Concept Lab">
     <div class="ocl-head">
       <strong>Desagregación MAI · OCL manualimagenes</strong>
-      <span class="version-badge" id="oclVersion">2.0.2</span>
+      <span class="version-badge" id="oclVersion">2.0.3</span>
       <button id="oclDecompose" type="button">Buscar exámenes en OCL</button>
     </div>
     <div class="ocl-body">
@@ -248,7 +250,7 @@
   <section class="validation" aria-label="Revisión de mapeos">
     <div class="validation-head">
       <span class="validation-title">Revisión de mapeos</span>
-      <span class="validation-count" id="validationCount">0 prestaciones · 0 conceptos</span>
+      <span class="validation-count" id="validationCount">0 prestaciones MAI · 0 desambiguaciones OCL · 0 conceptos</span>
       <button id="toggleValidated" type="button">Ver selección</button>
       <button class="remove" id="clearValidated" type="button" disabled>Vaciar revisión</button>
       <button class="export" id="exportValidated" type="button" disabled>Descargar Excel</button>
@@ -375,7 +377,7 @@ function sourceKey(code=sourceCodeEl.value, term=q.value){
 function oclRecordFields(){
   if(!activeOclContext) return {};
   return {
-    mapping_version:oclConfig && oclConfig.version || '2.0.2', mai_code:activeOclContext.mai_code,
+    mapping_version:oclConfig && oclConfig.version || '2.0.3', mai_code:activeOclContext.mai_code,
     mai_display:activeOclContext.mai_display, component_group:activeOclContext.mai_code,
     ocl_source:`${oclConfig && oclConfig.org || 'MINSALQA'}/${oclConfig && oclConfig.source || 'manualimagenes'}`,
     ocl_concept_id:String(activeOclContext.id), ocl_display:activeOclContext.display,
@@ -547,8 +549,10 @@ function renderValidatedPanel(){
   const nMaps = validatedRecords.reduce((n,r)=>n+r.mappings.length,0);
   const nRejected = rejectedRecords.reduce((n,r)=>n+r.rejections.length,0);
   const nObserved = observationRecords.reduce((n,r)=>n+r.observations.length,0);
-  const nSources = new Set([...validatedRecords, ...rejectedRecords, ...observationRecords].map(r=>r.key)).size;
-  validationCount.textContent = `${nSources} prestaciones · ${nMaps} seleccionados · ${nRejected} descartados · ${nObserved} observados`;
+  const reviewRecords=[...validatedRecords, ...rejectedRecords, ...observationRecords];
+  const nMai = new Set(reviewRecords.map(r=>r.mai_code ? `${r.mai_code}|${r.mai_display}` : r.key)).size;
+  const nOcl = new Set(reviewRecords.filter(r=>r.ocl_concept_id).map(r=>`${r.mai_code}|${r.ocl_concept_id}`)).size;
+  validationCount.textContent = `${nMai} prestaciones MAI · ${nOcl} desambiguaciones OCL · ${nMaps} seleccionados · ${nRejected} descartados · ${nObserved} observados`;
   exportValidated.disabled = nMaps + nRejected + nObserved === 0;
   const selectedOcl = oclWorkspace.components.filter(item=>item.selected);
   const allOclConfirmed = selectedOcl.length > 0 && selectedOcl.every(item=>item.confirmed);
@@ -561,12 +565,16 @@ function renderValidatedPanel(){
   validationList.innerHTML = validatedRecords.map((rec,ri) => `
     <div class="v-group">
       <div class="v-source">
-        <strong>${rec.source_code ? `<span class="v-code">${esc(rec.source_code)}</span> · ` : ''}${esc(rec.source_term)}</strong>
+        <strong>${rec.ocl_concept_id
+          ? `<span class="field-label">Prestación MAI</span><br><span class="v-code">${esc(rec.mai_code || rec.source_code)}</span> · ${esc(rec.mai_display)}<br>
+             <span class="field-label">Desambiguación OCL</span><br>${esc(rec.ocl_display)} · <span class="v-code">ID de desambiguación OCL ${esc(rec.ocl_concept_id)}</span>`
+          : `${rec.source_code ? `<span class="v-code">${esc(rec.source_code)}</span> · ` : ''}${esc(rec.source_term)}`}</strong>
         <button class="remove" type="button" data-remove-record="${ri}">Quitar prestación</button>
       </div>
       ${rec.mappings.map((m,mi)=>`
         <div class="v-map">
-          <span><b>${esc(m.fsn)}</b><br><span class="v-code">${esc(m.concept_id)}</span>${m.reference ? `<br>Referencia: ${esc(m.reference)}` : ''}</span>
+          <span><span class="field-label">Término preferido SNOMED CT (es)</span><br><b>${esc(m.fsn)}</b><br>
+          <span class="field-label">ConceptID SNOMED CT</span> · <span class="v-code">${esc(m.concept_id)}</span>${m.reference ? `<br>Referencia: ${esc(m.reference)}` : ''}</span>
           <button class="remove" type="button" data-remove-map="${ri}:${mi}">Quitar</button>
         </div>`).join('')}
     </div>`).join('');
@@ -680,7 +688,7 @@ function renderOclWorkspace(){
     const reviewed = componentReviewCount(item);
     return `<div class="ocl-item${item.selected?' selected':''}" data-ocl-row="${esc(item.id)}">
       <input type="checkbox" data-ocl-select="${esc(item.id)}" ${item.selected?'checked':''} aria-label="Incluir ${esc(item.display)}">
-      <div><div><span class="ocl-code">${esc(item.id)}</span> · <span class="ocl-name">${esc(item.display)}</span></div>
+      <div><div><span class="field-label">Desambiguación OCL</span><br><span class="ocl-name">${esc(item.display)}</span> · <span class="ocl-code">ID de desambiguación OCL ${esc(item.id)}</span></div>
         ${item.display_en?`<div class="ocl-en">${esc(item.display_en)}</div>`:''}
         ${reviewed?`<div class="ocl-en">${reviewed} candidato${reviewed===1?'':'s'} SNOMED revisado${reviewed===1?'':'s'}</div>`:''}
         ${item.selected?`<div class="ocl-en"><strong>${item.confirmed?'Confirmado':'Pendiente de confirmación'}</strong></div>`:''}</div>
@@ -695,7 +703,7 @@ async function initOclV2(){
     oclConfig=await response.json();
     if(!oclConfig.enabled) return;
     oclPanel.hidden=false;
-    document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.2';
+    document.getElementById('oclVersion').textContent=oclConfig.version || '2.0.3';
     try{
       const saved=JSON.parse(localStorage.getItem(OCL_WORKSPACE_KEY) || 'null');
       if(saved && Array.isArray(saved.components)){
@@ -772,8 +780,9 @@ function renderActiveOclBanner(){
   const index=selected.findIndex(item=>String(item.id)===String(activeOclContext.id));
   const isLast=index===selected.length-1;
   activeComponent.hidden=false;
-  activeComponent.innerHTML=`<strong>Examen ${index+1} de ${selected.length}</strong> · Mapeando componente OCL
-    <span class="ocl-code">${esc(activeOclContext.id)}</span> <strong>${esc(activeOclContext.display)}</strong> · MAI ${esc(oclWorkspace.mai_code)}
+  activeComponent.innerHTML=`<strong>Examen ${index+1} de ${selected.length}</strong> ·
+    <span><span class="field-label">Prestación MAI</span><br><strong>${esc(oclWorkspace.mai_display)}</strong> · <span class="ocl-code">Código MAI ${esc(oclWorkspace.mai_code)}</span></span>
+    <span><span class="field-label">Desambiguación OCL</span><br><strong>${esc(activeOclContext.display)}</strong> · <span class="ocl-code">ID de desambiguación OCL ${esc(activeOclContext.id)}</span></span>
     <button type="button" class="ocl-map-btn" id="confirmOclComponent">${isLast?'Confirmar examen y finalizar':'Confirmar examen y continuar'}</button>
     <button type="button" class="ocl-map-btn" id="closeOclComponent">Volver sin confirmar</button>`;
 }
@@ -784,7 +793,7 @@ async function startOclMapping(){
 function updateOclRecordConfirmation(id, confirmed){
   [validatedRecords,rejectedRecords,observationRecords].forEach(records=>records.forEach(rec=>{
     if(rec.mai_code===oclWorkspace.mai_code && String(rec.ocl_concept_id)===String(id)){
-      rec.mapping_version=oclConfig && oclConfig.version || '2.0.2';
+      rec.mapping_version=oclConfig && oclConfig.version || '2.0.3';
       rec.mapping_confirmed=confirmed;
     }
   }));
@@ -1039,8 +1048,9 @@ function cardHtml(r, i){
   return `<div class="card${r.llm_pick ? ' llmpick' : ''}${selected ? ' validated' : ''}${rejected ? ' rejected' : ''}" data-cid="${r.concept_id}">
     <span class="rank">${i+1}</span>
     <div>
+      <div class="field-label">Término preferido SNOMED CT (es)</div>
       <div class="term">${esc(displayTerm)} ${displayTag?`<span class="tag">· ${esc(displayTag)}</span>`:''}</div>
-      <div class="cid">${esc(r.concept_id)}</div>
+      <div class="cid"><span class="field-label">ConceptID SNOMED CT</span> · ${esc(r.concept_id)}</div>
       ${r.llm_pick && r.llm_reason ? `<div class="reason">llm: ${esc(r.llm_reason)}</div>` : ''}
     </div>
     ${r.llm_pick ? '<span class="badge b-llm">LLM pick</span>' : ''}

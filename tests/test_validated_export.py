@@ -10,6 +10,10 @@ def test_validated_mappings_xlsx_is_auditable_long_table():
         {
             "source_code": "MAI-001",
             "source_term": "Radiografía de las glándulas salivales (sialografía)",
+            "mai_code": "MAI-001",
+            "mai_display": "Radiografía de las glándulas salivales (sialografía)",
+            "ocl_concept_id": "2340",
+            "ocl_display": "Sialografía convencional",
             "concept_id": "1343566005",
             "fsn": "Fluoroscopy of salivary apparatus with contrast (procedure)",
             "matched_term": "Fluoroscopic sialography with contrast",
@@ -36,13 +40,16 @@ def test_validated_mappings_xlsx_is_auditable_long_table():
     assert tuple(c.value for c in ws[1]) == HEADERS
     assert ws.max_row == 3
     assert ws["A2"].value == "MAI-001"
-    assert ws["C2"].value == "1343566005"
-    assert ws["G2"].value == "Seleccionado"
-    assert ws["J2"].value == "Guía clínica 2025, p. 18"
-    assert ws["K2"].value == "Coincide con la técnica descrita."
+    assert ws["B2"].value == "Radiografía de las glándulas salivales (sialografía)"
+    assert ws["C2"].value == "2340"
+    assert ws["D2"].value == "Sialografía convencional"
+    assert ws["E2"].value == "1343566005"
+    assert ws["I2"].value == "Seleccionado"
+    assert ws["L2"].value == "Guía clínica 2025, p. 18"
+    assert ws["M2"].value == "Coincide con la técnica descrita."
     assert "Contexto de búsqueda" not in HEADERS
-    assert ws["G3"].value == "Descartado"
-    assert ws["H3"].value == "Concepto muy genérico"
+    assert ws["I3"].value == "Descartado"
+    assert ws["J3"].value == "Concepto muy genérico"
     assert ws.freeze_panes == "A2"
     assert "RevisionMapeos" in ws.tables
 

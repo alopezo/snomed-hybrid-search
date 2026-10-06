@@ -31,7 +31,7 @@ def test_workspace_key_normalizes_case_and_spaces():
 def test_v2_export_contains_grouping_and_component_columns():
     content = create_mapping_v2_xlsx([
         {
-            "mapping_version": "2.0.2",
+            "mapping_version": "2.0.3",
             "mai_code": "0401010",
             "mai_display": "Mamografía bilateral",
             "component_group": "0401010",
@@ -49,7 +49,7 @@ def test_v2_export_contains_grouping_and_component_columns():
     ])
     ws = load_workbook(BytesIO(content), data_only=False).active
     assert tuple(cell.value for cell in ws[1]) == V2_HEADERS
-    assert ws["A2"].value == "2.0.2"
+    assert ws["A2"].value == "2.0.3"
     assert ws["B2"].value == "0401010"
     assert ws["F2"].value == "3898"
     assert ws["J2"].value == "Sí"

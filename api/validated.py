@@ -11,6 +11,8 @@ from openpyxl.worksheet.table import Table, TableStyleInfo
 HEADERS = (
     "Código MAI",
     "Prestación MAI",
+    "ID de desambiguación OCL",
+    "Desambiguación OCL",
     "ConceptID SNOMED CT",
     "Término preferido SNOMED CT (es)",
     "Término coincidente",
@@ -28,12 +30,12 @@ HEADERS = (
 V2_HEADERS = (
     "Versión del mapeo",
     "Código MAI",
-    "Display MAI",
+    "Prestación MAI",
     "Grupo de componentes",
     "Fuente OCL",
-    "Código de examen OCL",
-    "Examen único OCL (es)",
-    "Examen único OCL (en)",
+    "ID de desambiguación OCL",
+    "Desambiguación OCL (es)",
+    "Desambiguación OCL (en)",
     "Componente obligatorio",
     "Mapeo del componente confirmado",
     "ConceptID SNOMED CT",
@@ -65,8 +67,10 @@ def create_validated_mappings_xlsx(mappings: list[dict]) -> bytes:
 
     for item in mappings:
         ws.append([
-            _excel_text(item.get("source_code")),
-            _excel_text(item.get("source_term")),
+            _excel_text(item.get("mai_code") or item.get("source_code")),
+            _excel_text(item.get("mai_display") or item.get("source_term")),
+            _excel_text(item.get("ocl_concept_id")),
+            _excel_text(item.get("ocl_display")),
             _excel_text(item.get("concept_id")),
             _excel_text(item.get("fsn")),
             _excel_text(item.get("matched_term")),
@@ -93,7 +97,7 @@ def create_validated_mappings_xlsx(mappings: list[dict]) -> bytes:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.number_format = "@"
 
-    widths = (16, 38, 24, 48, 38, 22, 20, 34, 38, 45, 45, 45, 36, 24)
+    widths = (16, 38, 24, 48, 24, 48, 38, 22, 20, 34, 38, 45, 45, 45, 36, 24)
     for column, width in zip(ws.columns, widths):
         ws.column_dimensions[column[0].column_letter].width = width
     ws.row_dimensions[1].height = 30
@@ -101,7 +105,7 @@ def create_validated_mappings_xlsx(mappings: list[dict]) -> bytes:
     last_row = max(ws.max_row, 2)
     if ws.max_row == 1:  # Tables need a data row; the endpoint rejects this case, kept for safety.
         ws.append([""] * len(HEADERS))
-    table = Table(displayName="RevisionMapeos", ref=f"A1:N{last_row}")
+    table = Table(displayName="RevisionMapeos", ref=f"A1:P{last_row}")
     table.tableStyleInfo = TableStyleInfo(
         name="TableStyleMedium2",
         showFirstColumn=False,
@@ -126,7 +130,7 @@ def create_mapping_v2_xlsx(mappings: list[dict]) -> bytes:
     ws.append(V2_HEADERS)
     for item in mappings:
         ws.append([
-            _excel_text(item.get("mapping_version") or "2.0.2"),
+            _excel_text(item.get("mapping_version") or "2.0.3"),
             _excel_text(item.get("mai_code") or item.get("source_code")),
             _excel_text(item.get("mai_display")),
             _excel_text(item.get("component_group") or item.get("mai_code")),

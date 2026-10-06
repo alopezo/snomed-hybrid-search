@@ -12,7 +12,7 @@ from psycopg.types.json import Jsonb
 
 from api.search import PG_DSN
 
-MAPPING_VERSION = "2.0.2"
+MAPPING_VERSION = "2.0.3"
 OCL_PAGE_SIZE = 100
 OCL_MAX_RESULTS = 200
 OCL_API_URL = os.environ.get("OCL_API_URL", "https://api.openconceptlab.org").rstrip("/")
@@ -43,7 +43,7 @@ def _schema(cur) -> None:
         );
         CREATE TABLE IF NOT EXISTS mai_decomposition_v2 (
             workspace_key text NOT NULL,
-            mapping_version text NOT NULL DEFAULT '2.0.2',
+            mapping_version text NOT NULL DEFAULT '2.0.3',
             mai_code text NOT NULL,
             mai_display text NOT NULL,
             ocl_concept_id text NOT NULL,
@@ -64,7 +64,7 @@ def _schema(cur) -> None:
         ALTER TABLE mai_decomposition_v2
             ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;
         ALTER TABLE mai_decomposition_v2
-            ALTER COLUMN mapping_version SET DEFAULT '2.0.2';
+            ALTER COLUMN mapping_version SET DEFAULT '2.0.3';
         """
     )
 

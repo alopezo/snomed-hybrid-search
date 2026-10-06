@@ -1,7 +1,8 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.0.2-ocl-200-results**. The guided workflow
-> is preserved by `v2.0.1-ocl-guided`, the previous OCL preview by
+> Current development version: **2.0.3-ocl-column-semantics**. The 200-result
+> OCL version is preserved by `v2.0.2-ocl-200-results`, the guided workflow by
+> `v2.0.1-ocl-guided`, the previous OCL preview by
 > `v2.0.0-ocl-preview`, and the stable pre-OCL implementation by
 > `v1.0.0-local-mapping`.
 

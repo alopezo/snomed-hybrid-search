@@ -50,6 +50,10 @@ DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "demo")
 class ValidatedMapping(BaseModel):
     source_code: str = ""
     source_term: str = Field(min_length=1, max_length=1000)
+    mai_code: str = ""
+    mai_display: str = ""
+    ocl_concept_id: str = ""
+    ocl_display: str = ""
     concept_id: str = Field(pattern=r"^\d+$")
     fsn: str = Field(min_length=1, max_length=2000)
     matched_term: str = ""
@@ -70,13 +74,9 @@ class ValidatedExportRequest(BaseModel):
 
 
 class ValidatedMappingV2(ValidatedMapping):
-    mapping_version: str = "2.0.2"
-    mai_code: str = ""
-    mai_display: str = ""
+    mapping_version: str = "2.0.3"
     component_group: str = ""
     ocl_source: str = "MINSALQA/manualimagenes"
-    ocl_concept_id: str = ""
-    ocl_display: str = ""
     ocl_display_en: str = ""
     required_component: bool = True
     mapping_confirmed: bool = False
@@ -105,7 +105,7 @@ class OclComponentInput(BaseModel):
 class OclSelectionRequest(BaseModel):
     mai_code: str = Field(min_length=1, max_length=100)
     mai_display: str = Field(min_length=1, max_length=2000)
-    components: list[OclComponentInput] = Field(min_length=1, max_length=100)
+    components: list[OclComponentInput] = Field(min_length=1, max_length=200)
 
 
 class HierarchyRequest(BaseModel):
