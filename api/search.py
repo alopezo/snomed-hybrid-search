@@ -28,12 +28,21 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# All transformer weights are provisioned locally.  These flags prevent the
+# Hugging Face client from performing metadata probes that can stall for
+# minutes on networks where huggingface.co is blocked.
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 PG_DSN = os.environ["PG_DSN"]
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "FremyCompany/BioLORD-2023-M")
 EMBED_DEVICE = os.environ.get("EMBED_DEVICE", "cpu")
 RERANK_MODEL = os.environ.get("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 GEMMA_URL = os.environ.get("GEMMA_URL", "http://127.0.0.1:8080/v1")
 GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma-4-26b-a4b-it")
+# Module that contains the descriptions shown to the user. The bundled Spanish
+# International Edition uses 450829007; retrieval and ranking remain bilingual.
+DISPLAY_LANGUAGE_MODULE = int(os.environ.get("DISPLAY_LANGUAGE_MODULE", "450829007"))
 # For reasoning ("thinking") models served through the OpenAI-compatible endpoint: pass a
 # reasoning_effort ("none" disables the chain-of-thought; "low"/"medium"/"high" enable it). Unset =>
 # omit the field, so non-reasoning models (e.g. gemma 3) are unaffected. Reasoning tokens count
@@ -50,6 +59,10 @@ CANDIDATES = 200  # top-N per channel before fusing
 # Preferred-term nudge added to the RRF score. Kept small: an RRF rank step is ~1/60² ≈ 0.0003,
 # so 0.001 ≈ a few ranks — a gentle tie-breaker, not a dominator (0.01 used to flip clear winners).
 PREF_BOOST = 0.001
+# A description retrieved by both independent channels is stronger evidence than a top semantic
+# neighbour alone, especially with short abbreviations. Keep the nudge comparable to PREF_BOOST:
+# it breaks close RRF ties without overpowering a clearly better single-channel result.
+BOTH_BOOST = 0.001
 # How much the cross-encoder gets to reorder. Both the RRF score and the rerank score are min-max
 # normalized to [0,1] per query, then blended: final = W*rerank + (1-W)*rrf.
 #   W = 1.0 -> rerank fully dictates (old behavior; over-favors broad/high-frequency concepts)
@@ -112,7 +125,9 @@ fused AS (
 ),
 scored AS (
     SELECT d.concept_id, d.term, d.semantic_tag,
-           {score_expr} + (d.pref_us::int * %(pref_boost)s) AS score,
+           {score_expr}
+             + (CASE WHEN f.in_lex AND f.in_vec THEN %(both_boost)s ELSE 0 END)
+             + (d.pref_us::int * %(pref_boost)s) AS score,
            f.in_lex, f.in_vec
     FROM fused f JOIN descriptions d ON d.id = f.id
     WHERE {row_filter}
@@ -124,7 +139,8 @@ best AS (
     ORDER BY concept_id, score DESC
 )
 SELECT b.concept_id, b.matched_term, b.semantic_tag, b.score, b.in_lex, b.in_vec,
-       fsn.term AS fsn,
+       fsn.term AS fsn, display.term AS display_term,
+       display.semantic_tag AS display_semantic_tag,
        EXISTS (SELECT 1 FROM descriptions e
                WHERE e.concept_id = b.concept_id AND e.term_norm = ANY(%(exact_norms)s)) AS is_exact
 FROM best b
@@ -132,6 +148,16 @@ LEFT JOIN LATERAL (
     SELECT term FROM descriptions
     WHERE concept_id = b.concept_id AND type_id = 900000000000003001 LIMIT 1
 ) fsn ON true
+LEFT JOIN LATERAL (
+    -- Present the preferred Spanish synonym (without the FSN semantic tag).
+    -- Fall back in the client to FSN/matched_term when a concept has no Spanish translation.
+    SELECT term, semantic_tag FROM descriptions
+    WHERE concept_id = b.concept_id AND module_id = %(display_module)s::bigint
+    ORDER BY (type_id = 900000000000013009 AND pref_us) DESC,
+             (type_id = 900000000000013009) DESC,
+             pref_us DESC, id
+    LIMIT 1
+) display ON true
 ORDER BY b.score DESC
 LIMIT %(k_out)s
 """
@@ -233,15 +259,37 @@ _infer_lock = threading.Lock()
 
 
 @lru_cache(maxsize=1)
+def model_device() -> str:
+    """Use the requested accelerator only when PyTorch can actually initialize it."""
+    requested = EMBED_DEVICE.strip().lower()
+    if requested == "mps":
+        import torch
+        if not torch.backends.mps.is_available():
+            return "cpu"
+    return requested
+
+
+@lru_cache(maxsize=1)
 def get_model():
     from sentence_transformers import SentenceTransformer
-    return SentenceTransformer(EMBED_MODEL, device=EMBED_DEVICE)
+    return SentenceTransformer(EMBED_MODEL, device=model_device(), local_files_only=True)
 
 
 def embed_query(text: str) -> str:
     with _infer_lock:
         vec = get_model().encode([text], normalize_embeddings=True)[0]
     return "[" + ",".join(f"{x:.6f}" for x in vec) + "]"
+
+
+@lru_cache(maxsize=1)
+def embeddings_available() -> bool:
+    """Whether the database has semantic vectors. Re-evaluated on each API process restart."""
+    try:
+        with psycopg.connect(PG_DSN, connect_timeout=3) as conn, conn.cursor() as cur:
+            cur.execute("SELECT EXISTS (SELECT 1 FROM descriptions WHERE embedding IS NOT NULL)")
+            return bool(cur.fetchone()[0])
+    except Exception:
+        return False
 
 
 def gemma_expand(query: str, timeout: float = 25.0) -> str | None:
@@ -420,7 +468,7 @@ def extract_entities(text: str, timeout: float = 180.0) -> list[dict]:
 @lru_cache(maxsize=1)
 def get_reranker():
     from sentence_transformers import CrossEncoder
-    return CrossEncoder(RERANK_MODEL, device=EMBED_DEVICE)
+    return CrossEncoder(RERANK_MODEL, device=model_device(), local_files_only=True)
 
 
 def _minmax(vals: list[float]) -> list[float]:
@@ -488,7 +536,7 @@ def llm_select(query: str, context: str, results: list[dict], top_n: int = 8,
         "'Entire X' concept means the whole/complete organ and is rarely what a mention intends — prefer "
         "the 'Structure of X' form unless the text explicitly means the entire organ. "
         'Reply with STRICT JSON: {"index": <a number from the list, or 0 if none fit>, '
-        '"reason": "<max 12 words>"}. No other text.')
+        '"reason": "<máximo 12 palabras, escrito en español>"}. No other text.')
     user = f"Query: {query}\nContext: {ctx}\n\nCandidates:\n{listing}"
     try:
         r = httpx.post(
@@ -543,7 +591,11 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
 
     yield {"stage": "retrieve"}
     te = time.perf_counter()
-    qvec = embed_query(search_text)          # BioLORD encodes the query -> 768d vector
+    semantic_ready = channel != "lexical" and embeddings_available()
+    effective_channel = channel if semantic_ready else "lexical"
+    # Keep the lexical interface usable while the optional model is unavailable. The zero vector is
+    # only a typed SQL placeholder; the lexical channel discards semantic-only rows.
+    qvec = embed_query(search_text) if semantic_ready else "[" + ",".join(["0"] * 768) + "]"
     t["embed_ms"] = round((time.perf_counter() - te) * 1000, 1)
     tr = time.perf_counter()
     # Retrieval = lexical + semantic + RRF fusion + FSN, all in ONE SQL plan. Kept as a single
@@ -559,10 +611,13 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
             cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
-        cur.execute(_rrf_sql(channel, desc_scope), {
+        cur.execute(_rrf_sql(effective_channel, desc_scope), {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
-            "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
+            "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST,
+            "both_boost": BOTH_BOOST if effective_channel == "both" else 0.0,
+            "exact_norms": exact_norms,
             "filter": filter_concept, "excl_module": exclude_module,
+            "display_module": DISPLAY_LANGUAGE_MODULE,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)
@@ -572,12 +627,14 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
             "concept_id": str(cid),
             "matched_term": term,
             "fsn": fsn,
+            "display_term": display_term,
             "semantic_tag": tag,
+            "display_semantic_tag": display_tag,
             "score": round(float(score), 5),
             "channel": ("both" if in_lex and in_vec else "lexical" if in_lex else "semantic"),
             "is_exact": bool(is_exact),
         }
-        for cid, term, tag, score, in_lex, in_vec, fsn, is_exact in rows
+        for cid, term, tag, score, in_lex, in_vec, fsn, display_term, display_tag, is_exact in rows
     ]
     results = exact_first(results)   # deterministic: exact matches to the top
 
@@ -657,9 +714,11 @@ def health() -> dict:
 
 def warmup() -> dict:
     """Load the embedding model and warm the LLM (the 'wake' action)."""
-    get_model()
+    semantic_ready = embeddings_available()
+    if semantic_ready:
+        get_model()
     exp = gemma_expand("warmup")
-    return {"embeddings_loaded": True, "llm_ok": exp is not None}
+    return {"embeddings_loaded": semantic_ready, "llm_ok": exp is not None}
 
 
 def main() -> None:

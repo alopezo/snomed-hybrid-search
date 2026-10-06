@@ -117,6 +117,20 @@ def main() -> None:
     print(f"  ancestor pairs (closure size): {total:,}  (~{total/len(active):.1f} per concept)")
 
     with psycopg.connect(dsn) as conn, conn.cursor() as cur:
+        print("Writing direct IS-A edges...")
+        cur.execute("DROP TABLE IF EXISTS concept_parents")
+        cur.execute(
+            "CREATE TABLE concept_parents ("
+            "child_id BIGINT NOT NULL, parent_id BIGINT NOT NULL, "
+            "PRIMARY KEY (child_id, parent_id))"
+        )
+        with cur.copy("COPY concept_parents (child_id, parent_id) FROM STDIN") as cp:
+            for child, direct_parents in parents.items():
+                for parent in sorted(set(direct_parents)):
+                    cp.write_row((child, parent))
+        cur.execute("CREATE INDEX ix_cp_parent ON concept_parents (parent_id)")
+        cur.execute("ANALYZE concept_parents")
+
         print("Writing concept_ancestors...")
         cur.execute("DROP TABLE IF EXISTS concept_ancestors")
         cur.execute("CREATE TABLE concept_ancestors (concept_id BIGINT PRIMARY KEY, ancestors BIGINT[])")

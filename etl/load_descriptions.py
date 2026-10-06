@@ -41,10 +41,14 @@ REFSET_GB = "900000000000508004"
 FSN_TAG_RE = re.compile(r"\(([^()]+)\)\s*$")
 
 
-def find_file(snapshot_dir: str, pattern: str) -> str:
-    matches = glob.glob(os.path.join(snapshot_dir, "**", pattern), recursive=True)
+def find_file(snapshot_dir: str, *patterns: str) -> str:
+    matches: list[str] = []
+    for pattern in patterns:
+        matches = glob.glob(os.path.join(snapshot_dir, "**", pattern), recursive=True)
+        if matches:
+            break
     if not matches:
-        sys.exit(f"ERROR: no file found matching pattern {pattern} in {snapshot_dir}")
+        sys.exit(f"ERROR: no file found matching any of {patterns} in {snapshot_dir}")
     if len(matches) > 1:
         print(f"WARNING: multiple matches for {pattern}, using the first:\n  " + "\n  ".join(matches))
     return matches[0]
@@ -134,8 +138,13 @@ def copy_descriptions(conn, path: str, active_concepts: set[str], fsn_tags: dict
     return n
 
 
-def mark_preferred(conn, path: str) -> None:
-    """Loads the Language refset into a temp table and marks pref_us / pref_gb."""
+def mark_preferred(conn, path: str, primary_refset: str | None = None) -> None:
+    """Loads a Language refset and marks preferred descriptions.
+
+    The schema retains the historical ``pref_us`` column name, but ``primary_refset`` lets a
+    non-English edition use it as the preferred-term flag for its own language refset.
+    """
+    accepted_refsets = {primary_refset} if primary_refset else {REFSET_US, REFSET_GB}
     with conn.cursor() as cur:
         cur.execute(
             "CREATE TEMP TABLE lang_pref (desc_id BIGINT, refset BIGINT) ON COMMIT DROP"
@@ -150,27 +159,38 @@ def mark_preferred(conn, path: str) -> None:
                 if cols[2] != "1" or cols[6] != ACCEPT_PREFERRED:
                     continue
                 refset = cols[4]
-                if refset not in (REFSET_US, REFSET_GB):
+                if refset not in accepted_refsets:
                     continue
                 cp.write_row((int(cols[5]), int(refset)))
                 n += 1
         print(f"  'preferred' rows loaded: {n:,}")
         cur.execute("CREATE INDEX ON lang_pref (desc_id)")
-        cur.execute(
-            "UPDATE descriptions d SET pref_us = true "
-            "FROM lang_pref lp WHERE lp.desc_id = d.id AND lp.refset = %s",
-            (int(REFSET_US),),
-        )
-        cur.execute(
-            "UPDATE descriptions d SET pref_gb = true "
-            "FROM lang_pref lp WHERE lp.desc_id = d.id AND lp.refset = %s",
-            (int(REFSET_GB),),
-        )
+        if primary_refset:
+            cur.execute(
+                "UPDATE descriptions d SET pref_us = true "
+                "FROM lang_pref lp WHERE lp.desc_id = d.id AND lp.refset = %s",
+                (int(primary_refset),),
+            )
+        else:
+            cur.execute(
+                "UPDATE descriptions d SET pref_us = true "
+                "FROM lang_pref lp WHERE lp.desc_id = d.id AND lp.refset = %s",
+                (int(REFSET_US),),
+            )
+            cur.execute(
+                "UPDATE descriptions d SET pref_gb = true "
+                "FROM lang_pref lp WHERE lp.desc_id = d.id AND lp.refset = %s",
+                (int(REFSET_GB),),
+            )
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--snapshot", help="Snapshot dir to load (default: SNOMED_SNAPSHOT_DIR from .env)")
+    ap.add_argument("--concept-snapshot",
+                    help="optional separate Snapshot dir supplying the active concept list")
+    ap.add_argument("--preferred-refset",
+                    help="language refset SCTID to treat as the primary preferred-term flag")
     ap.add_argument("--append", action="store_true",
                     help="add these descriptions on top of what's loaded (skip TRUNCATE) — for extensions")
     args = ap.parse_args()
@@ -181,9 +201,16 @@ def main() -> None:
     if not dsn or not snapshot_dir:
         sys.exit("ERROR: set PG_DSN and SNOMED_SNAPSHOT_DIR in .env (or pass --snapshot)")
 
-    concept_file = find_file(snapshot_dir, "sct2_Concept_Snapshot_*.txt")
-    desc_file = find_file(snapshot_dir, "sct2_Description_Snapshot-en_*.txt")
-    lang_file = find_file(snapshot_dir, "der2_cRefset_LanguageSnapshot-en_*.txt")
+    concept_dir = args.concept_snapshot or snapshot_dir
+    concept_file = find_file(concept_dir,
+                             "sct2_Concept_Snapshot_*.txt",
+                             "sct2_Concept_*Snapshot_*.txt")
+    desc_file = find_file(snapshot_dir,
+                          "sct2_Description_Snapshot-en_*.txt",
+                          "sct2_Description_*Snapshot-*.txt")
+    lang_file = find_file(snapshot_dir,
+                          "der2_cRefset_LanguageSnapshot-en_*.txt",
+                          "der2_cRefset_Language*Snapshot-*.txt")
 
     print("Active concepts...")
     active_concepts = load_active_concepts(concept_file)
@@ -220,7 +247,7 @@ def main() -> None:
                         "UPDATE descriptions SET term_tsv = to_tsvector('unaccent_simple', term)")
 
         print("Marking preferred terms (US/GB)...")
-        mark_preferred(conn, lang_file)
+        mark_preferred(conn, lang_file, args.preferred_refset)
 
         conn.commit()
 

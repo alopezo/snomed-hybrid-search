@@ -10,22 +10,28 @@ from __future__ import annotations
 
 import os
 
+import io
 import json
 import tempfile
+import threading
 import time
 import uuid
+from datetime import datetime
 
+import psycopg
 from fastapi import Body, FastAPI, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 from starlette.background import BackgroundTask
 
 from api.mapper import best_match, read_table, resolve_columns, write_table
+from api.hierarchy import hierarchy_for_results
+from api.validated import create_validated_mappings_xlsx
 from api.search import (
     TYPE_TO_HIERARCHY,
     extract_entities,
     gemma_expand,
-    get_model,
     health,
     search,
     search_stream,
@@ -40,9 +46,45 @@ app = FastAPI(title="SNOMED hybrid search")
 DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "demo")
 
 
+class ValidatedMapping(BaseModel):
+    source_code: str = ""
+    source_term: str = Field(min_length=1, max_length=1000)
+    concept_id: str = Field(pattern=r"^\d+$")
+    fsn: str = Field(min_length=1, max_length=2000)
+    matched_term: str = ""
+    semantic_tag: str = ""
+    status: str = "Seleccionado"
+    rejection_reason: str = ""
+    rejection_detail: str = ""
+    reference: str = ""
+    selection_reason: str = ""
+    observations: str = ""
+    context: str = ""
+    notes: str = ""
+    reviewed_at: str = ""
+
+
+class ValidatedExportRequest(BaseModel):
+    mappings: list[ValidatedMapping] = Field(min_length=1, max_length=5000)
+
+
+class HierarchyRequest(BaseModel):
+    concept_ids: list[str] = Field(min_length=1, max_length=50)
+    max_depth: int = Field(default=8, ge=1, le=12)
+    max_nodes: int = Field(default=120, ge=20, le=250)
+
+
 @app.on_event("startup")
 def _warmup() -> None:
-    get_model()  # load the embedding model once (avoids latency on the 1st query)
+    # Model initialization can take several minutes after a cold start.  Keep the
+    # local UI available while it warms in the background.
+    threading.Thread(target=_warmup_models, name="model-warmup", daemon=True).start()
+
+
+def _warmup_models() -> None:
+    # The embedding model is loaded on the first search (or through /api/warmup).
+    # Starting it here could race with an immediate search and initialize two
+    # copies of the same large model.
     try:
         gemma_expand("warmup")  # load the LLM into memory so the first real query isn't cold
     except Exception:
@@ -57,6 +99,36 @@ def api_health():
 @app.get("/api/warmup")
 def api_warmup():
     return warmup()
+
+
+@app.post("/api/hierarchy")
+def api_hierarchy(payload: HierarchyRequest):
+    ids = []
+    for value in payload.concept_ids:
+        if not value.isdigit():
+            return JSONResponse({"error": f"invalid conceptId: {value}"}, status_code=400)
+        ids.append(int(value))
+    try:
+        return hierarchy_for_results(ids, payload.max_depth, payload.max_nodes)
+    except psycopg.errors.UndefinedTable:
+        return JSONResponse(
+            {"error": "concept_parents is not loaded; rebuild the RF2 hierarchy"},
+            status_code=503,
+        )
+
+
+@app.post("/api/validated/export")
+def api_validated_export(payload: ValidatedExportRequest):
+    """Export the complete MAI-to-SNOMED candidate review as one auditable Excel table."""
+    rows = [m.model_dump() for m in payload.mappings]
+    content = create_validated_mappings_xlsx(rows)
+    stamp = datetime.now().strftime("%Y%m%d_%H%M")
+    filename = f"revision_mapeos_mai_snomed_{stamp}.xlsx"
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @app.get("/api/testcases")

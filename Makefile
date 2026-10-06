@@ -3,6 +3,7 @@
 
 POSTGRES_USER ?= snomed
 POSTGRES_DB   ?= snomed_search
+PYTHON ?= $(shell command -v python3.12 2>/dev/null || command -v python3)
 PY   := .venv/bin/python
 PIP  := .venv/bin/pip
 PSQL := docker compose exec -T db psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
@@ -19,7 +20,7 @@ help: ## Show this help
 		echo ">> Created .env — edit SNOMED_SNAPSHOT_DIR to point at your release Snapshot dir.")
 
 install: ## Create the venv and install Python deps
-	python3 -m venv .venv
+	$(PYTHON) -m venv .venv
 	$(PIP) install -U pip
 	$(PIP) install -U -r requirements.txt
 
@@ -46,7 +47,7 @@ embed: ## Download the embedding model and encode all terms into pgvector
 	$(PY) embed/index_embeddings.py
 
 index-hnsw: ## Build the semantic (HNSW) index
-	$(PSQL) -c "SET maintenance_work_mem='2GB'; CREATE INDEX IF NOT EXISTS ix_desc_emb ON descriptions USING hnsw (embedding vector_cosine_ops); ANALYZE descriptions;"
+	$(PSQL) -c "SET maintenance_work_mem='6GB'; CREATE INDEX IF NOT EXISTS ix_desc_emb ON descriptions USING hnsw (embedding vector_cosine_ops); ANALYZE descriptions;"
 
 all: db-up install etl hierarchy index-lexical embed index-hnsw ## Full reproduction pipeline
 	@echo ">> Pipeline complete. Start the app with: make serve"

@@ -6,7 +6,7 @@
 <title>SNOMED CT hybrid search</title>
 <style>
   :root { --bg:#0f1115; --card:#1a1d24; --fg:#e6e6e6; --muted:#9aa0aa; --accent:#4f9cf9;
-          --lex:#2e7d32; --sem:#6a1b9a; --both:#1565c0; }
+          --lex:#2e7d32; --sem:#6a1b9a; --both:#1565c0; --ok:#2e7d32; --danger:#c62828; }
   * { box-sizing:border-box; }
   body { margin:0; font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
          background:var(--bg); color:var(--fg); }
@@ -17,9 +17,11 @@
   .arch-link:hover { text-decoration:underline; }
   .sub { color:var(--muted); font-size:13px; }
   .wrap { max-width:900px; margin:0 auto; padding:12px 20px 60px; }
-  .searchbar { display:flex; gap:8px; align-items:center; margin:12px 0; }
+  .searchbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0; }
   input[type=text] { flex:1; padding:12px 14px; font-size:16px; border-radius:10px;
                      border:1px solid #2b2f38; background:var(--card); color:var(--fg); }
+  input.source-code { flex:0 0 145px; font-size:14px; }
+  #q { min-width:280px; }
   input.filter { flex:0 0 130px; padding:11px 10px; font-size:13px; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:-4px 0 12px; }
   .chips-label { color:var(--muted); font-size:12px; }
@@ -36,10 +38,18 @@
   .tstep b { color:var(--fg); font-weight:600; }
   .card { background:var(--card); border:1px solid #23262e; border-radius:10px;
           padding:12px 14px; margin-bottom:8px; display:flex; gap:12px; align-items:baseline; }
+  .card > div:nth-child(2) { flex:1; min-width:0; }
+  .card.validated { border-color:var(--ok); box-shadow:inset 3px 0 0 var(--ok); }
+  .card.rejected { border-color:#7f4545; box-shadow:inset 3px 0 0 #9f4f4f; }
   .rank { color:var(--muted); font-variant-numeric:tabular-nums; min-width:22px; }
   .term { font-weight:600; }
   .tag { color:var(--muted); font-weight:400; }
   .cid { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+  .hier-relations { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+  .hier-relation { font-size:11px; color:#b9d7ff; border:1px solid #315b83; border-radius:12px;
+                   padding:1px 7px; background:#142638; }
+  .hier-card-btn { border:0; background:transparent; color:var(--accent); cursor:pointer;
+                   padding:3px 0; font-size:11px; text-align:left; }
   .badge { font-size:11px; padding:2px 8px; border-radius:20px; color:#fff; white-space:nowrap; }
   .b-lexical{background:var(--lex);} .b-semantic{background:var(--sem);} .b-both{background:var(--both);}
   .b-exact{background:#00897b;} .b-llm{background:#c2410c;}
@@ -68,7 +78,43 @@
     pointer-events: none;
     animation: borderCycle 1.6s linear infinite;
   }
-  .score { margin-left:auto; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+  .score { color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+  .validate-btn, .validation button, .validation select { border:1px solid #353a45; border-radius:7px;
+          background:#20242c; color:var(--fg); font-size:12px; padding:5px 9px; cursor:pointer; }
+  .validate-btn { white-space:nowrap; }
+  .validate-btn.on { background:var(--ok); border-color:var(--ok); color:#fff; }
+  .validate-btn:disabled, .validation button:disabled { opacity:.5; cursor:default; }
+  .review-actions { display:flex; flex:0 0 235px; flex-direction:column; gap:6px; align-self:center; }
+  .review-actions select, .reject-other { width:100%; border:1px solid #353a45; border-radius:7px;
+          background:#20242c; color:var(--fg); font:12px/1.35 inherit; padding:6px 8px; }
+  .review-field { display:flex; flex-direction:column; gap:3px; color:var(--muted); font-size:11px; }
+  .review-field textarea, .reject-other { width:100%; border:1px solid #353a45; border-radius:7px;
+          background:#20242c; color:var(--fg); font:12px/1.35 inherit; padding:7px 8px;
+          resize:vertical; min-height:62px; }
+  .observations-toggle { width:100%; border:1px solid #353a45; border-radius:7px;
+          background:transparent; color:var(--muted); font-size:12px; padding:5px 9px; cursor:pointer; }
+  .review-actions select:disabled, .review-field textarea:disabled { opacity:.5; }
+  .validation { border:1px solid #2b2f38; border-radius:10px; background:#14171d; margin:4px 0 14px; }
+  .validation-head { display:flex; align-items:center; gap:8px; padding:10px 12px; flex-wrap:wrap; }
+  .validation-title { font-weight:600; }
+  .validation-count { color:var(--muted); font-size:12px; margin-right:auto; }
+  .validation .export { background:var(--ok); border-color:var(--ok); color:#fff; font-weight:600; }
+  .validation-list { border-top:1px solid #2b2f38; padding:8px 12px 12px; max-height:360px; overflow:auto; }
+  .validation-list[hidden] { display:none; }
+  .v-group { padding:9px 0; border-bottom:1px solid #252933; }
+  .v-group:last-child { border-bottom:0; }
+  .v-source { display:flex; gap:8px; align-items:center; margin-bottom:5px; }
+  .v-source strong { flex:1; }
+  .v-code { color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .v-map { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center;
+           margin:5px 0 5px 18px; color:var(--muted); font-size:12px; }
+  .v-map b { color:var(--fg); font-weight:500; }
+  .validation .remove { color:#ff9b94; }
+  .validation-msg { color:var(--muted); font-size:12px; padding:0 12px 10px; min-height:18px; }
+  @media(max-width:700px){
+    .card{flex-wrap:wrap;} .review-actions{flex:1 1 100%; margin-left:34px;}
+    .v-map{grid-template-columns:1fr; margin-left:0;} input.source-code{flex:1 1 130px;}
+  }
   .hint { color:var(--muted); font-size:13px; }
   .hint b { color:var(--fg); }
   .status { display:flex; align-items:center; gap:14px; font-size:12px; color:var(--muted); margin-top:8px; flex-wrap:wrap; }
@@ -79,6 +125,26 @@
                    background:var(--card); color:var(--fg); cursor:pointer; }
   .status button:disabled { opacity:.5; cursor:default; }
   #statusmsg { color:var(--muted); }
+  .hierarchy-bar { display:flex; justify-content:flex-end; margin:-5px 0 10px; }
+  .hierarchy-bar button, .hierarchy-toolbar button { border:1px solid #353a45; border-radius:7px;
+          background:#20242c; color:var(--fg); padding:6px 10px; cursor:pointer; }
+  .hierarchy-bar button:disabled { opacity:.5; cursor:default; }
+  .hierarchy-modal { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.72);
+          display:flex; align-items:center; justify-content:center; padding:18px; }
+  .hierarchy-modal[hidden] { display:none; }
+  .hierarchy-panel { width:min(1500px,97vw); height:min(900px,94vh); display:flex; flex-direction:column;
+          border:1px solid #3a404d; border-radius:12px; background:#11141a; overflow:hidden; }
+  .hierarchy-head { display:flex; gap:12px; align-items:center; padding:10px 14px;
+          border-bottom:1px solid #2b2f38; }
+  .hierarchy-head strong { margin-right:auto; }
+  .hierarchy-toolbar { display:flex; gap:6px; }
+  .hierarchy-legend { display:flex; gap:14px; flex-wrap:wrap; padding:7px 14px; color:var(--muted);
+          font-size:11px; border-bottom:1px solid #232832; }
+  .legend-swatch { width:12px; height:12px; display:inline-block; margin-right:4px;
+          border-radius:2px; vertical-align:-2px; }
+  .hierarchy-canvas { flex:1; min-height:0; background:#0c0f14; cursor:grab; touch-action:none; }
+  .hierarchy-canvas.dragging { cursor:grabbing; }
+  .hierarchy-note { padding:6px 14px; color:var(--muted); font-size:11px; border-top:1px solid #232832; }
 </style>
 </head>
 <body>
@@ -90,7 +156,7 @@
     <a class="arch-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
     <a class="arch-link" href="/static/map.html" target="_blank" rel="noopener">map ↗</a>
   </div>
-  <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
+  <div class="sub">Búsqueda bilingüe EN/ES: lexical multi-prefijo + semántica BioLORD cuando está disponible</div>
   <div class="status" id="status">
     <span class="item"><span class="dot" id="d-db"></span> DB</span>
     <span class="item"><span class="dot" id="d-llm"></span> LLM</span>
@@ -101,8 +167,10 @@
 </header>
 <div class="wrap">
   <div class="searchbar">
+    <input id="sourceCode" class="source-code" type="text" placeholder="Código MAI"
+           title="Código de la prestación de origen; se incluirá en el Excel">
     <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
-    <label class="toggle"><input id="gemma" type="checkbox" checked> pre-process</label>
+    <label class="toggle"><input id="gemma" type="checkbox"> pre-process</label>
     <label class="toggle"><input id="rerank" type="checkbox"> rerank</label>
     <label class="toggle" title="Third layer: a local LLM picks the best candidate using the context below">
       <input id="llmsel" type="checkbox"> llm pick</label>
@@ -125,10 +193,45 @@
     <button class="chip" data-sctid="243796009">Situation</button>
     <button class="chip" data-sctid="">none</button>
   </div>
+  <section class="validation" aria-label="Revisión de mapeos">
+    <div class="validation-head">
+      <span class="validation-title">Revisión de mapeos</span>
+      <span class="validation-count" id="validationCount">0 prestaciones · 0 conceptos</span>
+      <button id="toggleValidated" type="button">Ver selección</button>
+      <button class="remove" id="clearValidated" type="button" disabled>Vaciar revisión</button>
+      <button class="export" id="exportValidated" type="button" disabled>Descargar Excel</button>
+    </div>
+    <div class="validation-list" id="validationList" hidden></div>
+    <div class="validation-msg" id="validationMsg">Selecciona un mapeo o registra el motivo para descartarlo.</div>
+  </section>
   <div class="meta" id="meta"></div>
+  <div class="hierarchy-bar"><button id="showHierarchy" type="button" disabled>Ver jerarquía de resultados</button></div>
   <div id="results">
     <p class="hint">Type a query in Spanish or English. Try "badly worded" terms:
       <b>heart attack</b>, <b>azucar alta</b>, <b>water on the knee</b>, <b>rinon inflamado</b>.</p>
+  </div>
+</div>
+<div class="hierarchy-modal" id="hierarchyModal" hidden role="dialog" aria-modal="true" aria-labelledby="hierarchyTitle">
+  <div class="hierarchy-panel">
+    <div class="hierarchy-head">
+      <strong id="hierarchyTitle">Jerarquía SNOMED CT de los resultados</strong>
+      <div class="hierarchy-toolbar">
+        <button id="hierarchyZoomOut" type="button" title="Alejar">−</button>
+        <button id="hierarchyFit" type="button">Centrar</button>
+        <button id="hierarchyZoomIn" type="button" title="Acercar">+</button>
+        <button id="hierarchyDownload" type="button">Descargar SVG</button>
+        <button id="hierarchyClose" type="button">Cerrar</button>
+      </div>
+    </div>
+    <div class="hierarchy-legend">
+      <span><i class="legend-swatch" style="background:#2e7d32"></i>Seleccionado</span>
+      <span><i class="legend-swatch" style="background:#9f4f4f"></i>Descartado</span>
+      <span><i class="legend-swatch" style="background:#c2410c"></i>Resultado sin revisar</span>
+      <span><i class="legend-swatch" style="background:#7c83b9"></i>Ancestro intermedio</span>
+      <span>Las flechas apuntan hacia el concepto padre</span>
+    </div>
+    <svg class="hierarchy-canvas" id="hierarchySvg" aria-label="Diagrama jerárquico SNOMED CT"></svg>
+    <div class="hierarchy-note" id="hierarchyNote"></div>
   </div>
 </div>
 <script>
@@ -139,15 +242,24 @@ const llmsel = document.getElementById('llmsel');
 const ctxrow = document.getElementById('ctxrow');
 const contextEl = document.getElementById('context');
 const filterEl = document.getElementById('filter');
+const sourceCodeEl = document.getElementById('sourceCode');
+const validationCount = document.getElementById('validationCount');
+const validationList = document.getElementById('validationList');
+const validationMsg = document.getElementById('validationMsg');
+const toggleValidated = document.getElementById('toggleValidated');
+const clearValidated = document.getElementById('clearValidated');
+const exportValidated = document.getElementById('exportValidated');
+const showHierarchy = document.getElementById('showHierarchy');
+const hierarchyModal = document.getElementById('hierarchyModal');
+const hierarchySvg = document.getElementById('hierarchySvg');
+const hierarchyNote = document.getElementById('hierarchyNote');
 
-// Persist the pre-process / rerank / llm-pick options across reloads.
-const PREFS_KEY = 'snomed-search-prefs';
+// Search layers intentionally start disabled on every page load.  Only the free-text
+// context is remembered; activating an expensive layer is always an explicit user action.
+const PREFS_KEY = 'snomed-search-prefs-v2';
 (function restorePrefs(){
   try {
     const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-    if (typeof p.gemma === 'boolean') gemma.checked = p.gemma;
-    if (typeof p.rerank === 'boolean') rerank.checked = p.rerank;
-    if (typeof p.llmsel === 'boolean') llmsel.checked = p.llmsel;
     if (typeof p.context === 'string' && p.context) contextEl.value = p.context;
   } catch(e) {}
   ctxrow.hidden = !llmsel.checked;          // context box only visible when layer 3 is enabled
@@ -155,16 +267,453 @@ const PREFS_KEY = 'snomed-search-prefs';
 function savePrefs(){
   try {
     localStorage.setItem(PREFS_KEY, JSON.stringify({
-      gemma: gemma.checked, rerank: rerank.checked,
-      llmsel: llmsel.checked, context: contextEl.value,
+      context: contextEl.value,
     }));
   } catch(e) {}
+}
+
+// A browser-local review basket. One source record may contain several selected SNOMED targets,
+// which represents a deliberate MAI 1:N mapping rather than a list of unreviewed alternatives.
+const VALIDATED_KEY = 'snomed-validated-mappings-v1';
+const REJECTED_KEY = 'snomed-rejected-mappings-v1';
+const OBSERVATIONS_KEY = 'snomed-candidate-observations-v1';
+let validatedRecords = [];
+let rejectedRecords = [];
+let observationRecords = [];
+const openObservationKeys = new Set();
+let latestResults = [], latestQuery = '';
+try {
+  const stored = JSON.parse(localStorage.getItem(VALIDATED_KEY) || '[]');
+  if(Array.isArray(stored)) validatedRecords = stored;
+} catch(e) {}
+try {
+  const stored = JSON.parse(localStorage.getItem(OBSERVATIONS_KEY) || '[]');
+  if(Array.isArray(stored)) observationRecords = stored;
+} catch(e) {}
+try {
+  const stored = JSON.parse(localStorage.getItem(REJECTED_KEY) || '[]');
+  if(Array.isArray(stored)) rejectedRecords = stored;
+} catch(e) {}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .toLowerCase().trim().replace(/\s+/g,' ');
+function sourceKey(code=sourceCodeEl.value, term=q.value){
+  const c = String(code || '').trim();
+  return c ? `code:${norm(c)}` : `term:${norm(term)}`;
+}
+function currentRecord(){
+  const key = sourceKey();
+  return validatedRecords.find(r => r.key === key);
+}
+function currentMapping(cid){
+  const rec = currentRecord();
+  return rec && rec.mappings.find(m => String(m.concept_id) === String(cid));
+}
+function isCurrentValidated(cid){
+  const rec = currentRecord();
+  return !!(rec && rec.mappings.some(m => String(m.concept_id) === String(cid)));
+}
+function saveValidated(){
+  localStorage.setItem(VALIDATED_KEY, JSON.stringify(validatedRecords));
+}
+function saveRejected(){
+  localStorage.setItem(REJECTED_KEY, JSON.stringify(rejectedRecords));
+}
+function saveObservations(){
+  localStorage.setItem(OBSERVATIONS_KEY, JSON.stringify(observationRecords));
+}
+function observationKey(cid){ return `${sourceKey()}|${String(cid)}`; }
+function currentObservation(cid){
+  const rec = observationRecords.find(r => r.key === sourceKey());
+  return rec && rec.observations.find(x => String(x.concept_id) === String(cid));
+}
+function setCandidateObservation(cid, text){
+  const result = latestResults.find(r => String(r.concept_id) === String(cid));
+  if(!result || norm(q.value) !== norm(latestQuery)) return;
+  let rec = observationRecords.find(r => r.key === sourceKey());
+  if(!rec){
+    rec = {key:sourceKey(), source_code:sourceCodeEl.value.trim(),
+           source_term:q.value.trim(), observations:[]};
+    observationRecords.push(rec);
+  }
+  let item = rec.observations.find(x => String(x.concept_id) === String(cid));
+  if(!item){ item = {concept_id:String(cid)}; rec.observations.push(item); }
+  item.term = result.display_term || result.fsn || result.matched_term || '';
+  item.matched_term = result.matched_term || '';
+  item.semantic_tag = result.display_semantic_tag || result.semantic_tag || '';
+  item.text = text;
+  item.context = contextEl.value.trim();
+  item.updated_at = new Date().toISOString();
+  if(!text.trim()){
+    rec.observations = rec.observations.filter(x => x !== item);
+    if(!rec.observations.length) observationRecords = observationRecords.filter(r => r !== rec);
+  }
+  saveObservations(); renderValidatedPanel();
+}
+function currentRejection(cid){
+  const rec = rejectedRecords.find(r => r.key === sourceKey());
+  return rec && rec.rejections.find(x => String(x.concept_id) === String(cid));
+}
+function removeRejection(cid){
+  const rec = rejectedRecords.find(r => r.key === sourceKey());
+  if(!rec) return false;
+  const before = rec.rejections.length;
+  rec.rejections = rec.rejections.filter(x => String(x.concept_id) !== String(cid));
+  if(!rec.rejections.length) rejectedRecords = rejectedRecords.filter(r => r !== rec);
+  return rec.rejections.length !== before;
+}
+function removeSelectedMapping(cid){
+  const rec = currentRecord();
+  if(!rec) return false;
+  const before = rec.mappings.length;
+  rec.mappings = rec.mappings.filter(m => String(m.concept_id) !== String(cid));
+  if(!rec.mappings.length) validatedRecords = validatedRecords.filter(r => r !== rec);
+  return rec.mappings.length !== before;
+}
+function setRejection(cid, reason, detail=''){
+  if(!q.value.trim() || norm(q.value) !== norm(latestQuery)) return;
+  const result = latestResults.find(r => String(r.concept_id) === String(cid));
+  if(!result) return;
+  if(!reason){
+    if(removeRejection(cid)){ saveRejected(); renderValidatedPanel(); }
+    return;
+  }
+  removeSelectedMapping(cid);
+  let rec = rejectedRecords.find(r => r.key === sourceKey());
+  if(!rec){
+    rec = {key:sourceKey(), source_code:sourceCodeEl.value.trim(),
+           source_term:q.value.trim(), rejections:[]};
+    rejectedRecords.push(rec);
+  }
+  let rejection = rec.rejections.find(x => String(x.concept_id) === String(cid));
+  if(!rejection){
+    rejection = {concept_id:String(cid)};
+    rec.rejections.push(rejection);
+  }
+  rejection.term = result.display_term || result.fsn || result.matched_term || '';
+  rejection.matched_term = result.matched_term || '';
+  rejection.semantic_tag = result.display_semantic_tag || result.semantic_tag || '';
+  rejection.reason = reason;
+  rejection.detail = reason === 'Otra justificación' ? detail : '';
+  rejection.context = contextEl.value.trim();
+  rejection.reviewed_at = new Date().toISOString();
+  saveValidated(); saveRejected(); renderValidatedPanel();
+}
+function rejectionOptions(selected=''){
+  const choices = [
+    ['', 'Justificar no selección…'],
+    ['No corresponde al método imagenológico', 'No corresponde al método imagenológico'],
+    ['No corresponde al sitio anatómico', 'No corresponde al sitio anatómico'],
+    ['Concepto muy genérico', 'Concepto muy genérico'],
+    ['Otra justificación', 'Otra justificación'],
+  ];
+  return choices.map(([v,l]) => `<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(l)}</option>`).join('');
+}
+function localizeValidatedMappings(searchResults){
+  let changed = false;
+  const byConcept = new Map((searchResults || []).map(r => [String(r.concept_id), r]));
+  validatedRecords.forEach(rec => rec.mappings.forEach(m => {
+    const r = byConcept.get(String(m.concept_id));
+    if(!r || !r.display_term) return;
+    if(m.fsn !== r.display_term){ m.fsn = r.display_term; changed = true; }
+    const tag = r.display_semantic_tag || r.semantic_tag || '';
+    if(tag && m.semantic_tag !== tag){ m.semantic_tag = tag; changed = true; }
+  }));
+  if(changed){ saveValidated(); renderValidatedPanel(); }
+}
+function flattenedReview(){
+  const rows = new Map();
+  const ensure = (rec, item) => {
+    const key = `${rec.key}|${String(item.concept_id)}`;
+    if(!rows.has(key)) rows.set(key, {
+      source_code:rec.source_code || '', source_term:rec.source_term || '',
+      concept_id:String(item.concept_id), fsn:item.fsn || item.term || '',
+      matched_term:item.matched_term || '', semantic_tag:item.semantic_tag || '',
+      status:'Sin decisión', rejection_reason:'', rejection_detail:'', reference:'',
+      selection_reason:'', observations:'', notes:item.notes || '', reviewed_at:'',
+    });
+    return rows.get(key);
+  };
+  validatedRecords.forEach(rec => rec.mappings.forEach(m => {
+    const row = ensure(rec,m);
+    Object.assign(row, {status:'Seleccionado', reference:m.reference || '',
+      notes:m.notes || '',
+      reviewed_at:m.reviewed_at || m.validated_at || ''});
+  }));
+  rejectedRecords.forEach(rec => rec.rejections.forEach(r => {
+    const row = ensure(rec,r);
+    Object.assign(row, {status:'Descartado', rejection_reason:r.reason || '',
+      rejection_detail:r.detail || '',
+      reviewed_at:r.reviewed_at || ''});
+  }));
+  observationRecords.forEach(rec => rec.observations.forEach(o => {
+    const row = ensure(rec,o);
+    if(row.status === 'Seleccionado') row.selection_reason = o.text || '';
+    else row.observations = o.text || '';
+    if(!row.reviewed_at) row.reviewed_at = o.updated_at || '';
+  }));
+  return [...rows.values()];
+}
+function renderValidatedPanel(){
+  const nMaps = validatedRecords.reduce((n,r)=>n+r.mappings.length,0);
+  const nRejected = rejectedRecords.reduce((n,r)=>n+r.rejections.length,0);
+  const nObserved = observationRecords.reduce((n,r)=>n+r.observations.length,0);
+  const nSources = new Set([...validatedRecords, ...rejectedRecords, ...observationRecords].map(r=>r.key)).size;
+  validationCount.textContent = `${nSources} prestaciones · ${nMaps} seleccionados · ${nRejected} descartados · ${nObserved} observados`;
+  exportValidated.disabled = nMaps + nRejected + nObserved === 0;
+  clearValidated.disabled = nMaps + nRejected + nObserved === 0;
+  if(!nMaps){
+    validationList.innerHTML = '<p class="hint">Aún no hay mapeos seleccionados.</p>';
+    return;
+  }
+  validationList.innerHTML = validatedRecords.map((rec,ri) => `
+    <div class="v-group">
+      <div class="v-source">
+        <strong>${rec.source_code ? `<span class="v-code">${esc(rec.source_code)}</span> · ` : ''}${esc(rec.source_term)}</strong>
+        <button class="remove" type="button" data-remove-record="${ri}">Quitar prestación</button>
+      </div>
+      ${rec.mappings.map((m,mi)=>`
+        <div class="v-map">
+          <span><b>${esc(m.fsn)}</b><br><span class="v-code">${esc(m.concept_id)}</span>${m.reference ? `<br>Referencia: ${esc(m.reference)}` : ''}</span>
+          <button class="remove" type="button" data-remove-map="${ri}:${mi}">Quitar</button>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function syncCardValidation(){
+  const currentIsFresh = norm(q.value) === norm(latestQuery);
+  results.querySelectorAll('.card[data-cid]').forEach(card => {
+    const on = currentIsFresh && isCurrentValidated(card.dataset.cid);
+    const rejected = currentIsFresh ? currentRejection(card.dataset.cid) : null;
+    card.classList.toggle('validated', on);
+    card.classList.toggle('rejected', !!rejected);
+    const btn = card.querySelector('.validate-btn');
+    if(btn){
+      btn.disabled = !currentIsFresh;
+      btn.classList.toggle('on', on);
+      btn.textContent = currentIsFresh ? (on ? 'Seleccionado' : 'Seleccionar') : 'Buscar primero';
+    }
+    const reject = card.querySelector('[data-reject]');
+    if(reject){ reject.disabled = !currentIsFresh; reject.value = rejected ? rejected.reason : ''; }
+    const other = card.querySelector('[data-reject-other]');
+    if(other) other.disabled = !currentIsFresh;
+    card.querySelectorAll('[data-reference],[data-observations]').forEach(el => el.disabled = !currentIsFresh);
+  });
+}
+function toggleMapping(cid){
+  const sourceTerm = q.value.trim();
+  if(!sourceTerm || norm(sourceTerm) !== norm(latestQuery)) return;
+  const result = latestResults.find(r => String(r.concept_id) === String(cid));
+  if(!result) return;
+  const key = sourceKey();
+  let rec = validatedRecords.find(r => r.key === key);
+  if(!rec){
+    rec = {key, source_code:sourceCodeEl.value.trim(), source_term:sourceTerm, mappings:[]};
+    validatedRecords.push(rec);
+  }
+  const idx = rec.mappings.findIndex(m => String(m.concept_id) === String(cid));
+  let added = false;
+  if(idx >= 0){
+    rec.mappings.splice(idx,1);
+    if(!rec.mappings.length) validatedRecords = validatedRecords.filter(r => r !== rec);
+  }else{
+    added = true;
+    removeRejection(cid);
+    rec.mappings.push({
+      concept_id:String(result.concept_id),
+      fsn:result.display_term || result.fsn || result.matched_term,
+      matched_term:result.matched_term || '',
+      semantic_tag:result.display_semantic_tag || result.semantic_tag || '',
+      reference:'', context:contextEl.value.trim(), notes:'',
+      reviewed_at:new Date().toISOString(),
+    });
+  }
+  saveValidated(); saveRejected(); renderValidatedPanel(); paintLatestResults();
+  validationMsg.textContent = added
+    ? 'Mapeo seleccionado. Puedes seleccionar más de un concepto para una relación 1:N.'
+    : 'Mapeo retirado de la selección.';
+}
+function setReference(cid, reference){
+  const mapping = currentMapping(cid);
+  if(!mapping) return;
+  mapping.reference = reference;
+  mapping.reviewed_at = new Date().toISOString();
+  saveValidated(); renderValidatedPanel();
+}
+async function downloadValidatedExcel(){
+  const mappings = flattenedReview();
+  if(!mappings.length) return;
+  exportValidated.disabled = true;
+  validationMsg.textContent = 'Generando Excel…';
+  try{
+    const response = await fetch('/api/validated/export', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mappings}),
+    });
+    if(!response.ok){
+      const detail = await response.text();
+      throw new Error(detail || `HTTP ${response.status}`);
+    }
+    const blob = await response.blob();
+    const cd = response.headers.get('content-disposition') || '';
+    const match = cd.match(/filename="?([^";]+)"?/i);
+    const name = match ? match[1] : 'revision_mapeos_mai_snomed.xlsx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download=name;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    validationMsg.textContent = `Excel generado con ${mappings.length} candidatos revisados.`;
+  }catch(e){
+    validationMsg.textContent = `No se pudo generar el Excel: ${e.message}`;
+  }finally{
+    exportValidated.disabled = false;
+  }
 }
 const meta = document.getElementById('meta');
 const results = document.getElementById('results');
 let timer = null, seq = 0, inflight = null;
+let hierarchyData = null, hierarchyResultKey = '', hierarchyFocusId = null;
+let hierarchyTransform = {x:0, y:0, k:1};
+let hierarchyGraphSize = {width:1, height:1};
 
 function badge(ch){ return `<span class="badge b-${ch}">${ch}</span>`; }
+
+function hierarchyKey(rows=latestResults){
+  return (rows || []).map(r=>String(r.concept_id)).join(',');
+}
+function relationHtml(cid){
+  if(!hierarchyData || hierarchyResultKey !== hierarchyKey()) return '';
+  const rel = hierarchyData.relations[String(cid)];
+  if(!rel) return '';
+  const ranks = new Map(latestResults.map((r,i)=>[String(r.concept_id),i+1]));
+  const labels = [];
+  rel.direct_parents.forEach(x=>labels.push(`Hijo directo de #${ranks.get(x)}`));
+  rel.direct_children.forEach(x=>labels.push(`Padre directo de #${ranks.get(x)}`));
+  rel.ancestors.forEach(x=>labels.push(`Descendiente de #${ranks.get(x)}`));
+  rel.descendants.forEach(x=>labels.push(`Ancestro de #${ranks.get(x)}`));
+  const badges = labels.map(x=>`<span class="hier-relation">${esc(x)}</span>`).join('');
+  return `<div class="hier-relations">${badges}</div><button class="hier-card-btn" type="button" data-focus-hierarchy="${esc(cid)}">Ver en jerarquía</button>`;
+}
+async function loadHierarchy(rows){
+  const key = hierarchyKey(rows);
+  hierarchyData = null; hierarchyResultKey = key;
+  showHierarchy.disabled = true;
+  showHierarchy.textContent = 'Cargando jerarquía…';
+  if(!rows.length) return;
+  try{
+    const response = await fetch('/api/hierarchy', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({concept_ids:rows.map(r=>String(r.concept_id)), max_depth:8, max_nodes:120}),
+    });
+    if(!response.ok) throw new Error(await response.text());
+    const data = await response.json();
+    if(key !== hierarchyKey()) return;
+    hierarchyData = data;
+    showHierarchy.disabled = false;
+    showHierarchy.textContent = 'Ver jerarquía de resultados';
+    paintLatestResults();
+  }catch(e){
+    if(key !== hierarchyKey()) return;
+    showHierarchy.disabled = true;
+    showHierarchy.textContent = 'Jerarquía no disponible';
+  }
+}
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgNode(name, attrs={}){
+  const el = document.createElementNS(SVG_NS,name);
+  Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));
+  return el;
+}
+function wrapHierarchyTerm(text, max=31){
+  const words=String(text||'').split(/\s+/), lines=[''];
+  words.forEach(word=>{
+    const last=lines.length-1;
+    if((lines[last]+' '+word).trim().length<=max || lines.length===2) lines[last]=(lines[last]+' '+word).trim();
+    else lines.push(word);
+  });
+  if(lines[1] && lines[1].length>max+8) lines[1]=lines[1].slice(0,max+5)+'…';
+  return lines.slice(0,2);
+}
+function hierarchyFill(node){
+  if(!node.is_result) return '#525a87';
+  if(isCurrentValidated(node.id)) return '#2e7d32';
+  if(currentRejection(node.id)) return '#8e4141';
+  return '#b54a13';
+}
+function applyHierarchyTransform(){
+  const viewport=hierarchySvg.querySelector('[data-hierarchy-viewport]');
+  if(viewport) viewport.setAttribute('transform',`translate(${hierarchyTransform.x} ${hierarchyTransform.y}) scale(${hierarchyTransform.k})`);
+}
+function fitHierarchy(){
+  const box=hierarchySvg.getBoundingClientRect();
+  const k=Math.min((box.width-30)/hierarchyGraphSize.width,(box.height-30)/hierarchyGraphSize.height,1.25);
+  hierarchyTransform={x:(box.width-hierarchyGraphSize.width*k)/2,y:(box.height-hierarchyGraphSize.height*k)/2,k};
+  applyHierarchyTransform();
+}
+function drawHierarchy(focusId=null){
+  if(!hierarchyData) return;
+  hierarchyFocusId=focusId ? String(focusId) : null;
+  hierarchySvg.replaceChildren();
+  const defs=svgNode('defs');
+  const marker=svgNode('marker',{id:'hierArrow',viewBox:'0 0 10 10',refX:9,refY:5,
+    markerWidth:7,markerHeight:7,orient:'auto-start-reverse'});
+  marker.appendChild(svgNode('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'#8f98a8'}));
+  defs.appendChild(marker); hierarchySvg.appendChild(defs);
+  const viewport=svgNode('g',{'data-hierarchy-viewport':'1'}); hierarchySvg.appendChild(viewport);
+  const nodes=new Map(hierarchyData.nodes.map(n=>[String(n.id),n]));
+  const level=new Map([...nodes.keys()].map(id=>[id,0]));
+  for(let i=0;i<nodes.size;i++){
+    let changed=false;
+    hierarchyData.edges.forEach(e=>{
+      const next=(level.get(String(e.child))||0)+1, pid=String(e.parent);
+      if(next>(level.get(pid)||0)){level.set(pid,next);changed=true;}
+    });
+    if(!changed) break;
+  }
+  const groups=new Map();
+  nodes.forEach((n,id)=>{const l=level.get(id)||0;if(!groups.has(l))groups.set(l,[]);groups.get(l).push(n);});
+  groups.forEach(arr=>arr.sort((a,b)=>(a.result_rank||999)-(b.result_rank||999)||a.term.localeCompare(b.term)));
+  const nodeW=230,nodeH=66,gapX=28,gapY=66,pad=34,maxLevel=Math.max(0,...groups.keys());
+  const maxAcross=Math.max(1,...[...groups.values()].map(a=>a.length));
+  const graphW=pad*2+maxAcross*nodeW+(maxAcross-1)*gapX;
+  const graphH=pad*2+(maxLevel+1)*nodeH+maxLevel*gapY;
+  hierarchyGraphSize={width:graphW,height:graphH};
+  const pos=new Map();
+  groups.forEach((arr,l)=>{
+    const rowW=arr.length*nodeW+(arr.length-1)*gapX, start=(graphW-rowW)/2;
+    arr.forEach((n,i)=>pos.set(String(n.id),{x:start+i*(nodeW+gapX),y:pad+(maxLevel-l)*(nodeH+gapY)}));
+  });
+  const edgeLayer=svgNode('g'); viewport.appendChild(edgeLayer);
+  hierarchyData.edges.forEach(e=>{
+    const c=pos.get(String(e.child)),p=pos.get(String(e.parent)); if(!c||!p)return;
+    const x1=c.x+nodeW/2,y1=c.y,x2=p.x+nodeW/2,y2=p.y+nodeH;
+    const mid=(y1+y2)/2;
+    edgeLayer.appendChild(svgNode('path',{d:`M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2}`,
+      fill:'none',stroke:'#747d8d','stroke-width':1.5,'marker-end':'url(#hierArrow)'}));
+  });
+  const nodeLayer=svgNode('g'); viewport.appendChild(nodeLayer);
+  nodes.forEach((n,id)=>{
+    const p=pos.get(id),g=svgNode('g',{transform:`translate(${p.x} ${p.y})`,'data-node-id':id,style:'cursor:pointer'});
+    const focused=hierarchyFocusId===id;
+    g.appendChild(svgNode('rect',{width:nodeW,height:nodeH,rx:6,fill:hierarchyFill(n),
+      stroke:focused?'#ffd166':n.is_result?'#dbeafe':'#9aa3c8','stroke-width':focused?4:n.is_result?2:1.2}));
+    const lines=wrapHierarchyTerm(n.term);
+    lines.forEach((line,i)=>{
+      const t=svgNode('text',{x:10,y:18+i*15,fill:'#fff','font-size':11,'font-family':'-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif'});
+      t.textContent=line; g.appendChild(t);
+    });
+    const sub=svgNode('text',{x:10,y:nodeH-9,fill:'#dbe3ee','font-size':9.5,'font-family':'ui-monospace,SFMono-Regular,monospace'});
+    sub.textContent=`${n.id}${n.is_result?' · resultado #'+n.result_rank:''}`; g.appendChild(sub);
+    g.addEventListener('click',()=>{drawHierarchy(id);fitHierarchy();hierarchyNote.textContent=`${n.term} · ${n.id}`;});
+    nodeLayer.appendChild(g);
+  });
+  hierarchyNote.textContent=`${nodes.size} conceptos · ${hierarchyData.edges.length} relaciones IS-A directas${hierarchyData.truncated?' · vista limitada para mantener legibilidad':''}`;
+}
+function openHierarchy(focusId=null){
+  if(!hierarchyData) return;
+  hierarchyModal.hidden=false; drawHierarchy(focusId);
+  requestAnimationFrame(fitHierarchy);
+}
 
 const STAGE_TEXT = {
   expand:     'pre-processing (gemma)…',
@@ -197,21 +746,50 @@ function metaLine(data, live){
 }
 
 function cardHtml(r, i){
-  return `<div class="card${r.llm_pick ? ' llmpick' : ''}" data-cid="${r.concept_id}">
+  const selected = isCurrentValidated(r.concept_id);
+  const mapping = currentMapping(r.concept_id);
+  const rejected = currentRejection(r.concept_id);
+  const observation = currentObservation(r.concept_id);
+  const observationsOpen = openObservationKeys.has(observationKey(r.concept_id)) || !!observation;
+  const displayTerm = r.display_term || r.fsn || r.matched_term;
+  const displayTag = r.display_semantic_tag || r.semantic_tag;
+  return `<div class="card${r.llm_pick ? ' llmpick' : ''}${selected ? ' validated' : ''}${rejected ? ' rejected' : ''}" data-cid="${r.concept_id}">
     <span class="rank">${i+1}</span>
     <div>
-      <div class="term">${r.fsn || r.matched_term} ${r.semantic_tag?`<span class="tag">· ${r.semantic_tag}</span>`:''}</div>
-      <div class="cid">${r.concept_id}${r.matched_term && r.fsn && r.matched_term!==r.fsn ? ' · match: '+r.matched_term : ''}</div>
-      ${r.llm_pick && r.llm_reason ? `<div class="reason">llm: ${r.llm_reason}</div>` : ''}
+      <div class="term">${esc(displayTerm)} ${displayTag?`<span class="tag">· ${esc(displayTag)}</span>`:''}</div>
+      <div class="cid">${esc(r.concept_id)}</div>
+      ${r.llm_pick && r.llm_reason ? `<div class="reason">llm: ${esc(r.llm_reason)}</div>` : ''}
+      ${relationHtml(r.concept_id)}
     </div>
     ${r.llm_pick ? '<span class="badge b-llm">LLM pick</span>' : ''}
     ${r.is_exact ? '<span class="badge b-exact">exact</span>' : ''}
     ${badge(r.channel)}
+    <div class="review-actions">
+      <button class="validate-btn${selected?' on':''}" type="button" data-validate="${r.concept_id}">${selected?'Seleccionado':'Seleccionar'}</button>
+      ${selected ? `
+        <label class="review-field">Referencia bibliográfica
+          <textarea data-reference="${r.concept_id}" placeholder="Ingrese la referencia bibliográfica…">${esc(mapping && mapping.reference || '')}</textarea>
+        </label>` : `
+        <select data-reject="${r.concept_id}" aria-label="Justificación de no selección">
+          ${rejectionOptions(rejected ? rejected.reason : '')}
+        </select>
+        ${rejected && rejected.reason === 'Otra justificación' ? `<label class="review-field">Otra justificación<textarea class="reject-other" data-reject-other="${r.concept_id}" placeholder="Ingrese la justificación…">${esc(rejected.detail || '')}</textarea></label>` : ''}`}
+      <button class="observations-toggle" type="button" data-observations-toggle="${r.concept_id}">${observationsOpen ? (selected ? 'Ocultar motivo de selección' : 'Ocultar observaciones') : (selected ? 'Motivo de selección' : 'Observaciones adicionales')}</button>
+      ${observationsOpen ? `<label class="review-field">${selected ? 'Motivo de selección' : 'Observaciones adicionales'}<textarea data-observations="${r.concept_id}" placeholder="${selected ? 'Ingrese el motivo de selección…' : 'Ingrese observaciones adicionales…'}">${esc(observation && observation.text || '')}</textarea></label>` : ''}
+    </div>
     <span class="score">${r.score}</span>
   </div>`;
 }
 
+function paintLatestResults(){
+  if(!latestResults.length) return;
+  results.innerHTML = latestResults.map(cardHtml).join('');
+}
+
 function paintResults(data){   // full render (cards only; caller sets meta)
+  latestQuery = data.query || q.value.trim();
+  latestResults = data.results || [];
+  localizeValidatedMappings(latestResults);
   results.innerHTML = data.results.length
     ? data.results.map(cardHtml).join('')
     : '<p class="hint">No results.</p>';
@@ -219,6 +797,9 @@ function paintResults(data){   // full render (cards only; caller sets meta)
 
 // FLIP animation: reorder the existing cards to the new (reranked) order and animate the move.
 function animateReorder(data){
+  latestQuery = data.query || latestQuery;
+  latestResults = data.results || latestResults;
+  localizeValidatedMappings(latestResults);
   const cards = {};
   [...results.children].forEach(el=>{ if(el.dataset && el.dataset.cid) cards[el.dataset.cid]=el; });
   const cids = data.results.map(r=>String(r.concept_id));
@@ -239,6 +820,7 @@ function animateReorder(data){
     }
     results.appendChild(el);
   });
+  syncCardValidation();
   cids.forEach(c=>{                                            // Last + Invert + Play
     const el = cards[c];
     const dy = first[c] - el.getBoundingClientRect().top;
@@ -256,8 +838,10 @@ function animateReorder(data){
 
 async function run(){
   const query = q.value.trim();
-  if(!query){ results.innerHTML=''; meta.textContent=''; return; }
+  if(!query){ latestQuery=''; latestResults=[]; hierarchyData=null; results.innerHTML=''; meta.textContent=''; showHierarchy.disabled=true; return; }
   const mySeq = ++seq;
+  hierarchyData=null; hierarchyResultKey='';
+  showHierarchy.disabled=true; showHierarchy.textContent='Ver jerarquía de resultados';
   meta.textContent = '';
   if(inflight) inflight.abort();          // cancel the previous in-flight search
   const ctrl = new AbortController();
@@ -327,6 +911,7 @@ async function run(){
       if(doneData.reranked || doneData.llm_selected) animateReorder(doneData);   // animate the reordering
       else if(!previewShown) paintResults(doneData);
       meta.innerHTML = metaLine(doneData);
+      loadHierarchy(doneData.results || []);
       if(wake.style.display !== 'none') checkHealth();   // a search warms the model → refresh panel
     }
   }catch(e){
@@ -386,24 +971,148 @@ chips.addEventListener('click', (e)=>{
   markActiveChip(); run();
 });
 
-q.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(run, 1100); });
+q.addEventListener('input', ()=>{ syncCardValidation(); clearTimeout(timer); timer=setTimeout(run, 1100); });
 filterEl.addEventListener('input', ()=>{ markActiveChip(); clearTimeout(timer); timer=setTimeout(run, 1100); });
 q.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ clearTimeout(timer); run(); } });  // search now
+sourceCodeEl.addEventListener('input', paintLatestResults);
 gemma.addEventListener('change', ()=>{ savePrefs(); run(); });
 rerank.addEventListener('change', ()=>{ savePrefs(); run(); });
 llmsel.addEventListener('change', ()=>{ ctxrow.hidden = !llmsel.checked; savePrefs(); run(); });
 contextEl.addEventListener('input', ()=>{ savePrefs(); clearTimeout(timer); timer=setTimeout(run, 1100); });
 
-// Deep-link support: /?q=…&gemma=1&rerank=1&filter=71388002 — used by the test runner to open a
-// case in the full search UI (URL params override the saved prefs for this load).
+results.addEventListener('click', e => {
+  const hierarchyButton = e.target.closest('[data-focus-hierarchy]');
+  if(hierarchyButton){ openHierarchy(hierarchyButton.dataset.focusHierarchy); return; }
+  const observationsButton = e.target.closest('[data-observations-toggle]');
+  if(observationsButton){
+    const key = observationKey(observationsButton.dataset.observationsToggle);
+    if(openObservationKeys.has(key)) openObservationKeys.delete(key); else openObservationKeys.add(key);
+    paintLatestResults();
+    return;
+  }
+  const button = e.target.closest('[data-validate]');
+  if(button && !button.disabled) toggleMapping(button.dataset.validate);
+});
+showHierarchy.addEventListener('click',()=>openHierarchy());
+document.getElementById('hierarchyClose').addEventListener('click',()=>{hierarchyModal.hidden=true;});
+document.getElementById('hierarchyFit').addEventListener('click',fitHierarchy);
+document.getElementById('hierarchyZoomIn').addEventListener('click',()=>{
+  hierarchyTransform.k=Math.min(3,hierarchyTransform.k*1.2); applyHierarchyTransform();
+});
+document.getElementById('hierarchyZoomOut').addEventListener('click',()=>{
+  hierarchyTransform.k=Math.max(.12,hierarchyTransform.k/1.2); applyHierarchyTransform();
+});
+hierarchyModal.addEventListener('click',e=>{if(e.target===hierarchyModal)hierarchyModal.hidden=true;});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!hierarchyModal.hidden)hierarchyModal.hidden=true;});
+hierarchySvg.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const rect=hierarchySvg.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const old=hierarchyTransform.k,next=Math.max(.12,Math.min(3,old*(e.deltaY<0?1.12:.89)));
+  hierarchyTransform.x=mx-(mx-hierarchyTransform.x)*(next/old);
+  hierarchyTransform.y=my-(my-hierarchyTransform.y)*(next/old);
+  hierarchyTransform.k=next; applyHierarchyTransform();
+},{passive:false});
+let hierarchyDrag=null;
+hierarchySvg.addEventListener('pointerdown',e=>{
+  hierarchyDrag={x:e.clientX,y:e.clientY,tx:hierarchyTransform.x,ty:hierarchyTransform.y};
+  hierarchySvg.setPointerCapture(e.pointerId); hierarchySvg.classList.add('dragging');
+});
+hierarchySvg.addEventListener('pointermove',e=>{
+  if(!hierarchyDrag)return;
+  hierarchyTransform.x=hierarchyDrag.tx+e.clientX-hierarchyDrag.x;
+  hierarchyTransform.y=hierarchyDrag.ty+e.clientY-hierarchyDrag.y; applyHierarchyTransform();
+});
+hierarchySvg.addEventListener('pointerup',()=>{hierarchyDrag=null;hierarchySvg.classList.remove('dragging');});
+document.getElementById('hierarchyDownload').addEventListener('click',()=>{
+  if(!hierarchyData)return;
+  const clone=hierarchySvg.cloneNode(true),viewport=clone.querySelector('[data-hierarchy-viewport]');
+  clone.setAttribute('xmlns',SVG_NS); clone.setAttribute('width',hierarchyGraphSize.width);
+  clone.setAttribute('height',hierarchyGraphSize.height); clone.setAttribute('viewBox',`0 0 ${hierarchyGraphSize.width} ${hierarchyGraphSize.height}`);
+  if(viewport)viewport.setAttribute('transform','translate(0 0) scale(1)');
+  const bg=svgNode('rect',{width:'100%',height:'100%',fill:'#0c0f14'}); clone.insertBefore(bg,clone.firstChild);
+  const blob=new Blob([new XMLSerializer().serializeToString(clone)],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='jerarquia_snomed_resultados.svg';
+  document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+});
+results.addEventListener('change', e => {
+  const select = e.target.closest('[data-reject]');
+  if(!select) return;
+  setRejection(select.dataset.reject, select.value);
+  paintLatestResults();
+  validationMsg.textContent = select.value
+    ? 'Motivo de no selección guardado en este navegador.'
+    : 'Se retiró el motivo de no selección.';
+});
+results.addEventListener('input', e => {
+  const reference = e.target.closest('[data-reference]');
+  if(reference){
+    setReference(reference.dataset.reference, reference.value);
+    validationMsg.textContent = 'Referencia bibliográfica guardada.';
+    return;
+  }
+  const observations = e.target.closest('[data-observations]');
+  if(observations){
+    setCandidateObservation(observations.dataset.observations, observations.value);
+    validationMsg.textContent = isCurrentValidated(observations.dataset.observations)
+      ? 'Motivo de selección guardado.'
+      : 'Observaciones adicionales guardadas.';
+    return;
+  }
+  const other = e.target.closest('[data-reject-other]');
+  if(!other) return;
+  setRejection(other.dataset.rejectOther, 'Otra justificación', other.value);
+  validationMsg.textContent = 'Justificación personalizada guardada.';
+});
+toggleValidated.addEventListener('click', ()=>{
+  validationList.hidden = !validationList.hidden;
+  toggleValidated.textContent = validationList.hidden ? 'Ver selección' : 'Ocultar selección';
+});
+exportValidated.addEventListener('click', downloadValidatedExcel);
+clearValidated.addEventListener('click', ()=>{
+  if(!validatedRecords.length && !rejectedRecords.length && !observationRecords.length) return;
+  const nMaps = validatedRecords.reduce((n,r)=>n+r.mappings.length,0);
+  const nRejected = rejectedRecords.reduce((n,r)=>n+r.rejections.length,0);
+  const nObserved = observationRecords.reduce((n,r)=>n+r.observations.length,0);
+  const ok = window.confirm(
+    `Se eliminarán ${nMaps} mapeos seleccionados, ${nRejected} descartes y ${nObserved} observaciones guardadas en este navegador. ` +
+    'Esta acción no se puede deshacer. ¿Deseas continuar?'
+  );
+  if(!ok) return;
+  validatedRecords = [];
+  rejectedRecords = [];
+  observationRecords = [];
+  openObservationKeys.clear();
+  localStorage.removeItem(VALIDATED_KEY);
+  localStorage.removeItem(REJECTED_KEY);
+  localStorage.removeItem(OBSERVATIONS_KEY);
+  renderValidatedPanel(); paintLatestResults();
+  validationMsg.textContent = 'Se vaciaron las validaciones guardadas en este navegador.';
+});
+validationList.addEventListener('click', e => {
+  const recordButton = e.target.closest('[data-remove-record]');
+  const mapButton = e.target.closest('[data-remove-map]');
+  if(recordButton){
+    validatedRecords.splice(Number(recordButton.dataset.removeRecord),1);
+  }else if(mapButton){
+    const [ri,mi] = mapButton.dataset.removeMap.split(':').map(Number);
+    if(validatedRecords[ri]){
+      validatedRecords[ri].mappings.splice(mi,1);
+      if(!validatedRecords[ri].mappings.length) validatedRecords.splice(ri,1);
+    }
+  }else return;
+  saveValidated(); renderValidatedPanel(); syncCardValidation();
+  validationMsg.textContent = 'Selección actualizada.';
+});
+renderValidatedPanel();
+
+// Deep-link support for the query and hierarchy filter. Search layers remain disabled
+// even when an older saved URL contains gemma/rerank flags.
 (function applyUrlParams(){
   const p = new URLSearchParams(location.search);
   if(!p.has('q')) return;
   q.value = p.get('q') || '';
-  const bool = v => v === '1' || v === 'true';
-  if(p.has('gemma'))  gemma.checked  = bool(p.get('gemma'));
-  if(p.has('rerank')) rerank.checked = bool(p.get('rerank'));
   if(p.has('filter')) filterEl.value = p.get('filter') || '';
+  if(p.has('code')) sourceCodeEl.value = p.get('code') || '';
   markActiveChip();
   run();
 })();
