@@ -253,6 +253,7 @@
       <span class="validation-count" id="validationCount">0 prestaciones MAI · 0 desambiguaciones OCL · 0 conceptos</span>
       <button id="toggleValidated" type="button">Ver selección</button>
       <button class="remove" id="clearValidated" type="button" disabled>Vaciar revisión</button>
+      <button class="remove" id="clearCache" type="button">Borrar caché</button>
       <button class="export" id="exportValidated" type="button" disabled>Descargar Excel</button>
     </div>
     <div class="validation-list" id="validationList" hidden></div>
@@ -302,6 +303,7 @@ const validationList = document.getElementById('validationList');
 const validationMsg = document.getElementById('validationMsg');
 const toggleValidated = document.getElementById('toggleValidated');
 const clearValidated = document.getElementById('clearValidated');
+const clearCache = document.getElementById('clearCache');
 const exportValidated = document.getElementById('exportValidated');
 const showHierarchy = document.getElementById('showHierarchy');
 const hierarchyModal = document.getElementById('hierarchyModal');
@@ -1421,6 +1423,49 @@ clearValidated.addEventListener('click', ()=>{
   localStorage.removeItem(OBSERVATIONS_KEY);
   renderValidatedPanel(); paintLatestResults();
   validationMsg.textContent = 'Se vaciaron las validaciones guardadas en este navegador.';
+});
+clearCache.addEventListener('click', ()=>{
+  const ok = window.confirm(
+    'Se borrarán del navegador las selecciones, descartes, observaciones, desambiguación OCL y preferencias de esta herramienta. ' +
+    'Los datos guardados en PostgreSQL y el caché del servidor no se eliminarán. Esta acción no se puede deshacer. ¿Deseas continuar?'
+  );
+  if(!ok) return;
+
+  // Restrict deletion to this application's keys on the current origin.
+  Object.keys(localStorage)
+    .filter(key => key.startsWith('snomed-'))
+    .forEach(key => localStorage.removeItem(key));
+
+  validatedRecords = [];
+  rejectedRecords = [];
+  observationRecords = [];
+  openObservationKeys.clear();
+  oclWorkspace = {mai_code:'', mai_display:'', components:[], source:''};
+  activeOclContext = null;
+  latestResults = [];
+  latestQuery = '';
+
+  sourceCodeEl.value = '';
+  q.value = '';
+  filterEl.value = '';
+  oclQuery.value = '';
+  contextEl.value = 'Clinical data entry in an EHR';
+  gemma.checked = false;
+  rerank.checked = false;
+  llmsel.checked = false;
+  ctxrow.hidden = true;
+  markActiveChip();
+  renderOclWorkspace();
+  renderActiveOclBanner();
+  renderValidatedPanel();
+  validationList.hidden = true;
+  toggleValidated.textContent = 'Ver selección';
+  oclStatus.textContent = 'Ingresa código y display MAI para buscar exámenes únicos.';
+  results.innerHTML = '<p class="hint">Ingresa una prestación MAI para iniciar una nueva búsqueda.</p>';
+  meta.textContent = '';
+  showHierarchy.disabled = true;
+  history.replaceState(null, '', location.pathname);
+  validationMsg.textContent = 'Se borró el caché de esta herramienta en el navegador.';
 });
 validationList.addEventListener('click', e => {
   const recordButton = e.target.closest('[data-remove-record]');
