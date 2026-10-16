@@ -13,6 +13,9 @@ import pytest
 
 from api.search import PG_DSN, search
 from tests.cases import (
+    CLINICAL_FINDING,
+    DIABETES_MELLITUS,
+    DURLACHERS_CORN,
     PLAIN_XRAY_CHEST,
     PROCEDURE_ROOT,
     SINGLE_CASES,
@@ -84,6 +87,23 @@ def test_rerank_lifts_precise_over_generic():
     assert _rank(on, PLAIN_XRAY_CHEST) == 1
     # ...and pushes the generic qualifier down.
     assert _rank(on, THORACIC_RADIOLOGY) > _rank(off, THORACIC_RADIOLOGY)
+
+
+def test_semantic_floor_drops_noise(monkeypatch):
+    """'diab mel' embeds to noise (cosine ~0.7). Without the floor, RRF scores the semantic #1
+    ('Durlachers corn') exactly like the lexical #1 ('Diabetes mellitus') — rank-only fusion. The
+    SEM_MIN_SIM floor drops semantic-only candidates that weak, leaving the lexical hits."""
+    import api.search as s
+
+    monkeypatch.setattr(s, "SEM_MIN_SIM", 0.0)
+    off = search("diab mel", k=15, use_gemma=False, filter_concept=CLINICAL_FINDING)
+    monkeypatch.undo()
+    on = search("diab mel", k=15, use_gemma=False, filter_concept=CLINICAL_FINDING)
+
+    assert DURLACHERS_CORN in _ids(off)[:5]          # the noise the floor exists for...
+    assert DURLACHERS_CORN not in _ids(on)           # ...is gone with it
+    assert _rank(on, DIABETES_MELLITUS) == 1
+    assert all(r["channel"] != "semantic" for r in on["results"][:5])
 
 
 def test_hierarchy_filter_excludes_out_of_branch():

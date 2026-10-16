@@ -113,3 +113,5 @@ SINGLE_CASES = [
 PLAIN_XRAY_CHEST = "399208008"      # a Procedure — the precise answer for "chest x-ray"
 THORACIC_RADIOLOGY = "1304212007"   # a Qualifier value — generic, and NOT under Procedure
 PROCEDURE_ROOT = 71388002           # 71388002 | Procedure (SNOMED top-level)
+DIABETES_MELLITUS = "73211009"      # the lexical answer for "diab mel"
+DURLACHERS_CORN = "238462001"       # semantic noise for "diab mel" (cosine ~0.7) — the floor drops it

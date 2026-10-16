@@ -57,6 +57,16 @@ PREF_BOOST = 0.001
 # 0.5 lets the reranker refine RRF instead of overriding it, so a precise lexical/semantic hit
 # isn't demoted below a generic parent just because the CE likes the parent's phrasing.
 RERANK_WEIGHT = 0.4
+# Minimum cosine similarity for a semantic-ONLY candidate to enter the fusion when the query looks
+# truncated (0 disables the floor); below it, a semantic neighbour can still corroborate a lexical hit.
+# Prefix abbreviations BioLORD can't embed ('diab mel', 'inf myo') return unrelated neighbours at
+# ~0.65-0.75. The floor is NOT applied to whole-word queries: untranslated Spanish mentions reach their
+# answer at that same similarity ('gripe' -> Influenza 0.68), so an unconditional floor cost 47
+# recall@10 hits on DisTEMIST (pre-process off).
+SEM_MIN_SIM = float(os.environ.get("SEM_MIN_SIM", "0.80"))
+# A token "looks truncated" when at least this many longer words in the index start with it ('diab' 15,
+# 'mel' 203, 'myo' 139) — Spanish words and real acronyms have few ('gripe' 1, 'gato' 2, 'mav' 3).
+TRUNC_MIN_COMPLETIONS = 10
 
 # Entity type (from extract_entities) -> the SNOMED top-level hierarchy to constrain that entity's
 # search to. Used as the `filter_concept` for per-entity mapping; falls back to no filter if the
@@ -91,7 +101,8 @@ lex AS (
     LIMIT %(cand)s
 ),
 vec AS (
-    SELECT d.id, row_number() OVER (ORDER BY d.embedding <=> %(qvec)s::vector) AS r
+    SELECT d.id, row_number() OVER (ORDER BY d.embedding <=> %(qvec)s::vector) AS r,
+           d.embedding <=> %(qvec)s::vector AS dist
     FROM descriptions d
     WHERE d.embedding IS NOT NULL
       AND (%(filter)s::bigint IS NULL OR EXISTS (
@@ -109,6 +120,13 @@ fused AS (
            (l.id IS NOT NULL) AS in_lex,
            (v.id IS NOT NULL) AS in_vec
     FROM lex l FULL OUTER JOIN vec v ON l.id = v.id
+    -- Similarity floor (min_sim is 0 unless the query looks truncated — see looks_truncated): RRF
+    -- scores by rank only, so the semantic #1 earns as much as the lexical #1 even when it is noise
+    -- (e.g. 'diab mel' -> 'Durlachers corn' at cosine 0.7). A semantic-only candidate below min_sim
+    -- is dropped; below it the semantic channel may still *corroborate* a lexical hit (weak agreement
+    -- is what lifts 'inf myo' -> Myocardial infarction). Applied after the kNN scan: a distance
+    -- predicate inside it would defeat the HNSW index.
+    WHERE l.id IS NOT NULL OR v.dist <= 1 - %(min_sim)s
 ),
 scored AS (
     SELECT d.concept_id, d.term, d.semantic_tag,
@@ -198,6 +216,26 @@ def to_prefix_query(text: str) -> str:
         seen.add(k)
         words.append(w)
     return " & ".join(f"{w}:*" for w in words)
+
+
+def looks_truncated(cur, text: str) -> bool:
+    """True when EVERY token of `text` reads as a typed prefix rather than a whole word: it has at
+    least TRUNC_MIN_COMPLETIONS longer completions in `lexicon` (the index vocabulary, built by
+    `make index-lexical`). Such queries ('diab mel', 'inf myo') embed to noise, so the semantic floor
+    applies only to them. Returns False if the lexicon table is missing (floor stays off)."""
+    tokens = list(dict.fromkeys(normalize(w) for w in to_prefix_query(text).replace(":*", "").split(" & ") if w))
+    if not tokens:
+        return False
+    try:
+        cur.execute(
+            "SELECT bool_and((SELECT count(*) FROM (SELECT 1 FROM lexicon"
+            "                 WHERE word LIKE t || '%%' AND word <> t LIMIT %(n)s) x) >= %(n)s)"
+            " FROM unnest(%(t)s::text[]) t",
+            {"t": tokens, "n": TRUNC_MIN_COMPLETIONS})
+        return bool(cur.fetchone()[0])
+    except psycopg.errors.UndefinedTable:
+        cur.connection.rollback()
+        return False
 
 
 def exact_first(results: list[dict]) -> list[dict]:
@@ -550,6 +588,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     # query on purpose: both channels are single-digit ms, so splitting them into parallel queries
     # would only add a 2nd-connection round-trip, not save time (the embed above dominates anyway).
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
+        truncated = looks_truncated(cur, search_text)   # before SET LOCAL: it may roll back
         # pgvector's HNSW scan returns at most `hnsw.ef_search` rows (default 40). Left unset, the
         # semantic channel would silently cap at 40 candidates, far below CANDIDATES, and a query that
         # lands the graph traversal in the wrong region would leak unrelated neighbours into the fused
@@ -563,6 +602,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
             "filter": filter_concept, "excl_module": exclude_module,
+            "min_sim": SEM_MIN_SIM if truncated else 0.0,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)

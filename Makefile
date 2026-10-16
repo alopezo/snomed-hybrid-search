@@ -38,8 +38,9 @@ etl: ## Load the SNOMED release into Postgres (reads SNOMED_SNAPSHOT_DIR from .e
 hierarchy: ## Load IS-A + build concept_ancestors (for the descendant/hierarchy filter)
 	$(PY) etl/load_hierarchy.py
 
-index-lexical: ## Build the lexical (GIN) index
+index-lexical: ## Build the lexical (GIN) index + the word lexicon (truncated-query detection)
 	$(PSQL) -c "CREATE INDEX IF NOT EXISTS ix_desc_tsv ON descriptions USING gin (term_tsv); CREATE INDEX IF NOT EXISTS ix_desc_concept ON descriptions (concept_id); ANALYZE descriptions;"
+	$(PSQL) -c "DROP TABLE IF EXISTS lexicon; CREATE TABLE lexicon AS SELECT word, ndoc FROM ts_stat('SELECT term_tsv FROM descriptions'); CREATE INDEX ix_lexicon_word ON lexicon (word text_pattern_ops); ANALYZE lexicon;"
 
 embed: ## Download the embedding model and encode all terms into pgvector
 	$(PY) embed/download_model.py
