@@ -24,7 +24,14 @@ The app reads these variables from `.env`:
 GEMMA_URL=http://localhost:11434/v1
 GEMMA_MODEL=gemma4:12b-it-qat
 GEMMA_REASONING=none          # gemma4 is a reasoning model; omit for non-reasoning models
+# WARMUP_LLM=false            # don't load the LLM at API startup (see "Low-memory machines" below)
 ```
+
+> **Low-memory machines.** The API loads the LLM at startup so the first query isn't cold. A 12B
+> model takes ~7.4 GB, and on a 16 GB Mac it competes with Postgres, BioLORD and the reranker. The
+> machine then swaps, and *every* stage slows down: searches that take ~70 ms took 4–9 s on an M1/16 GB.
+> Set `WARMUP_LLM=false` there. The LLM then loads only on the first pre-processed query (~10–15 s once),
+> so with pre-process off it never loads. To free it after use: `ollama stop <model>`.
 
 ---
 

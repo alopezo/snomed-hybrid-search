@@ -38,11 +38,17 @@ MAP_JOBS: dict[str, tuple[str, str, str]] = {}
 app = FastAPI(title="SNOMED hybrid search")
 
 DEMO_DIR = os.path.join(os.path.dirname(__file__), "..", "demo")
+# Load the LLM at startup so the first pre-processed query isn't cold. Set WARMUP_LLM=false on
+# memory-constrained machines (e.g. 16 GB with a 12B model): the LLM then loads on first use, and
+# searches with pre-process off never pull it into memory.
+WARMUP_LLM = os.environ.get("WARMUP_LLM", "true").lower() == "true"
 
 
 @app.on_event("startup")
 def _warmup() -> None:
     get_model()  # load the embedding model once (avoids latency on the 1st query)
+    if not WARMUP_LLM:
+        return
     try:
         gemma_expand("warmup")  # load the LLM into memory so the first real query isn't cold
     except Exception:
