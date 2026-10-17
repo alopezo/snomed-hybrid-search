@@ -134,6 +134,9 @@ def main() -> None:
                     help="which descriptions to retrieve over (synonym-value ablation): all = FSN + every "
                          "synonym (default); fsn = FSN only; fsn_pt = FSN + preferred term (drops only the "
                          "extra synonyms)")
+    ap.add_argument("--sem-scope", default=None, choices=["all", "fsn", "fsn_pt"],
+                    help="restrict the SEMANTIC channel only (default: same as --desc-scope), e.g. lexical "
+                         "over every synonym + semantic over FSN + preferred term")
     args = ap.parse_args()
     scope = None if args.scope.lower() == "all" else {t.strip() for t in args.scope.split(",")}
     cfg = CORPORA[args.corpus]
@@ -164,6 +167,8 @@ def main() -> None:
             u += f"&exclude_module={args.exclude_module}"
         if args.desc_scope != "all":
             u += f"&desc_scope={args.desc_scope}"
+        if args.sem_scope:
+            u += f"&sem_scope={args.sem_scope}"
         try:                                           # a single dirty span must not kill the run
             r = httpx.get(u, timeout=120)
             r.raise_for_status()
@@ -224,7 +229,8 @@ def main() -> None:
                    "k": args.k, "scope": args.scope,
                    "llm_select": args.llm_select,
                    "context_mode": (args.context_mode if args.llm_select else None),
-                   "exclude_module": args.exclude_module, "desc_scope": args.desc_scope},
+                   "exclude_module": args.exclude_module, "desc_scope": args.desc_scope,
+                   "sem_scope": args.sem_scope},
         "mentions": agg["total"], "scoped_out": agg["scoped_out"], "unresolved": agg["unresolved"],
         "resolved_via_history": agg["resolved"],
         "elapsed_s": round(time.time() - t0, 1),
@@ -247,6 +253,7 @@ def main() -> None:
     cm = "_sentctx" if (args.llm_select and args.context_mode == "sentence") else ""
     xm = "_noloinc" if args.exclude_module is not None else ""
     ds = "" if args.desc_scope == "all" else f"_{args.desc_scope}"
+    ds += f"_sem{args.sem_scope}" if args.sem_scope else ""
     stem = f"{args.corpus}_search_eval_{ch}{fl}pp{pp}_rr{rr}{ls}{cm}{xm}{ds}{args.tag}"
     (HERE / "results" / f"{stem}.json").write_text(
         json.dumps({"summary": summary, "rows": rows}, ensure_ascii=False, indent=2), encoding="utf-8")

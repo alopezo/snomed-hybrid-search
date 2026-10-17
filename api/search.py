@@ -105,16 +105,16 @@ lex AS (
     LIMIT %(cand)s
 ),
 vec AS (
-    SELECT d.id, row_number() OVER (ORDER BY d.embedding <=> %(qvec)s::vector) AS r,
-           d.embedding <=> %(qvec)s::vector AS dist
+    SELECT d.id, row_number() OVER (ORDER BY {emb} <=> %(qvec)s::{qtype}) AS r,
+           {emb} <=> %(qvec)s::{qtype} AS dist
     FROM descriptions d
     WHERE d.embedding IS NOT NULL
       AND (%(filter)s::bigint IS NULL OR EXISTS (
           SELECT 1 FROM concept_ancestors ca
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
       AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
-      AND {desc_filter}
-    ORDER BY d.embedding <=> %(qvec)s::vector
+      AND {sem_desc_filter}
+    ORDER BY {emb} <=> %(qvec)s::{qtype}
     LIMIT %(cand)s
 ),
 fused AS (
@@ -176,14 +176,34 @@ _DESC_FILTER = {
 }
 
 
-def _rrf_sql(channel: str = "both", desc_scope: str = "all") -> str:
+# Semantic-channel precision. "vector" = full fp32 (served default, index ix_desc_emb); "halfvec" = fp16,
+# answered by the expression index ix_desc_emb_hv on embedding::halfvec(768) — half the HNSW size, for
+# memory-constrained hosts. The ORDER BY must match the index expression exactly or the planner seq-scans.
+SEM_VECTOR = os.environ.get("SEM_VECTOR", "vector")
+_SEM_EXPR = {
+    "vector": ("d.embedding", "vector"),
+    "halfvec": ("d.embedding::halfvec(768)", "halfvec(768)"),
+}
+
+
+def _rrf_sql(channel: str = "both", desc_scope: str = "all", sem_scope: str | None = None) -> str:
+    """`sem_scope` restricts the semantic channel only (None = same as `desc_scope`), so the lexical
+    channel can keep every synonym while the semantic one searches a smaller set (e.g. "fsn_pt",
+    answered by the partial index ix_desc_emb_hv_fsnpt with SEM_VECTOR=halfvec)."""
+    sem_scope = sem_scope or desc_scope
     if channel not in _CHANNEL_SCORE:
         raise ValueError(f"channel must be one of {sorted(_CHANNEL_SCORE)}, got {channel!r}")
     if desc_scope not in _DESC_FILTER:
         raise ValueError(f"desc_scope must be one of {sorted(_DESC_FILTER)}, got {desc_scope!r}")
-    return RRF_SQL_TEMPLATE.format(score_expr=_CHANNEL_SCORE[channel],
+    if sem_scope not in _DESC_FILTER:
+        raise ValueError(f"sem_scope must be one of {sorted(_DESC_FILTER)}, got {sem_scope!r}")
+    if SEM_VECTOR not in _SEM_EXPR:
+        raise ValueError(f"SEM_VECTOR must be one of {sorted(_SEM_EXPR)}, got {SEM_VECTOR!r}")
+    emb, qtype = _SEM_EXPR[SEM_VECTOR]
+    return RRF_SQL_TEMPLATE.format(emb=emb, qtype=qtype, score_expr=_CHANNEL_SCORE[channel],
                                    row_filter=_CHANNEL_FILTER[channel],
-                                   desc_filter=_DESC_FILTER[desc_scope])
+                                   desc_filter=_DESC_FILTER[desc_scope],
+                                   sem_desc_filter=_DESC_FILTER[sem_scope])
 
 
 def normalize(term: str) -> str:
@@ -557,7 +577,7 @@ def llm_select(query: str, context: str, results: list[dict], top_n: int = 8,
 def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
                   filter_concept: int | None = None, channel: str = "both",
                   use_llm_select: bool = False, context: str = "", exclude_module: int | None = None,
-                  desc_scope: str = "all"):
+                  desc_scope: str = "all", sem_scope: str | None = None):
     """Generator version: yields a {"stage": ...} marker before each pipeline step,
     then a final {"stage": "done", ...full result...}. Lets the UI show the live stage.
     `filter_concept`: if set, restrict results to descendants-or-self of that concept id.
@@ -604,7 +624,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
         if filter_concept is not None:
             # Filtered ANN: let HNSW keep scanning until enough in-subtree neighbors pass (pgvector 0.8+).
             cur.execute("SET LOCAL hnsw.iterative_scan = relaxed_order")
-        cur.execute(_rrf_sql(channel, desc_scope), {
+        cur.execute(_rrf_sql(channel, desc_scope, sem_scope), {
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
             "filter": filter_concept, "excl_module": exclude_module,
@@ -667,13 +687,14 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
 def search(query: str, k: int = 15, use_gemma: bool = True, rerank: bool = False,
            filter_concept: int | None = None, channel: str = "both",
            use_llm_select: bool = False, context: str = "", exclude_module: int | None = None,
-           desc_scope: str = "all") -> dict:
+           desc_scope: str = "all", sem_scope: str | None = None) -> dict:
     """Non-streaming convenience wrapper: drains search_stream and returns the final result."""
     final: dict = {}
     for event in search_stream(query, k=k, use_gemma=use_gemma, rerank=rerank,
                                filter_concept=filter_concept, channel=channel,
                                use_llm_select=use_llm_select, context=context,
-                               exclude_module=exclude_module, desc_scope=desc_scope):
+                               exclude_module=exclude_module, desc_scope=desc_scope,
+                               sem_scope=sem_scope):
         final = event
     final = dict(final)
     final.pop("stage", None)

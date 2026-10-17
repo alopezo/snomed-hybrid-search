@@ -126,10 +126,11 @@ def api_search(
     context: str = Query(""),
     exclude_module: int | None = Query(None),
     desc_scope: str = Query("all", pattern="^(all|fsn|fsn_pt)$"),
+    sem_scope: str | None = Query(None, pattern="^(all|fsn|fsn_pt)$"),
 ):
     return search(q, k=k, use_gemma=gemma, rerank=rerank, filter_concept=filter, channel=channel,
                   use_llm_select=llm_select, context=context, exclude_module=exclude_module,
-                  desc_scope=desc_scope)
+                  desc_scope=desc_scope, sem_scope=sem_scope)
 
 
 @app.get("/api/search_stream")
