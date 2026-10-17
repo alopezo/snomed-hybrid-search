@@ -100,7 +100,7 @@
     its best SNOMED CT concept through the <b>semantic channel</b> (no rerank, no LLM) — the right regime
     for terminology-to-terminology maps, where source terms are already curated clinical phrases. Two
     columns are appended (<code>snomed_code</code>, <code>snomed_term</code>) and you download the result.</p>
-  <p class="nav"><a href="/">‹ back to search</a> · <a href="/extract" target="_blank" rel="noopener">extract ↗</a> · <a href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a> · <a href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a></p>
+  <p class="nav"><a href="/">‹ back to search</a><span id="extract-link"> · <a href="/extract" target="_blank" rel="noopener">extract ↗</a></span> · <a href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a> · <a href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a></p>
 
   <p class="health" id="health">checking API…</p>
 
@@ -303,6 +303,7 @@ drop.addEventListener('drop', e => { if(e.dataTransfer.files[0]) onFile(e.dataTr
 async function health(){
   try{
     const h = await fetch('/api/health').then(r => r.json());
+    if(h.llm && h.llm.enabled === false) $('#extract-link').hidden = true;
     $('#health').innerHTML =
       `DB <b class="${h.db.ok?'ok':'off'}">${h.db.ok?'up':'down'}</b> · `
       + `embeddings <b class="${h.embeddings.ok?'ok':'off'}">${h.embeddings.ok?'loaded':'—'}</b>`;

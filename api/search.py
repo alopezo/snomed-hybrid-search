@@ -40,6 +40,10 @@ GEMMA_MODEL = os.environ.get("GEMMA_MODEL", "gemma-4-26b-a4b-it")
 # against max_tokens, so EXTRACT_MAX_TOKENS is configurable to leave room for thinking + JSON.
 GEMMA_REASONING = os.environ.get("GEMMA_REASONING") or None
 EXTRACT_MAX_TOKENS = int(os.environ.get("EXTRACT_MAX_TOKENS", "4000"))
+# LLM-less deployment: false => never call the LLM. Pre-process and LLM pick are ignored even when a
+# request asks for them, entity extraction is unavailable, and health reports the LLM as disabled.
+# Lexical + semantic + cross-encoder rerank are unaffected (the paper's best serving configuration).
+LLM_ENABLED = os.environ.get("LLM_ENABLED", "true").lower() == "true"
 
 
 def _reasoning_field() -> dict:
@@ -560,6 +564,8 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     `channel`: retrieval channel(s) to rank on — "both" (RRF fusion), "lexical", or "semantic".
     `exclude_module`: if set, drop descriptions whose module_id equals it (e.g. exclude an appended
     extension such as the LOINC Extension) from both retrieval channels."""
+    use_gemma = use_gemma and LLM_ENABLED
+    use_llm_select = use_llm_select and LLM_ENABLED
     t: dict[str, float] = {}
     t0 = time.perf_counter()
 
@@ -684,13 +690,17 @@ def health() -> dict:
         status["db"] = {"ok": True, "embeddings": n}
     except Exception as e:
         status["db"] = {"ok": False, "error": str(e)[:140]}
-    try:
-        r = httpx.get(f"{GEMMA_URL}/models", timeout=3)
-        r.raise_for_status()
-        installed = [m.get("id") for m in r.json().get("data", [])]
-        status["llm"] = {"ok": True, "model": GEMMA_MODEL, "installed": GEMMA_MODEL in installed}
-    except Exception as e:
-        status["llm"] = {"ok": False, "model": GEMMA_MODEL, "error": str(e)[:140]}
+    if not LLM_ENABLED:
+        status["llm"] = {"ok": False, "enabled": False, "model": None}
+    else:
+        try:
+            r = httpx.get(f"{GEMMA_URL}/models", timeout=3)
+            r.raise_for_status()
+            installed = [m.get("id") for m in r.json().get("data", [])]
+            status["llm"] = {"ok": True, "enabled": True, "model": GEMMA_MODEL,
+                             "installed": GEMMA_MODEL in installed}
+        except Exception as e:
+            status["llm"] = {"ok": False, "enabled": True, "model": GEMMA_MODEL, "error": str(e)[:140]}
     status["embeddings"] = {"ok": True, "loaded": get_model.cache_info().currsize > 0}
     return status
 
@@ -698,6 +708,8 @@ def health() -> dict:
 def warmup() -> dict:
     """Load the embedding model and warm the LLM (the 'wake' action)."""
     get_model()
+    if not LLM_ENABLED:
+        return {"embeddings_loaded": True, "llm_ok": False, "llm_enabled": False}
     exp = gemma_expand("warmup")
     return {"embeddings_loaded": True, "llm_ok": exp is not None}
 

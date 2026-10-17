@@ -46,7 +46,7 @@
   .card.llmpick { box-shadow: inset 0 0 0 1px #c2410c; }
   .reason { color:var(--muted); font-size:12px; font-style:italic; margin-top:2px; }
   .ctxrow { display:flex; gap:8px; align-items:center; margin:-4px 0 12px; }
-  .ctxrow[hidden] { display:none; }
+  .ctxrow[hidden], [hidden] { display:none !important; }
   .ctxrow .lbl { color:var(--muted); font-size:12px; white-space:nowrap; }
   .card.moved { box-shadow: inset 0 0 0 1px var(--both); }
   /* Provisional state while rerank runs: a light beam circulating the card border. */
@@ -87,13 +87,13 @@
     <h1>SNOMED CT hybrid search</h1>
     <a class="arch-link" href="/static/architecture.html" target="_blank" rel="noopener">architecture ↗</a>
     <a class="arch-link" href="/static/tests.html" target="_blank" rel="noopener">tests ↗</a>
-    <a class="arch-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
+    <a class="arch-link" id="extract-link" href="/static/extract.html" target="_blank" rel="noopener">extract ↗</a>
     <a class="arch-link" href="/static/map.html" target="_blank" rel="noopener">map ↗</a>
   </div>
   <div class="sub">Lexical (multi-prefix, order-independent) + semantic (BioLORD, multilingual) with RRF fusion</div>
   <div class="status" id="status">
     <span class="item"><span class="dot" id="d-db"></span> DB</span>
-    <span class="item"><span class="dot" id="d-llm"></span> LLM</span>
+    <span class="item" id="llm-item"><span class="dot" id="d-llm"></span> LLM</span>
     <span class="item"><span class="dot" id="d-emb"></span> embeddings</span>
     <button id="wake">warm up</button>
     <span id="statusmsg"></span>
@@ -102,9 +102,9 @@
 <div class="wrap">
   <div class="searchbar">
     <input id="q" type="text" placeholder="heart attack, high blood sugar, MI, water on the knee…" autofocus>
-    <label class="toggle"><input id="gemma" type="checkbox"> pre-process</label>
+    <label class="toggle" id="gemma-toggle"><input id="gemma" type="checkbox"> pre-process</label>
     <label class="toggle"><input id="rerank" type="checkbox" checked> rerank</label>
-    <label class="toggle" title="Third layer: a local LLM picks the best candidate using the context below">
+    <label class="toggle" id="llmsel-toggle" title="Third layer: a local LLM picks the best candidate using the context below">
       <input id="llmsel" type="checkbox"> llm pick</label>
     <input id="filter" class="filter" type="text" inputmode="numeric"
            placeholder="under SCTID" title="Restrict to descendants-or-self of this concept ID">
@@ -127,7 +127,7 @@
   </div>
   <div class="meta" id="meta"></div>
   <div id="results">
-    <p class="hint">Type a query in Spanish or English. Try "badly worded" terms:
+    <p class="hint" id="hint">Type a query in Spanish or English. Try "badly worded" terms:
       <b>heart attack</b>, <b>azucar alta</b>, <b>water on the knee</b>, <b>rinon inflamado</b>.</p>
   </div>
 </div>
@@ -180,7 +180,7 @@ function metaLine(data, live){
   const step = (label, ms) => ms == null ? null
     : `<span class="tstep">${label} <b>${ms}</b> ms</span>`;
   const steps = [
-    step('pre-process', t.expand_ms),
+    step('pre-process', llmOn ? t.expand_ms : null),
     step('embed',       t.embed_ms),
     step('retrieval',   t.retrieval_ms),
     step('rerank',      t.rerank_ms),
@@ -351,6 +351,7 @@ function setDot(id, state){ // state: 'ok' | 'bad' | 'idle'
 async function checkHealth(){
   try{
     const h = await (await fetch('/api/health')).json();
+    if(h.llm && h.llm.enabled === false) disableLlmUi();
     setDot('d-db',  h.db && h.db.ok ? 'ok' : 'bad');
     setDot('d-llm', h.llm && h.llm.ok ? 'ok' : 'bad');
     const warm = !!(h.embeddings && h.embeddings.loaded);
@@ -358,7 +359,7 @@ async function checkHealth(){
     wake.style.display = warm ? 'none' : 'inline-block';   // only show when NOT warm
     const notes = [];
     if(h.db && !h.db.ok) notes.push('DB down');
-    if(h.llm && !h.llm.ok) notes.push('LLM down (run: make llm)');
+    if(h.llm && h.llm.enabled !== false && !h.llm.ok) notes.push('LLM down (run: make llm)');
     if(!warm) notes.push('embeddings idle — click "warm up"');
     statusmsg.textContent = notes.join(' · ');
   }catch(e){
@@ -366,6 +367,18 @@ async function checkHealth(){
     wake.style.display = 'none';   // API unreachable: button can't help
     statusmsg.textContent = 'API unreachable — run: make up';
   }
+}
+// LLM-less deployment (LLM_ENABLED=false): hide every LLM control. The server ignores them anyway.
+let llmOn = true;
+function disableLlmUi(){
+  llmOn = false;
+  gemma.checked = llmsel.checked = false;
+  ['gemma-toggle','llmsel-toggle','llm-item','extract-link'].forEach(id=>{ document.getElementById(id).hidden = true; });
+  ctxrow.hidden = true;
+  // Short lay Spanish (e.g. "azucar alta") needs the pre-process; suggest queries that work without it.
+  const hint = document.getElementById('hint');
+  if(hint) hint.innerHTML = 'Type a query in English or Spanish. Try: <b>heart attack</b>, '
+    + '<b>water on the knee</b>, <b>infarto de miocardio</b>, <b>dolor de pecho</b>.';
 }
 wake.addEventListener('click', async ()=>{
   wake.disabled = true; statusmsg.textContent = 'warming up…';

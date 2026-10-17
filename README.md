@@ -127,6 +127,9 @@ things: **translating/expanding** the query to English and the optional **rerank
   BioLORD embeds queries cross-lingually. You lose reliable handling of short Spanish lay phrases
   and the rerank. Calls are best-effort with an 8 s timeout and never block the core search.
 - **To use a different model**, just change `GEMMA_MODEL` and `GEMMA_URL`.
+- **To deploy without any LLM** (e.g. a hosted demo with no GPU), set `LLM_ENABLED=false`. The server
+  then ignores pre-process and LLM pick, the demo hides those toggles and the extract page, and
+  `/api/health` reports the LLM as disabled. Search, rerank and table mapping are unaffected.
 
 ---
 

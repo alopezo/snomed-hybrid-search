@@ -22,6 +22,7 @@ from starlette.background import BackgroundTask
 
 from api.mapper import best_match, read_table, resolve_columns, write_table
 from api.search import (
+    LLM_ENABLED,
     TYPE_TO_HIERARCHY,
     extract_entities,
     gemma_expand,
@@ -47,7 +48,7 @@ WARMUP_LLM = os.environ.get("WARMUP_LLM", "true").lower() == "true"
 @app.on_event("startup")
 def _warmup() -> None:
     get_model()  # load the embedding model once (avoids latency on the 1st query)
-    if not WARMUP_LLM:
+    if not (WARMUP_LLM and LLM_ENABLED):
         return
     try:
         gemma_expand("warmup")  # load the LLM into memory so the first real query isn't cold
@@ -93,6 +94,9 @@ def api_extract(text: str = Body(..., embed=True, min_length=1)):
     """Extract structured clinical entities from a free-text note (one LLM call). The page then maps
     each entity through /api/search. `type_filters` lets the page constrain each entity's search to the
     matching SNOMED hierarchy (with a client-side fallback to no filter)."""
+    if not LLM_ENABLED:
+        return JSONResponse({"error": "entity extraction needs the LLM, which is disabled on this "
+                                      "deployment (LLM_ENABLED=false)"}, status_code=503)
     t0 = time.perf_counter()
     entities = extract_entities(text)
     return {
@@ -103,7 +107,10 @@ def api_extract(text: str = Body(..., embed=True, min_length=1)):
 
 
 @app.get("/extract")
-def extract_page() -> FileResponse:
+def extract_page():
+    if not LLM_ENABLED:
+        return JSONResponse({"error": "not available: the LLM is disabled (LLM_ENABLED=false)"},
+                            status_code=404)
     return FileResponse(os.path.join(DEMO_DIR, "extract.html"))
 
 

@@ -251,7 +251,10 @@ async function run(){
   try{
     const r = await fetch('/api/extract', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({text: note})});
-    if(!r.ok) throw new Error('HTTP '+r.status);
+    if(!r.ok){
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.error || 'HTTP '+r.status);
+    }
     data = await r.json();
   }catch(err){
     $('#status').textContent = '';
@@ -294,7 +297,9 @@ async function health(){
     const h = await fetch('/api/health').then(r => r.json());
     $('#health').innerHTML =
       `DB <b class="${h.db.ok?'ok':'off'}">${h.db.ok?'up':'down'}</b> · `
-      + `LLM <b class="${h.llm&&h.llm.ok?'ok':'off'}">${h.llm&&h.llm.ok?'up':'off'}</b> (${h.llm?h.llm.model:'—'}) · `
+      + (h.llm && h.llm.enabled === false
+          ? `LLM <b class="off">disabled</b> (LLM_ENABLED=false — extraction unavailable) · `
+          : `LLM <b class="${h.llm&&h.llm.ok?'ok':'off'}">${h.llm&&h.llm.ok?'up':'off'}</b> (${h.llm?h.llm.model:'—'}) · `)
       + `embeddings <b class="${h.embeddings.ok?'ok':'off'}">${h.embeddings.ok?'loaded':'—'}</b>`;
   }catch(e){ $('#health').innerHTML = `<b class="off">API unreachable</b> — run <code>make up</code>`; }
 }

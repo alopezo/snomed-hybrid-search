@@ -132,3 +132,33 @@ def test_hierarchy_filter_returns_only_descendants():
         )
         stragglers = [r[0] for r in cur.fetchall()]
     assert not stragglers, f"results not under Procedure({PROCEDURE_ROOT}): {stragglers}"
+
+
+def test_llm_disabled_never_calls_the_llm(monkeypatch):
+    """LLM_ENABLED=false (LLM-less deployment): a request that asks for pre-process and LLM pick must
+    not reach the LLM, still return the normal hybrid results, and health must say 'disabled'."""
+    import api.search as s
+    from api.search import health
+
+    def boom(*a, **kw):
+        raise AssertionError("the LLM was called with LLM_ENABLED=false")
+
+    monkeypatch.setattr(s, "LLM_ENABLED", False)
+    monkeypatch.setattr(s, "gemma_expand", boom)
+    monkeypatch.setattr(s, "llm_select", boom)
+    out = search("chest x-ray", k=15, use_gemma=True, use_llm_select=True, filter_concept=PROCEDURE_ROOT)
+
+    assert out["expansion"] is None and not out["llm_selected"]
+    assert PLAIN_XRAY_CHEST in _ids(out)
+    assert health()["llm"] == {"ok": False, "enabled": False, "model": None}
+
+
+def test_llm_disabled_extract_unavailable(monkeypatch):
+    """With the LLM disabled the extract API answers 503 (not a silent empty list) and the page 404s."""
+    from fastapi.testclient import TestClient
+    import api.server as srv
+
+    monkeypatch.setattr(srv, "LLM_ENABLED", False)
+    client = TestClient(srv.app)   # no `with`: skip the startup warm-up
+    assert client.post("/api/extract", json={"text": "chest pain"}).status_code == 503
+    assert client.get("/extract").status_code == 404
