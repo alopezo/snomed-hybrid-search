@@ -73,6 +73,33 @@ SINGLE_CASES = [
         "expect": {"concept": "202381003", "rank_le": 3, "channel": {"semantic", "both"}},
     },
 
+    # ── Semantic floor: fires on prefixes, never on typos ───────────────────────────────────
+    # A misspelled word is not the start of 10+ indexed words, so typos never look truncated and the
+    # SEM_MIN_SIM floor stays off. That matters: BioLORD rescues these below the floor (cosine 0.76),
+    # where an unconditional floor would have dropped them.
+    {
+        "id": "floor__typo_pnuemonia",
+        "query": "pnuemonia", "gemma": False, "rerank": False, "filter": CLINICAL_FINDING,
+        "why": "transposed letters → Pneumonia via the semantic channel at cosine 0.76 (top-5). Not "
+               "truncated-looking, so the floor must not fire.",
+        "expect": {"concept": "233604007", "top_k": 5, "channel": {"semantic", "both"}},
+    },
+    {
+        "id": "floor__typo_diabetis_melitus",
+        "query": "diabetis melitus", "gemma": False, "rerank": False, "filter": CLINICAL_FINDING,
+        "why": "two misspelled words → Diabetes mellitus at cosine 0.76 (top-5). No token matches "
+               "lexically, so it lives on the semantic channel alone; the floor must stay off.",
+        "expect": {"concept": "73211009", "top_k": 5, "channel": {"semantic", "both"}},
+    },
+    # The other side: a real prefix. BioLORD can't embed 'pneu' (cosine 0.18 to Pneumonia), so the
+    # floor drops the semantic-only noise and the lexical hit rises from #3 (floor off) to #1.
+    {
+        "id": "floor__prefix_pneu",
+        "query": "pneu", "gemma": False, "rerank": False, "filter": CLINICAL_FINDING,
+        "why": "single prefix → Pneumonia #1 once the floor clears semantic-only noise (#3 without it).",
+        "expect": {"concept": "233604007", "rank_le": 1, "channel": {"lexical", "both"}},
+    },
+
     # ── Exact-match pin ─────────────────────────────────────────────────────────────────────
     # "hepatomegaly" is a synonym of "Large liver". The deterministic exact_first rule keeps it at
     # the very top, ahead of more specific siblings (Congenital/Schistosomal hepatomegaly, …).
