@@ -7,6 +7,6 @@ CREATE INDEX IF NOT EXISTS ix_desc_concept ON descriptions (concept_id);
 
 -- Canal semántico (correr DESPUÉS de poblar embeddings, Fase 2):
 CREATE INDEX IF NOT EXISTS ix_desc_emb
-    ON descriptions USING hnsw (embedding vector_cosine_ops);
+    ON descriptions USING hnsw (embedding halfvec_cosine_ops);
 
 ANALYZE descriptions;

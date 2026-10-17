@@ -48,7 +48,7 @@ def main() -> None:
 
     from sentence_transformers import SentenceTransformer  # noqa: WPS433
 
-    print(f"Loading {model_name} (device={device}) -> descriptions.{args.column} vector({args.dim})...")
+    print(f"Loading {model_name} (device={device}) -> descriptions.{args.column} halfvec({args.dim})...")
     model = SentenceTransformer(model_name, device=device)
 
     with psycopg.connect(dsn) as conn:
@@ -56,9 +56,9 @@ def main() -> None:
         # The default production column is never touched by DDL here.
         if args.column != "embedding":
             with conn.cursor() as cur:
-                cur.execute(f"ALTER TABLE descriptions ADD COLUMN IF NOT EXISTS {args.column} vector({args.dim})")
+                cur.execute(f"ALTER TABLE descriptions ADD COLUMN IF NOT EXISTS {args.column} halfvec({args.dim})")
             conn.commit()
-            print(f"ensured column descriptions.{args.column} vector({args.dim})")
+            print(f"ensured column descriptions.{args.column} halfvec({args.dim})")
         with conn.cursor() as cur:
             if args.only_missing:
                 cur.execute(f"SELECT DISTINCT term_norm FROM descriptions WHERE {args.column} IS NULL")
@@ -74,7 +74,7 @@ def main() -> None:
             cur.execute("DROP TABLE IF EXISTS emb_stage")
             cur.execute(
                 f"CREATE UNLOGGED TABLE emb_stage "
-                f"(term_norm TEXT PRIMARY KEY, embedding vector({args.dim}))"
+                f"(term_norm TEXT PRIMARY KEY, embedding halfvec({args.dim}))"
             )
         conn.commit()
 
@@ -112,7 +112,7 @@ def main() -> None:
     idx = "ix_desc_emb" if args.column == "embedding" else f"ix_desc_{args.column}"
     print(f"\nDone. Rows with {args.column}: {with_emb:,}/{total_rows:,}")
     print(f"Next: create HNSW -> docker compose exec -T db psql -U snomed -d snomed_search "
-          f"-c \"CREATE INDEX {idx} ON descriptions USING hnsw ({args.column} vector_cosine_ops);\"")
+          f"-c \"CREATE INDEX {idx} ON descriptions USING hnsw ({args.column} halfvec_cosine_ops);\"")
 
 
 if __name__ == "__main__":

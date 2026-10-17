@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS descriptions (
     pref_us      BOOLEAN NOT NULL DEFAULT false,
     pref_gb      BOOLEAN NOT NULL DEFAULT false,
     term_tsv     tsvector,                   -- canal léxico (multi-prefix ignore-order)
-    embedding    vector(768)                 -- canal semántico (BioLORD-2023-M)
+    embedding    halfvec(768)                -- canal semántico (BioLORD-2023-M, fp16: mitad de tamaño, misma calidad)
 );
 
 COMMENT ON TABLE descriptions IS 'Descripciones activas de SNOMED CT para búsqueda híbrida léxico+semántica';

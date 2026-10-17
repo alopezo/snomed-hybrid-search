@@ -98,7 +98,7 @@ Inputs: `Terminology/sct2_Description_...`, `Refset/Language/der2_cRefset_Langua
       id BIGINT PRIMARY KEY, concept_id BIGINT, term TEXT, term_norm TEXT,
       type_id BIGINT, semantic_tag TEXT,
       pref_us BOOLEAN DEFAULT false, pref_gb BOOLEAN DEFAULT false,
-      term_tsv tsvector, embedding vector(768)
+      term_tsv tsvector, embedding halfvec(768)
     );
     ```
 - [ ] **[AUTO]** `etl/load_descriptions.py`:
@@ -140,7 +140,7 @@ Inputs: `Terminology/sct2_Description_...`, `Refset/Language/der2_cRefset_Langua
   - **[MANUAL/decision]** run with gemma **unloaded** to free up GPU/RAM (overnight job, ~1–2 h).
 - [ ] **[AUTO]** `sql/02_indexes.sql` (vector part, AFTER populating):
     ```sql
-    CREATE INDEX ix_desc_emb ON descriptions USING hnsw (embedding vector_cosine_ops);
+    CREATE INDEX ix_desc_emb ON descriptions USING hnsw (embedding halfvec_cosine_ops);
     ```
 - [ ] **Checkpoint:** semantic kNN responds:
     ```sql

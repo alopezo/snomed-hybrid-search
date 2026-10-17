@@ -65,7 +65,7 @@ def run(args) -> None:
            f"WHERE d.{args.column} IS NOT NULL "
            + ("AND EXISTS (SELECT 1 FROM concept_ancestors ca WHERE ca.concept_id=d.concept_id "
               "AND ca.ancestors @> ARRAY[%(filt)s::bigint]) " if filt is not None else "")
-           + f"ORDER BY d.{args.column} <=> %(qv)s::vector LIMIT 300")
+           + f"ORDER BY d.{args.column} <=> %(qv)s::halfvec LIMIT 300")
 
     mentions = load_mentions(cfg, args.n)
     assoc = history.load_assoc({c for _, _, c in mentions})

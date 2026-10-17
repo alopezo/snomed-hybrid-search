@@ -94,7 +94,10 @@ lex AS (
     -- verbose one that merely accrues more prefix hits (e.g. 'myo:*' matching both 'myofibrillar' and
     -- 'myopathy'). Word-based because ts_rank operates on the tsvector (lexemes), which is the native,
     -- index-supported ranking; equivalent to Snowstorm's shorter-is-better intent without leaving ts_rank.
-    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1|8) DESC) AS r
+    -- Ties (e.g. every one-word term under 'pneu:*') break on the preferred term, then the shorter one,
+    -- then the id, so the order never depends on the table's physical row order.
+    SELECT d.id, row_number() OVER (ORDER BY ts_rank(d.term_tsv, q.ts, 1|8) DESC,
+                                             d.pref_us DESC, length(d.term), d.id) AS r
     FROM descriptions d, q
     WHERE %(tsq)s <> '' AND d.term_tsv @@ q.ts
       AND (%(filter)s::bigint IS NULL OR EXISTS (
@@ -105,8 +108,8 @@ lex AS (
     LIMIT %(cand)s
 ),
 vec AS (
-    SELECT d.id, row_number() OVER (ORDER BY {emb} <=> %(qvec)s::{qtype}) AS r,
-           {emb} <=> %(qvec)s::{qtype} AS dist
+    SELECT d.id, row_number() OVER (ORDER BY d.embedding <=> %(qvec)s::halfvec) AS r,
+           d.embedding <=> %(qvec)s::halfvec AS dist
     FROM descriptions d
     WHERE d.embedding IS NOT NULL
       AND (%(filter)s::bigint IS NULL OR EXISTS (
@@ -114,7 +117,7 @@ vec AS (
           WHERE ca.concept_id = d.concept_id AND ca.ancestors @> ARRAY[%(filter)s::bigint]))
       AND (%(excl_module)s::bigint IS NULL OR d.module_id IS DISTINCT FROM %(excl_module)s::bigint)
       AND {sem_desc_filter}
-    ORDER BY {emb} <=> %(qvec)s::{qtype}
+    ORDER BY d.embedding <=> %(qvec)s::halfvec
     LIMIT %(cand)s
 ),
 fused AS (
@@ -176,20 +179,10 @@ _DESC_FILTER = {
 }
 
 
-# Semantic-channel precision. "vector" = full fp32 (served default, index ix_desc_emb); "halfvec" = fp16,
-# answered by the expression index ix_desc_emb_hv on embedding::halfvec(768) — half the HNSW size, for
-# memory-constrained hosts. The ORDER BY must match the index expression exactly or the planner seq-scans.
-SEM_VECTOR = os.environ.get("SEM_VECTOR", "vector")
-_SEM_EXPR = {
-    "vector": ("d.embedding", "vector"),
-    "halfvec": ("d.embedding::halfvec(768)", "halfvec(768)"),
-}
-
-
 def _rrf_sql(channel: str = "both", desc_scope: str = "all", sem_scope: str | None = None) -> str:
     """`sem_scope` restricts the semantic channel only (None = same as `desc_scope`), so the lexical
-    channel can keep every synonym while the semantic one searches a smaller set (e.g. "fsn_pt",
-    answered by the partial index ix_desc_emb_hv_fsnpt with SEM_VECTOR=halfvec)."""
+    channel can keep every synonym while the semantic one searches a smaller set (e.g. "fsn_pt"; it
+    needs a matching partial HNSW index to stay fast and complete)."""
     sem_scope = sem_scope or desc_scope
     if channel not in _CHANNEL_SCORE:
         raise ValueError(f"channel must be one of {sorted(_CHANNEL_SCORE)}, got {channel!r}")
@@ -197,10 +190,7 @@ def _rrf_sql(channel: str = "both", desc_scope: str = "all", sem_scope: str | No
         raise ValueError(f"desc_scope must be one of {sorted(_DESC_FILTER)}, got {desc_scope!r}")
     if sem_scope not in _DESC_FILTER:
         raise ValueError(f"sem_scope must be one of {sorted(_DESC_FILTER)}, got {sem_scope!r}")
-    if SEM_VECTOR not in _SEM_EXPR:
-        raise ValueError(f"SEM_VECTOR must be one of {sorted(_SEM_EXPR)}, got {SEM_VECTOR!r}")
-    emb, qtype = _SEM_EXPR[SEM_VECTOR]
-    return RRF_SQL_TEMPLATE.format(emb=emb, qtype=qtype, score_expr=_CHANNEL_SCORE[channel],
+    return RRF_SQL_TEMPLATE.format(score_expr=_CHANNEL_SCORE[channel],
                                    row_filter=_CHANNEL_FILTER[channel],
                                    desc_filter=_DESC_FILTER[desc_scope],
                                    sem_desc_filter=_DESC_FILTER[sem_scope])

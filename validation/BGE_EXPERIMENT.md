@@ -24,7 +24,7 @@ cd snomed-search
 
 ## 1. Encode SNOMED with BGE-M3 into a side column  (the long step, ~1–3 h on MPS)
 
-The encoder auto-creates `descriptions.embedding_bge vector(1024)` (only because the column name is
+The encoder auto-creates `descriptions.embedding_bge halfvec(1024)` (only because the column name is
 non-default; the production `embedding` column is never altered):
 
 ```
@@ -37,7 +37,7 @@ EMBED_MODEL=BAAI/bge-m3 EMBED_DEVICE=mps \
 
 ```
 docker compose exec -T db psql -U snomed -d snomed_search \
-  -c "SET maintenance_work_mem='2GB'; CREATE INDEX ix_desc_embedding_bge ON descriptions USING hnsw (embedding_bge vector_cosine_ops); ANALYZE descriptions;"
+  -c "SET maintenance_work_mem='2GB'; CREATE INDEX ix_desc_embedding_bge ON descriptions USING hnsw (embedding_bge halfvec_cosine_ops); ANALYZE descriptions;"
 ```
 
 ## 3. Evaluate BGE-M3 (semantic-only) and compare

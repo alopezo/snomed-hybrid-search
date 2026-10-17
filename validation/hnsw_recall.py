@@ -43,14 +43,8 @@ from search import CANDIDATES, embed_query   # noqa: E402
 load_dotenv(HERE.parent / ".env")
 PG_DSN = os.environ["PG_DSN"]
 
-EXACT_SQL = "SELECT id FROM descriptions ORDER BY embedding <=> %(qv)s::vector LIMIT %(k)s"
-# ANN side: the served fp32 index, or the fp16 expression index (ix_desc_emb_hv). The exact side stays fp32,
-# so the halfvec rows measure the ANN index *and* the precision loss against the true neighbours.
-ANN_SQL = {
-    "vector": "SELECT id FROM descriptions ORDER BY embedding <=> %(qv)s::vector LIMIT %(cand)s",
-    "halfvec": "SELECT id FROM descriptions "
-               "ORDER BY embedding::halfvec(768) <=> %(qv)s::halfvec(768) LIMIT %(cand)s",
-}
+EXACT_SQL = "SELECT id FROM descriptions ORDER BY embedding <=> %(qv)s::halfvec LIMIT %(k)s"
+ANN_SQL = "SELECT id FROM descriptions ORDER BY embedding <=> %(qv)s::halfvec LIMIT %(cand)s"
 
 
 def exact_top(cur, qv: str, k: int) -> list[int]:
@@ -60,11 +54,11 @@ def exact_top(cur, qv: str, k: int) -> list[int]:
     return [r[0] for r in cur.fetchall()]
 
 
-def ann_rows(cur, qv: str, ef: int, sem_vector: str = "vector") -> list[int]:
+def ann_rows(cur, qv: str, ef: int) -> list[int]:
     cur.execute("SET LOCAL enable_indexscan = on")
     cur.execute("SET LOCAL enable_bitmapscan = on")
     cur.execute(f"SET LOCAL hnsw.ef_search = {ef}")
-    cur.execute(ANN_SQL[sem_vector], {"qv": qv, "cand": CANDIDATES})
+    cur.execute(ANN_SQL, {"qv": qv, "cand": CANDIDATES})
     return [r[0] for r in cur.fetchall()]
 
 
@@ -76,8 +70,6 @@ def main() -> None:
     ap.add_argument("--efs", default="40,100,200,400", help="comma-separated ef_search values to sweep")
     ap.add_argument("--k", type=int, default=10, help="recall@k")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--sem-vector", choices=sorted(ANN_SQL), default="vector",
-                    help="ANN index to test: fp32 (served) or the fp16 halfvec expression index")
     args = ap.parse_args()
     efs = [int(x) for x in args.efs.split(",")]
 
@@ -99,14 +91,14 @@ def main() -> None:
         for i, qv in enumerate(qvecs, 1):
             gold = set(exact_top(cur, qv, args.k))
             for ef in efs:
-                rows = ann_rows(cur, qv, ef, args.sem_vector)
+                rows = ann_rows(cur, qv, ef)
                 hit = len(gold & set(rows[: args.k]))
                 per_ef[ef]["recalls"].append(hit / len(gold) if gold else 0.0)
                 per_ef[ef]["rows"].append(len(rows))
             if i % 25 == 0:
                 print(f"  ... {i}/{len(qvecs)}")
 
-    lines = [f"# HNSW recall diagnostic — {args.corpus.upper()} ({args.sem_vector} index)\n",
+    lines = [f"# HNSW recall diagnostic — {args.corpus.upper()}\n",
              f"Approximate (HNSW) vs exact (brute-force) nearest neighbours over {len(spans)} gold mentions.",
              f"recall@{args.k} = overlap with the exact top-{args.k}; a *collapse* is recall <= 0.2 (graph",
              "traversal stuck). `rows` = mean rows returned for a LIMIT = CANDIDATES request "
@@ -120,8 +112,7 @@ def main() -> None:
         lines.append(f"| {ef}{star} | {statistics.mean(rc):.3f} | {coll} / {len(rc)} | "
                      f"{statistics.mean(per_ef[ef]['rows']):.0f} |")
     text = "\n".join(lines) + "\n"
-    suffix = "" if args.sem_vector == "vector" else f"_{args.sem_vector}"
-    out = HERE / f"hnsw_recall_{args.corpus}{suffix}.md"
+    out = HERE / f"hnsw_recall_{args.corpus}.md"
     out.write_text(text, encoding="utf-8")
     print("\n" + text)
     print(f"wrote {out}")

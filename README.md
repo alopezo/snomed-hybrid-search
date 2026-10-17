@@ -106,6 +106,14 @@ make serve
 Notes:
 - `make download` always fetches the **latest** International Edition from the syndication feed and
   updates `SNOMED_SNAPSHOT_DIR` in `.env`. The feed is public; the ZIP download needs your MLDS login.
+- **Upgrading a database built before embeddings were stored as `halfvec`** (fp32 `vector(768)`): convert
+  it in place instead of re-embedding (~20 min; halves the HNSW index to ~2 GB, same quality: 3/985
+  DisTEMIST mentions change rank):
+  ```bash
+  docker compose exec -T db psql -U snomed -d snomed_search -c "DROP INDEX IF EXISTS ix_desc_emb; \
+    ALTER TABLE descriptions ALTER COLUMN embedding TYPE halfvec(768) USING embedding::halfvec(768);"
+  make index-hnsw
+  ```
 - **Other editions** (e.g. a national extension) may name the Description/Language files differently
   or use another language code; adjust the glob patterns in [`etl/load_descriptions.py`](etl/load_descriptions.py).
 - Only **active** descriptions of **active** concepts are loaded (FSN + synonyms).
