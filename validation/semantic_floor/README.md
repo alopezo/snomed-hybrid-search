@@ -19,7 +19,21 @@ the Clinical finding filter, `diab mel` (pre-process off) returned *Durlachers c
   vocabulary start with it (`diab` 15, `mel` 203, `inf` 205, `myo` 139). Spanish words and real
   acronyms have few completions (`gripe` 1, `gato` 2, `mav` 3). The vocabulary is the `lexicon` table
   (`ts_stat` over `term_tsv`, ~120k words), built by `make index-lexical`.
+- A token must also be **rare as a word of its own**: the descriptions containing it as a whole word,
+  divided by those containing a longer word it starts (`ndoc` in `lexicon`), must stay below
+  `TRUNC_MAX_WORD_RATIO = 0.1`. Prefixes sit at ≤ 0.05 (`fam` 0.000, `ca` 0.001, `myo` 0.010, `cid`
+  0.048); whole words at ≥ 0.40, function words included (`on` 0.40, `the` 0.41, `water` 3.0, `knee`
+  10.6, `tumor` 50.9). Counting distinct longer words instead does not separate them (`knee` 12,
+  `fam` 25). Without this check every word of `water on the knee` looked truncated.
 - The gate fires only if **every** token looks truncated. One whole word leaves the query untouched.
+- **Two floors by query shape.** A lone prefix-like token gets `SEM_MIN_SIM` (0.80): it may be a Spanish
+  acronym that BioLORD maps correctly from the semantic channel alone (`CID`, `LAM`, `LES` on
+  DisTEMIST; a 1.0 floor lost all three). Two or more prefix-like tokens get `SEM_MIN_SIM_MULTI`
+  (0.95): that is clinician shorthand, and XLM-R reads fragments such as `▁fam ▁bre ▁ca` as short
+  Romance-language words, so BioLORD lands on foreign loanwords at high similarity (`fam bre ca` →
+  *Cafard* 0.86, *Cacique* 0.83; `fx hip` → *Coxa profunda* 0.88). Real phrases reach their answer at
+  0.89–1.00, so 0.95 still lets near-exact matches through if the detector misfires; paraphrases
+  (`water on the knee` 0.89) rely on the word-ratio check instead.
 - Below the floor, a semantic neighbour still **corroborates** a lexical hit. That weak agreement is
   what lifts `inf myo` → *Myocardial infarction* to #1, so turning the channel off entirely broke
   `lexical__inf_myo` and `lexical__order_independent`.
@@ -42,6 +56,11 @@ mentions move within the top 10 (`CID` 6 → 4, `LAM` 2 → 3). It fires on 12 o
 Spanish acronyms (`LES`, `TAB`, `CID`, `FAE`…), plus one whole word with many completions (`tumor`).
 Firing on a whole word is harmless, because whole words embed well and their neighbours clear the
 floor.
+
+The word-ratio check and the two-floor split (`*_ratiofloor.*`, rerank on) leave DisTEMIST unchanged:
+acc@1 0.575, recall@10 0.798, MRR 0.654, and no mention changes rank against the same configuration
+without them. Their benefit is pinned by `test_truncation_detector` and
+`test_multi_prefix_drops_foreign_word_noise`.
 
 DisTEMIST gold spans are complete, clean disease terms, so the corpus barely exercises truncated
 input. It shows the gate **does no harm**, not how much it helps. The benefit is pinned by

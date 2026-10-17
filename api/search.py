@@ -68,9 +68,20 @@ RERANK_WEIGHT = 0.4
 # answer at that same similarity ('gripe' -> Influenza 0.68), so an unconditional floor cost 47
 # recall@10 hits on DisTEMIST (pre-process off).
 SEM_MIN_SIM = float(os.environ.get("SEM_MIN_SIM", "0.80"))
+# Stricter floor when 2+ tokens ALL look truncated ('fam bre ca', 'diab mel'): that is clinician shorthand,
+# and BioLORD reads the fragments as short foreign words, so its noise climbs to ~0.88 ('fam bre ca' ->
+# Cafard 0.86, 'fx hip' -> Coxa profunda 0.88). A lone token keeps SEM_MIN_SIM because it may be a
+# Spanish acronym BioLORD maps correctly from the semantic channel alone (CID, LAM, LES on DisTEMIST).
+SEM_MIN_SIM_MULTI = float(os.environ.get("SEM_MIN_SIM_MULTI", "0.95"))
 # A token "looks truncated" when at least this many longer words in the index start with it ('diab' 15,
-# 'mel' 203, 'myo' 139) — Spanish words and real acronyms have few ('gripe' 1, 'gato' 2, 'mav' 3).
+# 'mel' 203, 'myo' 139) — Spanish words and real acronyms have few ('gripe' 1, 'gato' 2, 'mav' 3)...
 TRUNC_MIN_COMPLETIONS = 10
+# ...and it is rare as a word of its own: the descriptions containing it as a whole word, divided by
+# those containing a longer word it starts, stays below this. Prefixes are <= 0.05 (fam 0.000, ca 0.001,
+# myo 0.010, cid 0.048); whole words are >= 0.40 even for function words (on 0.40, the 0.41, water 3.0,
+# knee 10.6, tumor 50.9). Without it, 'water on the knee' looked truncated (every word has 10+ longer
+# completions) and a stricter floor dropped its only answer, Effusion of knee.
+TRUNC_MAX_WORD_RATIO = 0.1
 
 # Entity type (from extract_entities) -> the SNOMED top-level hierarchy to constrain that entity's
 # search to. Used as the `filter_concept` for per-entity mapping; falls back to no filter if the
@@ -127,7 +138,7 @@ fused AS (
            (l.id IS NOT NULL) AS in_lex,
            (v.id IS NOT NULL) AS in_vec
     FROM lex l FULL OUTER JOIN vec v ON l.id = v.id
-    -- Similarity floor (min_sim is 0 unless the query looks truncated — see looks_truncated): RRF
+    -- Similarity floor (min_sim is 0 unless the query looks truncated — see truncation_floor): RRF
     -- scores by rank only, so the semantic #1 earns as much as the lexical #1 even when it is noise
     -- (e.g. 'diab mel' -> 'Durlachers corn' at cosine 0.7). A semantic-only candidate below min_sim
     -- is dropped; below it the semantic channel may still *corroborate* a lexical hit (weak agreement
@@ -232,24 +243,31 @@ def to_prefix_query(text: str) -> str:
     return " & ".join(f"{w}:*" for w in words)
 
 
-def looks_truncated(cur, text: str) -> bool:
-    """True when EVERY token of `text` reads as a typed prefix rather than a whole word: it has at
-    least TRUNC_MIN_COMPLETIONS longer completions in `lexicon` (the index vocabulary, built by
-    `make index-lexical`). Such queries ('diab mel', 'inf myo') embed to noise, so the semantic floor
-    applies only to them. Returns False if the lexicon table is missing (floor stays off)."""
+def truncation_floor(cur, text: str) -> float:
+    """Semantic similarity floor for this query. 0 (off) unless EVERY token reads as a typed prefix rather
+    than a whole word: it has at least TRUNC_MIN_COMPLETIONS longer completions in `lexicon` (the index
+    vocabulary, built by `make index-lexical`) and is rare as a word of its own (TRUNC_MAX_WORD_RATIO).
+    Such queries ('diab mel', 'inf myo') embed to noise. One prefix-like token gets SEM_MIN_SIM (it may be
+    an acronym), two or more get SEM_MIN_SIM_MULTI. Returns 0 if the lexicon table is missing."""
     tokens = list(dict.fromkeys(normalize(w) for w in to_prefix_query(text).replace(":*", "").split(" & ") if w))
     if not tokens:
-        return False
+        return 0.0
     try:
         cur.execute(
-            "SELECT bool_and((SELECT count(*) FROM (SELECT 1 FROM lexicon"
-            "                 WHERE word LIKE t || '%%' AND word <> t LIMIT %(n)s) x) >= %(n)s)"
+            "SELECT bool_and("
+            "  (SELECT count(*) FROM (SELECT 1 FROM lexicon"
+            "    WHERE word LIKE t || '%%' AND word <> t LIMIT %(n)s) x) >= %(n)s"
+            "  AND COALESCE((SELECT ndoc FROM lexicon WHERE word = t), 0)"
+            "      < %(r)s * (SELECT COALESCE(sum(ndoc), 0) FROM lexicon WHERE word LIKE t || '%%' AND word <> t))"
             " FROM unnest(%(t)s::text[]) t",
-            {"t": tokens, "n": TRUNC_MIN_COMPLETIONS})
-        return bool(cur.fetchone()[0])
+            {"t": tokens, "n": TRUNC_MIN_COMPLETIONS, "r": TRUNC_MAX_WORD_RATIO})
+        truncated = bool(cur.fetchone()[0])
     except psycopg.errors.UndefinedTable:
         cur.connection.rollback()
-        return False
+        return 0.0
+    if not truncated:
+        return 0.0
+    return SEM_MIN_SIM_MULTI if len(tokens) > 1 else SEM_MIN_SIM
 
 
 def exact_first(results: list[dict]) -> list[dict]:
@@ -604,7 +622,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
     # query on purpose: both channels are single-digit ms, so splitting them into parallel queries
     # would only add a 2nd-connection round-trip, not save time (the embed above dominates anyway).
     with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
-        truncated = looks_truncated(cur, search_text)   # before SET LOCAL: it may roll back
+        min_sim = truncation_floor(cur, search_text)   # before SET LOCAL: it may roll back
         # pgvector's HNSW scan returns at most `hnsw.ef_search` rows (default 40). Left unset, the
         # semantic channel would silently cap at 40 candidates, far below CANDIDATES, and a query that
         # lands the graph traversal in the wrong region would leak unrelated neighbours into the fused
@@ -618,7 +636,7 @@ def search_stream(query: str, k: int = 15, use_gemma: bool = True, rerank: bool 
             "tsq": tsq, "qvec": qvec, "cand": CANDIDATES,
             "k": RRF_K, "k_out": k, "pref_boost": PREF_BOOST, "exact_norms": exact_norms,
             "filter": filter_concept, "excl_module": exclude_module,
-            "min_sim": SEM_MIN_SIM if truncated else 0.0,
+            "min_sim": min_sim,
         })
         rows = cur.fetchall()
     t["retrieval_ms"] = round((time.perf_counter() - tr) * 1000, 1)

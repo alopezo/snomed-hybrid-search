@@ -96,6 +96,7 @@ def test_semantic_floor_drops_noise(monkeypatch):
     import api.search as s
 
     monkeypatch.setattr(s, "SEM_MIN_SIM", 0.0)
+    monkeypatch.setattr(s, "SEM_MIN_SIM_MULTI", 0.0)
     off = search("diab mel", k=15, use_gemma=False, filter_concept=CLINICAL_FINDING)
     monkeypatch.undo()
     on = search("diab mel", k=15, use_gemma=False, filter_concept=CLINICAL_FINDING)
@@ -104,6 +105,29 @@ def test_semantic_floor_drops_noise(monkeypatch):
     assert DURLACHERS_CORN not in _ids(on)           # ...is gone with it
     assert _rank(on, DIABETES_MELLITUS) == 1
     assert all(r["channel"] != "semantic" for r in on["results"][:5])
+
+
+def test_truncation_detector():
+    """The floor keys on the query's shape: 2+ prefix-like tokens -> strict floor, one -> the lenient
+    one (it may be an acronym), any whole word -> off. 'water on the knee' has 10+ longer completions
+    for every word, so only the word-frequency ratio keeps it from looking truncated."""
+    import api.search as s
+
+    with psycopg.connect(PG_DSN) as conn, conn.cursor() as cur:
+        floors = {q: s.truncation_floor(cur, q) for q in
+                  ("fam bre ca", "diab mel", "pneu", "CID", "water on the knee", "tumor", "pnuemonia")}
+    assert floors["fam bre ca"] == floors["diab mel"] == s.SEM_MIN_SIM_MULTI
+    assert floors["pneu"] == floors["CID"] == s.SEM_MIN_SIM
+    assert floors["water on the knee"] == floors["tumor"] == floors["pnuemonia"] == 0.0
+
+
+def test_multi_prefix_drops_foreign_word_noise():
+    """BioLORD reads 'fam bre ca' as three short Romance words and lands on foreign loanwords (Cafard
+    0.86, Cacique 0.83) — above the lenient 0.80 floor. The strict multi-token floor drops them, so
+    every result is lexical (or corroborated) and Familial cancer of breast leads."""
+    out = search("fam bre ca", k=15, use_gemma=False, rerank=True)
+    assert all(r["channel"] != "semantic" for r in out["results"])
+    assert _rank(out, "254843006") == 1     # Familial cancer of breast
 
 
 def test_hierarchy_filter_excludes_out_of_branch():
