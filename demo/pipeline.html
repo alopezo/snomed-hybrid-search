@@ -207,11 +207,11 @@ const STEPS = [
     without:"Other hierarchies displace the right concept from the top: DisTEMIST acc@1 0.57 → 0.53.",
     evidence:"A precision tool: recall@10 barely moves (0.80 → 0.78). Field-scoped EL reached acc@1 0.52 across findings, procedures and body structures.",
     cost:{ms:1, mem:0.19}, costLabel:"1 indexed lookup · 190 MB" },
-  { id:"rerank", n:9, name:"Cross-encoder rerank", tech:"bge-reranker-v2-m3 · top-15 · blended W = 0.4", c:"--rerank",
+  { id:"rerank", n:9, name:"Cross-encoder rerank", tech:"bge-reranker-v2-m3 · top-15 · scores the matched term + semantic tag · blended W = 0.3", c:"--rerank",
     optional:true, on:true,
     solves:"<b>Precise over generic.</b> Reads query and candidate together, so the specific concept beats a broad one sharing the words (<code>chest x-ray</code> → the procedure, not the radiology qualifier).",
     without:"Ordering is rank fusion alone; generic concepts can outrank the precise one.",
-    evidence:"On DisTEMIST it is <b>net slightly negative</b>: acc@1 0.588 without it vs 0.575 with it, recall unchanged (40 mentions gained at rank 1, 53 lost). Its benefit is on short, ambiguous typed queries, pinned by <code>test_rerank_lifts_precise_over_generic</code>.",
+    evidence:"DisTEMIST acc@1 <b>0.588 \u2192 0.596</b> (MRR 0.663 \u2192 0.670), recall unchanged: 38 mentions gained at rank 1, 30 lost. It reads the description that matched, not the FSN; scoring the FSN at W = 0.4 made it net negative (0.575). Precise-over-generic is pinned by <code>test_rerank_lifts_precise_over_generic</code>.",
     cost:{ms:220, mem:2.2}, costLabel:"~0.2 s MPS / ~0.5 s CPU · 2.2 GB" },
   { id:"pick", n:10, name:"LLM pick", tech:"gemma chooses among the retrieved candidates", c:"--llm",
     optional:true, on:false,
@@ -226,15 +226,15 @@ const LLM_GB = 7.4, BASE_GB = 2.0;
 // floor is omitted (measured neutral) and rrf follows the channels.
 const KEY_IDS = ["pre","lex","syn","sem","exact","filter","rerank","pick"];
 const MEASURED = {
-  "0,1,1,1,1,1,1,0": ["0.575","0.798","served configuration"],
+  "0,1,1,1,1,1,1,0": ["0.596","0.798","served configuration"],
   "0,1,1,1,1,1,0,0": ["0.588","0.798","rerank off"],
-  "1,1,1,1,1,1,1,0": ["0.57","0.77","pre-process on (preprint Table 1)"],
+  "1,1,1,1,1,1,1,0": ["0.57","0.77","pre-process on (preprint Table 1) · earlier rerank"],
   "1,1,1,1,1,1,0,0": ["0.56","0.77","pre-process on, rerank off (preprint)"],
-  "0,0,1,1,1,1,1,0": ["0.58","0.80","semantic only (preprint Table 2)"],
-  "0,1,1,0,1,1,1,0": ["0.06","0.06","lexical only (preprint Table 2)"],
-  "0,1,1,1,1,0,1,0": ["0.53","0.78","no hierarchy filter (preprint)"],
-  "0,1,0,1,1,1,1,0": ["0.546","0.766","FSN + preferred term only"],
-  "0,1,1,1,1,1,1,1": ["0.61","0.80","with LLM pick (preprint Table 4)"],
+  "0,0,1,1,1,1,1,0": ["0.58","0.80","semantic only (preprint Table 2) · earlier rerank"],
+  "0,1,1,0,1,1,1,0": ["0.06","0.06","lexical only (preprint Table 2) · earlier rerank"],
+  "0,1,1,1,1,0,1,0": ["0.53","0.78","no hierarchy filter (preprint) · earlier rerank"],
+  "0,1,0,1,1,1,1,0": ["0.546","0.766","FSN + preferred term only · earlier rerank"],
+  "0,1,1,1,1,1,1,1": ["0.61","0.80","with LLM pick (preprint Table 4) · earlier rerank"],
 };
 const PRESETS = {
   served:  {pre:0,lex:1,syn:1,sem:1,floor:1,exact:1,filter:1,rerank:1,pick:0},
