@@ -58,9 +58,11 @@ PREF_BOOST = 0.001
 # normalized to [0,1] per query, then blended: final = W*rerank + (1-W)*rrf.
 #   W = 1.0 -> rerank fully dictates (old behavior; over-favors broad/high-frequency concepts)
 #   W = 0.0 -> rerank ignored (pure RRF)
-# 0.5 lets the reranker refine RRF instead of overriding it, so a precise lexical/semantic hit
-# isn't demoted below a generic parent just because the CE likes the parent's phrasing.
-RERANK_WEIGHT = 0.4
+# A low weight lets the reranker refine RRF instead of overriding it, so a precise lexical/semantic
+# hit isn't demoted below a near neighbour just because the CE likes its phrasing. On DisTEMIST
+# (pre-process off, k=10) acc@1 is 0.588 at W=0, peaks at W=0.2-0.3 (0.599/0.596) and falls below
+# rerank-off from W=0.5 up (0.579; 0.515 at W=1).
+RERANK_WEIGHT = 0.3
 # Minimum cosine similarity for a semantic-ONLY candidate to enter the fusion when the query looks
 # truncated (0 disables the floor); below it, a semantic neighbour can still corroborate a lexical hit.
 # Prefix abbreviations BioLORD can't embed ('diab mel', 'inf myo') return unrelated neighbours at
@@ -501,6 +503,16 @@ def _minmax(vals: list[float]) -> list[float]:
     return [(v - lo) / (hi - lo) for v in vals]
 
 
+def _ce_text(r: dict) -> str:
+    """Candidate text the cross-encoder scores: the description that matched, plus the semantic tag.
+    A query that reached its concept through a synonym ('hepatomegalia' -> 'Hepatomegaly', FSN 'Large
+    liver'; 'Síndrome de Alagille' -> 'Alagille syndrome', FSN 'Arteriohepatic dysplasia') would
+    otherwise be judged against wording it never resembled. The tag stays: it is how the CE tells a
+    '(qualifier value)' from the '(procedure)' the user meant ('chest x-ray')."""
+    term = r["matched_term"] or r["fsn"]
+    return f"{term} ({r['semantic_tag']})" if r.get("semantic_tag") else term
+
+
 def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
     """Reorder candidates by BLENDING the RRF score with a cross-encoder relevance score.
     A purpose-built neural reranker (deterministic, multilingual) — not an LLM opinion, not lexical.
@@ -510,13 +522,15 @@ def crossencoder_rerank(text: str, results: list[dict]) -> list[dict] | None:
     Both scores are min-max normalized per query and combined as
     RERANK_WEIGHT*rerank + (1-RERANK_WEIGHT)*rrf, so the CE refines the fused ranking instead of
     overriding it — a precise hit isn't demoted below a generic parent the CE happens to like.
+    The CE scores the description that MATCHED (see _ce_text), not the FSN. Scoring the FSN made rerank
+    net negative on DisTEMIST (acc@1 0.575 vs 0.588 off); the matched term makes it positive (0.596).
     Returns the reordered list, or None on failure (caller keeps the original order)."""
     if len(results) < 2:
         return results
     try:
         ce = get_reranker()
         with _infer_lock:   # serialize model inference (see embed_query)
-            ce_scores = [float(s) for s in ce.predict([(text, r["fsn"] or r["matched_term"]) for r in results])]
+            ce_scores = [float(s) for s in ce.predict([(text, _ce_text(r)) for r in results])]
     except Exception:
         return None
     ce_norm = _minmax(ce_scores)
