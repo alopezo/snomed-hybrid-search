@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Pipeline Steps</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  /* Same dark palette as the search app (index.html / architecture.html / tests.html). */
+  :root{
+    --bg:#0f1115; --surface:#1a1d24; --surface-2:#212530; --inset:#14171d;
+    --ink:#e6e6e6; --muted:#9aa0aa; --faint:#6b717c; --line:#2b2f38;
+    --accent:#4f9cf9; --warn:#e0a24d; --bad:#e5645a; --ok:#5bbd62;
+    --lex:#5bbd62; --sem:#b57be0; --llm:#e0a24d; --rerank:#46c5cc; --pg:#4f9cf9;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"IBM Plex Serif",Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px;
+    line-height:1.55; -webkit-font-smoothing:antialiased; padding:clamp(20px,4vw,48px) 16px}
+  .wrap{max-width:860px; margin:0 auto}
+  code{font-family:var(--mono); font-size:.88em; color:var(--ink)}
+  a{color:var(--accent); text-decoration:none} a:hover{text-decoration:underline}
+  [hidden]{display:none !important}
+
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 12px}
+  h1{font-family:var(--serif); font-weight:600; font-size:clamp(28px,4.6vw,42px); line-height:1.08;
+    letter-spacing:-.01em; margin:0 0 12px; text-wrap:balance}
+  .lede{color:var(--muted); max-width:68ch; margin:0}
+  .lede b{color:var(--ink); font-weight:600}
+  .nav{font-family:var(--mono); font-size:12.5px; margin:14px 0 0}
+
+  /* presets */
+  .presets{display:flex; flex-wrap:wrap; gap:8px; margin:26px 0 0; align-items:center}
+  .presets .lbl{font-family:var(--mono); font-size:11.5px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.08em; margin-right:4px}
+  .preset{font-family:var(--sans); font-size:13px; color:var(--ink); background:var(--surface);
+    border:1px solid var(--line); border-radius:20px; padding:5px 13px; cursor:pointer}
+  .preset:hover{border-color:var(--accent)}
+  .preset[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 22%,var(--surface));
+    border-color:var(--accent)}
+  .preset:focus-visible,.toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  /* sticky summary */
+  .summary{position:sticky; top:0; z-index:5; margin:16px 0 22px; padding:12px 16px;
+    background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px); border:1px solid var(--line); border-radius:12px;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:6px 16px}
+  .stat .k{font-family:var(--mono); font-size:10.5px; color:var(--muted); text-transform:uppercase;
+    letter-spacing:.08em}
+  .stat .v{font-family:var(--mono); font-size:17px; font-weight:600; font-variant-numeric:tabular-nums}
+  .stat .s{font-size:11.5px; color:var(--muted); line-height:1.35}
+  .stat.q .v.na{color:var(--faint); font-size:14px; font-weight:500}
+  .stat.p .v{color:var(--ok)} .stat.p.has .v{color:var(--warn)}
+  @media (max-width:640px){ .summary{grid-template-columns:1fr 1fr; position:static} }
+
+  /* step list */
+  .steps{list-style:none; margin:0; padding:0; position:relative}
+  .steps::before{content:""; position:absolute; left:19px; top:14px; bottom:14px; width:2px;
+    background:var(--line)}
+  .step{position:relative; padding-left:52px; margin:0 0 12px}
+  .dot{position:absolute; left:10px; top:18px; width:20px; height:20px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--c); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:10px; font-weight:600; color:var(--c)}
+  .card{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--c);
+    border-radius:0 12px 12px 0; padding:14px 16px; transition:opacity .15s ease, background .15s ease}
+  .head{display:flex; align-items:flex-start; gap:12px}
+  .titles{flex:1; min-width:0}
+  .name{font-weight:600; font-size:16px; line-height:1.25}
+  .tech{font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:2px}
+  .badge{display:inline-block; font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+    text-transform:uppercase; padding:1px 7px; border-radius:10px; margin-left:8px; vertical-align:2px;
+    border:1px solid var(--line); color:var(--muted)}
+  .badge.opt{color:var(--warn); border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+  .solves{margin:10px 0 0; font-size:14px}
+  .solves b{font-weight:600}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; font-family:var(--mono);
+    font-size:11.5px; color:var(--muted)}
+  .meta span b{color:var(--ink); font-weight:500}
+  .evidence{margin-top:8px; font-size:12.5px; color:var(--muted); line-height:1.5}
+  .evidence b{color:var(--ink); font-weight:500}
+  .without{margin-top:10px; padding:9px 12px; border-radius:8px; font-size:13.5px;
+    background:color-mix(in srgb,var(--warn) 11%,var(--inset));
+    border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
+  .without .wl{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--warn); margin-right:6px}
+  .note{margin-top:8px; font-size:12.5px; color:var(--faint); font-style:italic}
+
+  /* off / bypassed states */
+  .step.off .card{background:var(--inset); opacity:.82}
+  .step.off .name{color:var(--muted); text-decoration:line-through; text-decoration-color:var(--faint)}
+  .step.off .dot{border-color:var(--faint); color:var(--faint)}
+  .step.off .solves,.step.off .meta,.step.off .evidence{display:none}
+  .step:not(.off) .without{display:none}
+  .step.fixed .card{border-left-style:dashed}
+
+  /* toggle switch */
+  .toggle{flex:0 0 auto; position:relative; width:46px; height:26px; border-radius:13px; border:none;
+    background:var(--line); cursor:pointer; padding:0; transition:background .15s ease}
+  .toggle::after{content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
+    background:var(--muted); transition:transform .15s ease, background .15s ease}
+  .toggle[aria-checked="true"]{background:color-mix(in srgb,var(--c) 55%,var(--line))}
+  .toggle[aria-checked="true"]::after{transform:translateX(20px); background:#fff}
+  .toggle:disabled{cursor:not-allowed; opacity:.45}
+  .lock{font-family:var(--mono); font-size:10.5px; color:var(--faint); text-transform:uppercase;
+    letter-spacing:.06em; padding-top:5px}
+  @media (prefers-reduced-motion:reduce){ .toggle,.toggle::after,.card{transition:none} }
+
+  .shake{animation:shake .3s}
+  @keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+  .foot{margin-top:28px; padding-top:14px; border-top:1px solid var(--line); font-size:12.5px;
+    color:var(--muted); line-height:1.6}
+  .foot b{color:var(--ink); font-weight:500}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">SNOMED CT hybrid search · pipeline</p>
+    <h1>What each step solves</h1>
+    <p class="lede">A query goes through up to ten steps, top to bottom. Each one exists because of a
+      <b>specific failure</b> of the others. Switch a step off to see which problem comes back and what you
+      save in latency and memory. The quality line shows <b>measured</b> DisTEMIST numbers only for
+      configurations we actually evaluated.</p>
+    <p class="nav"><a href="/">‹ back to search</a> · <a href="/static/architecture.html">architecture ↗</a> ·
+      <a href="/static/tests.html">tests ↗</a></p>
+  </header>
+
+  <div class="presets" role="group" aria-label="Presets">
+    <span class="lbl">presets</span>
+    <button class="preset" data-preset="served">Served default</button>
+    <button class="preset" data-preset="lean">Lean (no rerank)</button>
+    <button class="preset" data-preset="full">Everything on</button>
+  </div>
+
+  <div class="summary" aria-live="polite">
+    <div class="stat"><div class="k">latency</div><div class="v" id="s-lat"></div><div class="s">warm, per query</div></div>
+    <div class="stat"><div class="k">memory</div><div class="v" id="s-mem"></div><div class="s" id="s-mem-s"></div></div>
+    <div class="stat q"><div class="k">DisTEMIST acc@1 · R@10</div><div class="v" id="s-q"></div><div class="s" id="s-q-s"></div></div>
+    <div class="stat p" id="s-p-box"><div class="k">problems back</div><div class="v" id="s-p"></div><div class="s" id="s-p-s"></div></div>
+  </div>
+
+  <ol class="steps" id="steps"></ol>
+
+  <div class="foot">
+    <b>Where the numbers come from.</b> Quality: 985 DisTEMIST disease mentions (Spanish, zero-shot,
+    search-only on gold spans), Clinical finding filter unless the filter step is off; EL Challenge figures
+    are field-scoped MIMIC-IV mentions from the preprint. Latency: warm, Apple M1 with MPS; the cross-encoder
+    takes ~0.5 s on CPU only. Memory: resident models plus the Postgres structures each step needs; the
+    descriptions table itself (~2 GB) is always there. Results files live in <code>validation/results/</code>.
+  </div>
+</div>
+
+<script>
+// Each step: what it solves, what comes back without it, what it costs. Numbers are measured (see footer).
+// cost.ms = warm latency it adds; cost.mem = GB it needs resident; llm = needs the shared gemma model.
+const STEPS = [
+  { id:"pre", n:1, name:"LLM pre-process", tech:"gemma4:12b via Ollama · translate + normalize", c:"--llm",
+    optional:true, on:false,
+    solves:"<b>Dirty input in any language.</b> Rewrites the note as one canonical English term: expands shorthand, fixes typos, translates lay phrases.",
+    without:"Short lay Spanish and bare shorthand rely on the embedding alone; “azucar alta” drifts to unrelated concepts.",
+    evidence:"Slightly <b>hurts clean terms</b> (DisTEMIST acc@1 0.57 → 0.56). With note context it <b>rescued 48%</b> of 250 EL hard misses (26% without context): worth it as a selective second pass, not on every query.",
+    cost:{ms:1500, mem:0, llm:true}, costLabel:"~1–2 s · shares the 7.4 GB LLM" },
+  { id:"lex", n:2, name:"Lexical channel", tech:"Postgres full-text · multi-prefix · order- and accent-independent · GIN", c:"--lex",
+    on:true,
+    solves:"<b>What clinicians actually type.</b> Prefixes and shorthand (<code>diab mel</code>, <code>inf myo</code>), any word order, missing accents, exact wording.",
+    without:"Typed prefixes stop working: the embedding cannot read fragments (<code>pneu</code> is at cosine 0.18 from Pneumonia).",
+    evidence:"Adds nothing on DisTEMIST (Spanish spans vs English index: lexical alone 0.06) — its regime is interactive typing, pinned by the <code>inf_myo</code> and order-independence tests.",
+    cost:{ms:10, mem:0.05}, costLabel:"~2–10 ms · GIN 48 MB" },
+  { id:"syn", n:3, name:"Every synonym indexed", tech:"all 1.05 M active descriptions, not just FSN + preferred term", c:"--pg",
+    on:true,
+    solves:"<b>Wording that is not the preferred term.</b> Acceptable synonyms are how real text names a concept.",
+    without:"Only FSN + preferred term are searchable; the lexical channel loses most (EL lexical acc@1 0.31 → 0.22).",
+    evidence:"DisTEMIST acc@1 0.571 → 0.546 without them; EL fused 0.48 → 0.42. Restricting only the semantic channel cost the same on DisTEMIST.",
+    cost:{ms:0, mem:0.48}, costLabel:"+24% rows · HNSW 1.6 → 2.0 GB" },
+  { id:"sem", n:4, name:"Semantic channel", tech:"BioLORD-2023-M · 768-d halfvec · pgvector HNSW", c:"--sem",
+    on:true,
+    solves:"<b>Vocabulary mismatch.</b> Lay phrasing (<code>water on the knee</code>), other languages (<code>dolor de pecho</code>), typos (<code>pnuemonia</code>).",
+    without:"Paraphrases and Spanish have nothing to match: DisTEMIST acc@1 drops from 0.58 to 0.06.",
+    evidence:"Carries essentially all of the accuracy on DisTEMIST (semantic only 0.58 vs fused 0.57). Stored as fp16: half the index of fp32 (4.1 → 2.0 GB), identical scores.",
+    cost:{ms:100, mem:2.06}, costLabel:"embed ~30 ms + ANN ~70 ms · model 0.5 GB + HNSW 2.0 GB" },
+  { id:"floor", n:5, name:"Prefix-noise guard", tech:"semantic floor gated by query shape", c:"--sem",
+    on:true, needs:["lex","sem"],
+    solves:"<b>Noise for shorthand.</b> When every token is a prefix, the embedding returns junk ranked like real hits (<code>fam bre ca</code> reads as Romance words \u2192 Cafard 0.86). Drops semantic-only candidates below 0.95 (2+ tokens) or 0.80 (one token, which may be an acronym like CID).",
+    without:"Shorthand results interleave unrelated semantic neighbours with the real lexical hits.",
+    evidence:"Neutral on DisTEMIST (no mention changes rank). A token counts as a prefix only if it is rare as a word on its own, so <code>water on the knee</code> never triggers it.",
+    cost:{ms:2, mem:0.01}, costLabel:"1 lexicon lookup · 9 MB" },
+  { id:"rrf", n:6, name:"Rank fusion (RRF)", tech:"Σ 1/(60 + rank) · one SQL plan", c:"--pg",
+    on:true, fixed:true,
+    solves:"<b>Merging two incomparable scores.</b> Uses ranks only, so the lexical and semantic channels need no calibration.",
+    without:"", evidence:"Structural: bypassed automatically when only one channel is on.",
+    cost:{ms:0, mem:0}, costLabel:"in the same SQL query" },
+  { id:"exact", n:7, name:"Exact-match pin", tech:"exact description match → rank 1 · small preferred-term nudge", c:"--pg",
+    on:true,
+    solves:"<b>Typing the exact name always wins.</b> A description that equals the query stays on top, ahead of more specific siblings.",
+    without:"An exact synonym can sit below its own subtypes (<code>hepatomegaly</code> under Congenital hepatomegaly).",
+    evidence:"Deterministic rule, pinned by the <code>exact__hepatomegaly</code> test; not separately evaluated on DisTEMIST.",
+    cost:{ms:0, mem:0}, costLabel:"free" },
+  { id:"filter", n:8, name:"Hierarchy filter", tech:"concept_ancestors transitive closure · GIN", c:"--pg",
+    optional:true, on:true,
+    solves:"<b>Field scoping.</b> A diagnosis field searches only Clinical findings, so substances or morphologies sharing the words cannot take rank 1.",
+    without:"Other hierarchies displace the right concept from the top: DisTEMIST acc@1 0.57 → 0.53.",
+    evidence:"A precision tool: recall@10 barely moves (0.80 → 0.78). Field-scoped EL reached acc@1 0.52 across findings, procedures and body structures.",
+    cost:{ms:1, mem:0.19}, costLabel:"1 indexed lookup · 190 MB" },
+  { id:"rerank", n:9, name:"Cross-encoder rerank", tech:"bge-reranker-v2-m3 · top-15 · blended W = 0.4", c:"--rerank",
+    optional:true, on:true,
+    solves:"<b>Precise over generic.</b> Reads query and candidate together, so the specific concept beats a broad one sharing the words (<code>chest x-ray</code> → the procedure, not the radiology qualifier).",
+    without:"Ordering is rank fusion alone; generic concepts can outrank the precise one.",
+    evidence:"On DisTEMIST it is <b>net slightly negative</b>: acc@1 0.588 without it vs 0.575 with it, recall unchanged (40 mentions gained at rank 1, 53 lost). Its benefit is on short, ambiguous typed queries, pinned by <code>test_rerank_lifts_precise_over_generic</code>.",
+    cost:{ms:220, mem:2.2}, costLabel:"~0.2 s MPS / ~0.5 s CPU · 2.2 GB" },
+  { id:"pick", n:10, name:"LLM pick", tech:"gemma chooses among the retrieved candidates", c:"--llm",
+    optional:true, on:false,
+    solves:"<b>The rank-1 call when context matters.</b> Picks from the list, so it cannot invent a concept.",
+    without:"Rank 1 is whatever the cross-encoder and fusion put there.",
+    evidence:"acc@1 <b>0.57 → 0.61</b> on DisTEMIST and <b>0.52 → 0.56</b> on EL; recall unchanged. 15–20× slower than the cross-encoder.",
+    cost:{ms:3500, mem:0, llm:true}, costLabel:"~3–5 s · shares the 7.4 GB LLM" },
+];
+const LLM_GB = 7.4, BASE_GB = 2.0;
+
+// Measured DisTEMIST configurations (985 mentions). Key: on/off of the steps that change the score.
+// floor is omitted (measured neutral) and rrf follows the channels.
+const KEY_IDS = ["pre","lex","syn","sem","exact","filter","rerank","pick"];
+const MEASURED = {
+  "0,1,1,1,1,1,1,0": ["0.575","0.798","served configuration"],
+  "0,1,1,1,1,1,0,0": ["0.588","0.798","rerank off"],
+  "1,1,1,1,1,1,1,0": ["0.57","0.77","pre-process on (preprint Table 1)"],
+  "1,1,1,1,1,1,0,0": ["0.56","0.77","pre-process on, rerank off (preprint)"],
+  "0,0,1,1,1,1,1,0": ["0.58","0.80","semantic only (preprint Table 2)"],
+  "0,1,1,0,1,1,1,0": ["0.06","0.06","lexical only (preprint Table 2)"],
+  "0,1,1,1,1,0,1,0": ["0.53","0.78","no hierarchy filter (preprint)"],
+  "0,1,0,1,1,1,1,0": ["0.546","0.766","FSN + preferred term only"],
+  "0,1,1,1,1,1,1,1": ["0.61","0.80","with LLM pick (preprint Table 4)"],
+};
+const PRESETS = {
+  served:  {pre:0,lex:1,syn:1,sem:1,floor:1,exact:1,filter:1,rerank:1,pick:0},
+  lean:    {pre:0,lex:1,syn:1,sem:1,floor:1,exact:1,filter:1,rerank:0,pick:0},
+  full:    {pre:1,lex:1,syn:1,sem:1,floor:1,exact:1,filter:1,rerank:1,pick:1},
+};
+
+const state = Object.fromEntries(STEPS.map(s => [s.id, s.on]));
+const byId = Object.fromEntries(STEPS.map(s => [s.id, s]));
+const blocked = s => (s.needs || []).some(d => !state[d]);
+const active = id => state[id] && !blocked(byId[id]) && !(id === "rrf" && !(state.lex && state.sem));
+
+function render(){
+  const ol = document.getElementById("steps");
+  ol.innerHTML = STEPS.map(s => {
+    const on = active(s.id), dep = blocked(s), fusionBypass = s.id === "rrf" && !(state.lex && state.sem);
+    const lock = s.fixed ? `<span class="lock">${fusionBypass ? "bypassed" : "always on"}</span>`
+      : `<button class="toggle" role="switch" aria-checked="${state[s.id]}" aria-label="${s.name}"
+           data-id="${s.id}" ${dep ? "disabled" : ""}></button>`;
+    const why = dep ? `<div class="note">Needs both retrieval channels, so it is off while one is disabled.</div>`
+      : fusionBypass ? `<div class="note">Only one channel is on, so there is nothing to fuse.</div>` : "";
+    return `<li class="step${on ? "" : " off"}${s.fixed ? " fixed" : ""}" style="--c:var(${s.c})" id="step-${s.id}">
+      <span class="dot">${s.n}</span>
+      <div class="card">
+        <div class="head">
+          <div class="titles">
+            <div class="name">${s.name}${s.optional ? '<span class="badge opt">optional</span>' : ""}</div>
+            <div class="tech">${s.tech}</div>
+          </div>${lock}
+        </div>
+        <p class="solves">${s.solves}</p>
+        <div class="meta"><span>cost <b>${s.costLabel}</b></span></div>
+        <div class="evidence">${s.evidence}</div>
+        ${s.without && !dep ? `<div class="without"><span class="wl">without it</span>${s.without}</div>` : ""}
+        ${why}
+      </div></li>`;
+  }).join("");
+  ol.querySelectorAll(".toggle").forEach(b => b.addEventListener("click", () => flip(b.dataset.id)));
+  summarize();
+  syncPresets();
+  try { history.replaceState(null, "", "#off=" + STEPS.filter(s => !s.fixed && !state[s.id]).map(s => s.id).join(",")); } catch(e) {}
+}
+
+function flip(id){
+  if (state[id] && (id === "lex" || id === "sem") && !(state.lex && state.sem)) {   // keep one channel
+    const el = document.getElementById("step-" + id);
+    el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+    return;
+  }
+  state[id] = !state[id];
+  render();
+  const t = document.querySelector(`.toggle[data-id="${id}"]`); if (t) t.focus();
+}
+
+function summarize(){
+  const on = STEPS.filter(s => active(s.id));
+  const ms = on.reduce((a, s) => a + s.cost.ms, 0);
+  // synonyms only cost memory through the HNSW they enlarge (2.06 GB of the semantic step is FSN + PT)
+  let gb = BASE_GB + on.reduce((a, s) => a + (s.id === "syn" && !active("sem") ? 0 : s.cost.mem), 0);
+  const llm = on.some(s => s.cost.llm);
+  if (llm) gb += LLM_GB;
+  document.getElementById("s-lat").textContent = ms >= 1000 ? `~${(ms/1000).toFixed(1)} s` : `~${Math.max(ms,10)} ms`;
+  document.getElementById("s-mem").textContent = `~${gb.toFixed(1)} GB`;
+  document.getElementById("s-mem-s").textContent = llm ? "incl. 7.4 GB LLM" : "no LLM loaded";
+
+  const key = KEY_IDS.map(id => active(id) ? 1 : 0).join(",");
+  const m = MEASURED[key], qv = document.getElementById("s-q");
+  if (m) { qv.textContent = `${m[0]} · ${m[1]}`; qv.classList.remove("na"); document.getElementById("s-q-s").textContent = m[2]; }
+  else { qv.textContent = "not measured"; qv.classList.add("na"); document.getElementById("s-q-s").textContent = "this combination was not evaluated"; }
+
+  // a step off only because a channel it guards is off brings no problem back (no semantic noise to guard)
+  const back = STEPS.filter(s => !s.fixed && !s.optional && !state[s.id]);
+  const optOff = STEPS.filter(s => s.optional && !active(s.id));
+  const box = document.getElementById("s-p-box");
+  document.getElementById("s-p").textContent = back.length ? `${back.length} core` : "none";
+  box.classList.toggle("has", back.length > 0);
+  document.getElementById("s-p-s").textContent = back.length ? back.map(s => s.name).join(", ").toLowerCase()
+    : optOff.length ? `${optOff.length} optional off` : "every step on";
+}
+
+function syncPresets(){
+  document.querySelectorAll(".preset").forEach(b => {
+    const p = PRESETS[b.dataset.preset];
+    b.setAttribute("aria-pressed", Object.keys(p).every(k => !!p[k] === active(k)));
+  });
+}
+document.querySelectorAll(".preset").forEach(b => b.addEventListener("click", () => {
+  Object.assign(state, Object.fromEntries(Object.entries(PRESETS[b.dataset.preset]).map(([k, v]) => [k, !!v])));
+  render();
+}));
+
+(function fromHash(){   // #off=pre,pick — shareable configurations
+  const m = location.hash.match(/off=([\w,]*)/);
+  if (!m) return;
+  const off = new Set(m[1].split(",").filter(Boolean));
+  STEPS.forEach(s => { if (!s.fixed) state[s.id] = !off.has(s.id); });
+  if (!state.lex && !state.sem) state.sem = true;
+})();
+render();
+</script>
+</body>
+</html>
