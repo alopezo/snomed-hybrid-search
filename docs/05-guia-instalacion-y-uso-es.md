@@ -611,4 +611,6 @@ RF2 completamente nueva y después de contar con un respaldo.
 - [`demo/index.html`](../demo/index.html): interfaz de revisión.
 - [`api/validated.py`](../api/validated.py): estructura de los archivos Excel.
 - [`docs/04-architecture-flow.md`](04-architecture-flow.md): arquitectura técnica detallada.
+- [`docs/06-metodologia-mapeo-mai-snomed.md`](06-metodologia-mapeo-mai-snomed.md): metodología,
+  priorización REM y cardinalidad SNOMED CT → MAI.
 

@@ -22,6 +22,8 @@ retrieve *Myocardial infarction* even though they share no lexical overlap.
 ## Notes index
 - [05-guia-instalacion-y-uso-es.md](05-guia-instalacion-y-uso-es.md) — guía operativa en español:
   instalación local, RF2 inglés/español, OCL manualimagenes, revisión MAI → SNOMED CT y Excel.
+- [06-metodologia-mapeo-mai-snomed.md](06-metodologia-mapeo-mai-snomed.md) — metodología viva:
+  priorización de 100 prestaciones desde REM, desagregación y relación N SNOMED CT → 1 MAI.
 - [01-paper-triplet-bert-semantic-search.md](01-paper-triplet-bert-semantic-search.md) — in-depth analysis of the reference paper (*Semantic Search for Large Scale Clinical Ontologies*, CSIRO).
 - [02-biolord-notes.md](02-biolord-notes.md) — BioLORD-2023, variants, and what happened after the paper.
 - [03-implementation-plan.md](03-implementation-plan.md) — step-by-step plan: ETL → model → search → demo → evaluation (includes manual steps).
