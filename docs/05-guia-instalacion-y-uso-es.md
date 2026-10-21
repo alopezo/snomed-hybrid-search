@@ -292,6 +292,10 @@ Marcar solamente los exámenes OCL que realmente forman parte de la prestación 
 puede indicar si es un componente obligatorio. Presionar **“Guardar desagregación”** para persistirla
 en PostgreSQL.
 
+Si el nombre MAI o los candidatos OCL no permiten distinguir con seguridad el método, el sitio
+anatómico o el alcance clínico del examen, realizar antes la revisión descrita en
+**“Desambiguación clínica basada en evidencia con OpenEvidence”**.
+
 ### Paso 4: abrir un examen OCL para mapear
 
 Presionar **“Mapear en SNOMED”** en un examen seleccionado. Solamente entonces aparecen candidatos
@@ -357,7 +361,123 @@ El archivo contiene, según corresponda, código y descripción MAI, ID y nombre
 ConceptID y término preferido SNOMED CT, estado, justificaciones, referencias, motivos, observaciones
 y fecha de revisión.
 
-## 11. Dónde se guardan los datos
+## 11. Desambiguación clínica basada en evidencia con OpenEvidence
+
+[OpenEvidence](https://www.openevidence.com/) puede utilizarse como apoyo documental cuando la
+descripción MAI o un término OCL sea ambiguo. Su función en este flujo es ayudar a comprender qué
+examen representa el texto clínico y cómo se diferencia de procedimientos parecidos. **No determina
+automáticamente el ConceptID SNOMED CT y no reemplaza la revisión terminológica.**
+
+Esta consulta es manual: la herramienta no envía prestaciones, resultados ni datos clínicos a
+OpenEvidence. El acceso al servicio puede depender del país, la condición profesional y los acuerdos
+de la institución.
+
+### Cuándo realizar la consulta
+
+Conviene consultar evidencia cuando:
+
+- un mismo nombre se utiliza para más de una modalidad de imagen;
+- la prestación MAI agrupa exámenes con métodos, proyecciones o contrastes diferentes;
+- existen candidatos OCL similares, pero con sitios anatómicos o alcances clínicos distintos;
+- no está claro si una expresión histórica corresponde a radiografía, fluoroscopia, tomografía,
+  resonancia magnética, ultrasonido u otro método;
+- la persona revisora necesita justificar por qué incluyó o descartó un componente.
+
+No es necesario consultar OpenEvidence para cada fila. Debe utilizarse en los casos donde la
+ambigüedad pueda cambiar la selección OCL o el mapeo SNOMED CT.
+
+### Pregunta sugerida
+
+Abrir OpenEvidence y formular una pregunta terminológica y clínica, sin información identificable de
+pacientes. Se puede adaptar la siguiente plantilla:
+
+```text
+En el contexto de imagenología, ¿qué procedimiento representa el término
+"<descripción MAI o nombre OCL>"?
+
+Indique por separado:
+1. método o modalidad de adquisición;
+2. sitio anatómico y lateralidad, si corresponde;
+3. uso de contraste, radiofármaco o instrumentación;
+4. proyecciones, fases o componentes incluidos;
+5. diferencias con <procedimientos candidatos que podrían confundirse>;
+6. fuentes clínicas o documentos de consenso que respaldan la respuesta.
+```
+
+Ejemplo para una sialografía:
+
+```text
+¿Qué procedimiento de imagen representa "sialografía de glándulas salivales"?
+Precise la modalidad, el sitio anatómico, el uso de contraste y cómo se diferencia
+de ecografía, tomografía computada y resonancia magnética de glándulas salivales.
+Cite las fuentes utilizadas.
+```
+
+La pregunta debe pedir las **características definitorias** del procedimiento, no “qué código SNOMED
+debo elegir”. La elección del código requiere posteriormente revisar el término preferido, la
+descripción completamente especificada, el estado activo y la jerarquía del RF2 instalado.
+
+### Paso a paso para incorporar la evidencia
+
+1. Registrar el código y la descripción MAI que se está revisando.
+2. Identificar los candidatos OCL cuya diferencia necesita aclaración.
+3. Consultar OpenEvidence con una pregunta estructurada como la anterior.
+4. Abrir y revisar las fuentes citadas en la respuesta. Comprobar autor o institución, título, fecha,
+   población o contexto y que la fuente realmente respalde la conclusión.
+5. Resumir por separado método, anatomía, lateralidad, contraste y componentes del examen.
+6. Volver a la herramienta y seleccionar solamente los exámenes OCL compatibles con esa definición.
+7. Ejecutar **“Mapear en SNOMED”** para cada OCL seleccionado y contrastar los candidatos con el RF2.
+8. En **“Referencia bibliográfica”**, registrar la fuente original revisada: autor o institución,
+   título, publicación, año y DOI o URL. Se puede añadir la fecha de consulta a OpenEvidence.
+9. En **“Motivo de selección”**, explicar qué características clínicas coinciden con el concepto
+   SNOMED CT. Usar **“Observaciones adicionales”** para discrepancias o incertidumbres.
+10. Si la evidencia no resuelve la ambigüedad o no existe un concepto suficientemente preciso,
+    utilizar **“Sin mapeo SNOMED actual”** y dejar el caso para revisión clínica-terminológica.
+
+Una forma breve de documentar la decisión es:
+
+```text
+Motivo de selección: coincide en método (fluoroscopia/radiografía con contraste),
+sitio anatómico (glándula o conducto salival) y propósito diagnóstico.
+
+Referencia bibliográfica: <autor o institución>. <título>. <publicación>, <año>.
+<DOI o URL>. Consultado mediante OpenEvidence el <AAAA-MM-DD>.
+```
+
+### Qué aporta y qué no aporta
+
+| La consulta puede ayudar a | No debe utilizarse por sí sola para |
+|---|---|
+| Aclarar el significado clínico de un examen | Declarar equivalencia entre MAI, OCL y SNOMED CT |
+| Diferenciar modalidades o sitios anatómicos | Elegir un ConceptID sin revisar el RF2 |
+| Identificar componentes incluidos en una prestación amplia | Sustituir el juicio clínico o terminológico |
+| Localizar bibliografía para justificar una decisión | Convertir una recomendación clínica en una regla de facturación |
+
+La vigencia o eficacia clínica de un procedimiento y su representación terminológica son preguntas
+distintas. La evidencia ayuda a definir el procedimiento; el mapeo se confirma contra SNOMED CT y las
+reglas del proyecto.
+
+### Privacidad, seguridad y revisión crítica
+
+- Consultar conceptos genéricos. No ingresar nombres, RUT, números de ficha, fechas identificables,
+  imágenes, informes clínicos completos ni otros datos personales o sensibles.
+- Verificar las políticas institucionales antes de utilizar un servicio externo. Las condiciones de
+  manejo de información clínica anunciadas para OpenEvidence Enterprise dependen de acuerdos y
+  controles institucionales; no deben presumirse para una cuenta individual.
+- Abrir las referencias originales y confirmar que existen y respaldan la afirmación. No copiar una
+  respuesta generada como si fuera una fuente primaria.
+- Preferir guías, consensos, revisiones sistemáticas y fuentes terminológicas oficiales pertinentes al
+  procedimiento. Registrar versión y fecha de consulta.
+- Si OpenEvidence no está disponible, efectuar el mismo proceso con fuentes institucionales o
+  bibliográficas autorizadas; esto no impide utilizar las funciones locales de la herramienta.
+
+Información oficial sobre el servicio y sus controles declarados:
+
+- <https://www.openevidence.com/>
+- <https://portal.openevidence.com/>
+- <https://trust.openevidence.com/>
+
+## 12. Dónde se guardan los datos
 
 | Información | Almacenamiento |
 |---|---|
@@ -377,7 +497,7 @@ Consecuencias prácticas:
 - Antes de cambiar de navegador, perfil o computador, descargar el Excel.
 - Esta versión no es una aplicación multiusuario ni un SaaS. Cada instalación es local.
 
-## 12. Operación cotidiana
+## 13. Operación cotidiana
 
 ```bash
 make up       # iniciar servicios
@@ -397,7 +517,7 @@ Una respuesta saludable debe informar:
 - `llm.ok: true` cuando Ollama está habilitado;
 - `embeddings.loaded: true` después del warm-up o de la primera búsqueda semántica.
 
-## 13. Solución de problemas
+## 14. Solución de problemas
 
 ### La página muestra “API unreachable”
 
@@ -457,7 +577,7 @@ DISPLAY_LANGUAGE_MODULE=450829007
 
 Reiniciar la API después de modificar `.env`.
 
-## 14. Actualización, respaldo y recuperación
+## 15. Actualización, respaldo y recuperación
 
 El volumen Docker `pgdata` conserva PostgreSQL entre reinicios. Antes de una actualización importante:
 
@@ -470,7 +590,7 @@ El volumen Docker `pgdata` conserva PostgreSQL entre reinicios. Antes de una act
 `make reset` elimina el volumen de PostgreSQL y todos sus datos. Utilizarlo solamente para una carga
 RF2 completamente nueva y después de contar con un respaldo.
 
-## 15. Alcance y buenas prácticas de validación
+## 16. Alcance y buenas prácticas de validación
 
 - Confirmar método, sitio anatómico, lateralidad, contraste y número de proyecciones.
 - No tratar automáticamente varios ConceptID dentro de un mismo campo como sinónimos.
@@ -481,7 +601,7 @@ RF2 completamente nueva y después de contar con un respaldo.
 - No utilizar esta herramienta como sistema de orden clínica, facturación o autorización sin reglas
   adicionales y validación institucional.
 
-## 16. Archivos relevantes
+## 17. Archivos relevantes
 
 - [`README.md`](../README.md): descripción general, arquitectura y comandos del proyecto.
 - [`.env.example`](../.env.example): configuración sin secretos.

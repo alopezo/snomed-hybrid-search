@@ -4,7 +4,7 @@
 > incluyendo RF2 inglés/español, configuración OCL `MINSALQA/manualimagenes`, flujo de revisión
 > MAI → OCL → BioLORD → SNOMED CT, persistencia, exportación y solución de problemas.
 
-> Current development version: **2.1.1-local-install-docs**. The no-current-map workflow is
+> Current development version: **2.1.2-openevidence-guidance**. The no-current-map workflow is
 > preserved by `v2.1.0-no-current-snomed-map`; browser cache
 > controls were introduced in `2.0.4-browser-cache-control`; the 200-result
 > OCL version is preserved by `v2.0.2-ocl-200-results`, the guided workflow by
