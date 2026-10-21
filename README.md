@@ -1,6 +1,11 @@
 # SNOMED CT hybrid search
 
-> Current development version: **2.1.0-no-current-snomed-map**. Browser cache
+> **Documentación en español:** [Guía completa de instalación y uso local](docs/05-guia-instalacion-y-uso-es.md),
+> incluyendo RF2 inglés/español, configuración OCL `MINSALQA/manualimagenes`, flujo de revisión
+> MAI → OCL → BioLORD → SNOMED CT, persistencia, exportación y solución de problemas.
+
+> Current development version: **2.1.1-local-install-docs**. The no-current-map workflow is
+> preserved by `v2.1.0-no-current-snomed-map`; browser cache
 > controls were introduced in `2.0.4-browser-cache-control`; the 200-result
 > OCL version is preserved by `v2.0.2-ocl-200-results`, the guided workflow by
 > `v2.0.1-ocl-guided`, the previous OCL preview by
@@ -91,11 +96,16 @@ Embedding device: set `EMBED_DEVICE` in `.env` to `mps` (Apple Silicon), `cuda` 
 ## Quickstart
 
 ```bash
-git clone <your-fork-url> && cd snomed-search
+git clone https://github.com/alopezo/snomed-hybrid-search.git
+cd snomed-hybrid-search
 cp .env.example .env          # then edit SNOMED_SNAPSHOT_DIR (and EMBED_DEVICE / GEMMA_* if needed)
 make all                      # db + deps + ETL + embeddings + indexes
 make serve                    # open http://127.0.0.1:8090
 ```
+
+For the MAI/OCL workflow and Spanish preferred terms, use the documented v2 branch/release and follow
+the [Spanish installation guide](docs/05-guia-instalacion-y-uso-es.md). Do not open
+`demo/index.html` directly: the UI must be served by the local API at `http://127.0.0.1:8090/`.
 
 Don't have a release downloaded yet? Put your MLDS credentials in `.env` (`SNOMED_USER` /
 `SNOMED_PASSWORD`) and let the tool fetch it:

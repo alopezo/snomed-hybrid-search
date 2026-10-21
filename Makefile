@@ -64,6 +64,18 @@ load-extension: ## Add an extension on top of the base edition: make load-extens
 	$(PSQL) -c "ANALYZE descriptions; ANALYZE concept_ancestors;"
 	@echo ">> Extension loaded. (HNSW/GIN indexes update incrementally; no rebuild needed.)"
 
+load-spanish: ## Add the International Spanish language release: make load-spanish ES=/path/to/Spanish/Snapshot [INTL=...]
+	$(eval ES ?= $(shell grep -E '^SPANISH_SNAPSHOT_DIR=' .env | cut -d= -f2-))
+	@test -n "$(ES)" || { echo "ERROR: set ES=/path/to/SnomedCT_SpanishRelease.../Snapshot"; exit 1; }
+	$(eval INTL ?= $(shell grep -E '^SNOMED_SNAPSHOT_DIR=' .env | cut -d= -f2-))
+	@test -n "$(INTL)" || { echo "ERROR: set INTL=/path/to/InternationalRF2.../Snapshot or SNOMED_SNAPSHOT_DIR in .env"; exit 1; }
+	@echo ">> Appending Spanish descriptions ($(ES))..."
+	$(PY) etl/load_descriptions.py --snapshot "$(ES)" --concept-snapshot "$(INTL)" --preferred-refset 450828004 --append
+	@echo ">> Embedding the new Spanish terms..."
+	$(PY) embed/index_embeddings.py --only-missing
+	$(PSQL) -c "ANALYZE descriptions;"
+	@echo ">> Spanish language release loaded (language refset 450828004)."
+
 llm: ## Start a small local LLM (Ollama) for translation + rerank (see docs/llm-setup.md)
 	bash scripts/serve-llm.sh
 
@@ -106,5 +118,5 @@ service-uninstall: ## Remove the API launchd agent
 reset: ## Delete the DB volume and re-init (DESTROYS loaded data + embeddings)
 	docker compose down -v
 
-.PHONY: help install db-up download etl hierarchy index-lexical embed index-hnsw all llm serve smoke test \
+.PHONY: help install db-up download etl hierarchy index-lexical embed index-hnsw all load-spanish llm serve smoke test \
         up down status service-install service-uninstall reset
